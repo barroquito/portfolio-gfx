@@ -1,0 +1,512 @@
+/* --------------------------------------------- */
+/* VARIABLES ROOT: COLORES, TIPOGRAFÍAS, TAMAÑOS, ESPACIADOS */
+/* --------------------------------------------- */
+:root {
+  /* Colores principales */
+  --color-bg: #F9F1E1;
+  --color-bg-dark: #1E1E1E;
+  --color-text: #1E1E1E;
+  --color-text-light: #F9F1E1;
+  --color-accent: #54F0A2;
+  --color-navbar: #1E1E1E;
+  --color-navbar-text: #F9F1E1;
+  --color-btn-bg: #1E1E1E;
+  --color-btn-text: #F9F1E1;
+  --color-box: #fff;
+  --color-contact-bg: #1E1E1E;
+  --color-contact-title: #F9F1E1;
+  --color-border: #1E1E1E;
+  --color-border-light: #f8f8f3;
+  --color-border-dark: #232323;
+  --color-low-op-txt: #1e1e1e80;
+
+  /* Tipografías */
+  --font-main: 'Inter', sans-serif;
+  --font-title: 'Darker Grotesque', sans-serif;
+
+  /* Tamaños */
+  --size-title: 7rem;
+  --size-project-title: 2.5rem;
+  --size-navbar: 1.1rem;
+  --size-desc: 1.2rem;
+  --size-box: 1.5rem;
+  --size-btn: 1rem;
+  --size-contact-title: 7rem;
+
+  /* Espaciados */
+  --space-section: 2.2rem;
+  --space-box: 1rem 0;
+  --space-container: 2rem;
+  --space-gap: 1rem;
+  --space-navbar: 0.75rem 2rem;
+  --space-btn: 0.6rem 1.3rem;
+  --space-skills-gap: 1.2rem 2.2rem;
+  --space-project-gap: 0.75rem;
+  --space-softskills-gap: 1.2rem;
+}
+
+
+/* --------------------------------------------- */
+/* HOVERS ABOUT: experiencia, habilidades, idiomas */
+/* --------------------------------------------- */
+.exp-hover {
+  border-left: 4px solid var(--color-accent) !important;
+  background: var(--color-border-light);
+  transition: border 0.2s, background 0.2s;
+}
+.about-hover {
+  background: var(--color-border-light);
+  text-decoration: underline;
+  transition: background 0.2s, text-decoration 0.2s;
+}
+
+/* --------------------------------------------- */
+/* RESET Y BASE                                 */
+/* --------------------------------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* --------------------------------------------- */
+/* LAYOUT GENERAL                               */
+/* --------------------------------------------- */
+.layout {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+
+/* Contenedores izquierdo y derecho */
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 2rem;
+  gap: 1rem;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+/* Contenedor derecho (About, Skills, etc) */
+.right {
+  background-color: transparent;
+  margin-top: 5.5rem; /* Para evitar solape con navbar */
+}
+
+/* --------------------------------------------- */
+/* TIPOGRAFÍA Y CAJAS                           */
+/* --------------------------------------------- */
+.box {
+  padding: var(--space-box);
+  border-bottom: 2px solid var(--color-border);
+  font-family: var(--font-title);
+  font-size: var(--size-box);
+}
+
+.title {
+  font-size: var(--size-title);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.description {
+  font-size: var(--size-desc);
+  font-family: var(--font-main);
+  line-height: 1.6;
+}
+
+/* --------------------------------------------- */
+/* NAVBAR                                       */
+/* --------------------------------------------- */
+.navbar {
+  position: fixed;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-navbar);
+  padding: var(--space-navbar);
+  /* border-radius: 2rem; */
+  z-index: 1000;
+  transition: all 0.3s ease;
+  animation: pulseNavbar 5s infinite ease-in-out;
+}
+
+.navbar ul {
+  list-style: none;
+  display: flex;
+  gap: 2rem;
+}
+
+.navbar a {
+  text-decoration: none;
+  color: var(--color-navbar-text);
+  font-family: var(--font-main);
+  font-weight: 500;
+  font-size: var(--size-navbar);
+  transition: color 0.2s ease;
+}
+
+.navbar a:hover {
+  color: var(--color-accent);
+}
+
+@keyframes pulseNavbar {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.03); }
+}
+
+/* --------------------------------------------- */
+/* PROYECTOS                                    */
+/* --------------------------------------------- */
+.project-box {
+  margin-top: 10%;
+  padding: 0;
+  border-bottom: none;
+}
+
+.project-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 350px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.project-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 2rem 2rem 1.5rem 2rem;
+  box-sizing: border-box;
+  transform: translateY(100%);
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+
+.project-title {
+  font-size: 3.5rem; /* Aumentado del tamaño original */
+  font-family: var(--font-title);
+  font-weight: 700;
+  color: var(--color-text-light)!important; /* Cambiado a blanco hueso */
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+}
+
+.project-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s ease, filter 0.8s ease;
+}
+
+.project-button {
+  background-color: var(--color-btn-bg);
+  color: var(--color-btn-text);
+  padding: var(--space-btn);
+  text-decoration: none;
+  font-family: var(--font-main);
+  font-size: var(--size-btn);
+  border: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  display: inline-block;
+  width: fit-content;
+}
+.project-button:hover {
+  background-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+
+/* --------------------------------------------- */
+/* SKILLS & TOOLS                               */
+/* --------------------------------------------- */
+.skills-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.2rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem 2.2rem;
+  align-items: center;
+}
+.skills-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* --------------------------------------------- */
+/* EXPERIENCIA, HABILIDADES, IDIOMAS            */
+/* --------------------------------------------- */
+.experience-section {
+  margin-top: 2.2rem;
+}
+.experience-title {
+  font-size: var(--size-box);
+  margin-bottom: 0.7rem;
+  letter-spacing: -0.5px;
+}
+.experience-block {
+  margin-bottom: var(--space-gap);
+}
+.experience-date {
+  color: var(--color-border-dark);
+  font-size: var(--size-btn);
+}
+.skills-block,
+.languages-block {
+  margin-bottom: var(--space-skills-gap);
+}
+
+/* --------------------------------------------- */
+/* CONTACTO                                     */
+/* --------------------------------------------- */
+.contact-title-box {
+  position: relative;
+  overflow: hidden;
+  margin-top: 2rem;
+}
+
+.contact-title {
+  position: relative;
+  font-size: var(--size-contact-title);
+  font-family: var(--font-title);
+  display: inline-block;
+  color: var(--color-contact-title);
+  text-transform: uppercase;
+}
+
+.contact-highlight {
+  position: relative;
+  z-index: 2;
+  padding: 0.2em 0.4em;
+  transition: color 0.3s ease;
+}
+
+.contact-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-contact-bg);
+  z-index: 1;
+  transform: translateX(-100%);
+}
+
+.contact-cta {
+  border-bottom: none;
+ 
+}
+
+.contact-cta p {
+  font-size: 3rem;
+  color: var(--color-text);
+  margin-bottom: 2.5rem;
+}
+
+.contact-list-box {
+  margin-top: 2rem;
+}
+
+.contact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.2rem;
+}
+.contact-method {
+  font-weight: bold;
+  font-size: 2em;
+  display: block;
+  color: var(--color-text);
+}
+.contact-info {
+  display: block;
+  font-size: 1em;
+  word-break: break-all;
+}
+.contact-info a {
+  color: var(--color-bg-dark);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.contact-info a:hover {
+  color: var(--color-accent);
+}
+
+/* --------------------------------------------- */
+/* UTILIDADES Y COLORES                         */
+/* --------------------------------------------- */
+.accent {
+  color: var(--color-accent);
+}
+
+/* --------------------------------------------- */
+/* SOFT SKILLS (Trabajo en equipo, etc)         */
+/* --------------------------------------------- */
+.soft-skills-list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-softskills-gap);
+  flex-wrap: wrap;
+}
+.soft-skills-list .soft-skill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* BOTÓN DE INTERROGACIÓN */
+.question-toggle {
+  position: fixed;
+  top: 1.5rem;
+  right: 5.5rem;
+  width: 3rem;
+  height: 3rem;
+  min-width: 3rem;
+  min-height: 3rem;
+  max-width: 3rem;
+  max-height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--color-navbar);
+  color: var(--color-navbar-text);
+  cursor: pointer;
+  z-index: 1002;
+  transition: background 0.3s, color 0.3s;
+  box-shadow: 0 2px 8px #0001;
+  padding: 0;
+}
+
+.question-toggle:hover {
+  background: var(--color-accent);
+  color: var(--color-text);
+}
+
+
+/* OBJETOS GEOMÉTRICOS */
+.flying-shape {
+  position: fixed;
+  z-index: 2000;
+  pointer-events: none;
+  animation: fly-shape 1.2s cubic-bezier(.4,2,.6,.9) forwards;
+}
+
+@keyframes fly-shape {
+  0% {
+    opacity: 1;
+    transform: scale(0.7) translateY(0);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2) translateY(-200px) rotate(180deg);
+  }
+}
+
+.projects-scroll {
+  overflow-y: auto;
+  height: 100%;
+  scroll-behavior: smooth;
+  padding-bottom: 40vh;
+}
+
+.gallery-scroll {
+  overflow-y: auto;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 0.8fr); /* Cambia 1fr a 0.8fr para hacerlas más estrechas */
+  gap: 1.5rem;
+  padding-right: 1.5rem;
+  padding-bottom: 40vh; /* para poder centrar la última fila */
+}
+
+.gallery-item {
+  width: 95%; /* Reduce el ancho relativo del contenedor de la imagen */
+  margin: 0 auto; /* Centra la imagen en la celda */
+}
+
+.gallery-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+/* Controla el tamaño por columnas */
+.gallery-item.one-col {
+  grid-column: span 1;
+}
+.gallery-item.two-col {
+  grid-column: span 2;
+}
+
+/* --------------------------------------------- */
+/* BACK ARROW                                   */
+/* --------------------------------------------- */
+.back-arrow {
+  position: fixed;
+  top: 1.5rem;
+  left: 2rem;
+  z-index: 1200;
+  background: none;
+  border: none;
+  padding: 0.3rem;
+  color: var(--color-bg-dark); /* Color visible por defecto */
+  transition: background 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.back-arrow:hover {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+.back-arrow svg {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  stroke: currentColor;
+}
+
+#project-solution {
+  color: var(--color-low-op-txt);
+}
+
+
+
+
+
+
+
+

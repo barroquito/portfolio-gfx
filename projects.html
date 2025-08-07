@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Projects | Mi Portfolio</title>
+   <!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="img/PRE-LOGO.svg">
+    <!-- Tipografías -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Darker+Grotesque:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="script.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+  </nav>
+  <main class="layout">
+    <section class="container left">
+      <div class="box title">My <br>projects</div>
+      <div class="box description">
+        These are a few projects I worked on during my time as a design student. They cover different areas like branding, editorial, and UI. Each one was a chance to learn, experiment, and get better at turning ideas into clear, effective visuals.
+      </div>
+    </section>
+    <section class="container right projects-scroll">
+      <div class="box project-box">
+        <div class="project-image-wrapper">
+          <img src="img/BILLBOARD3 1.png" alt="Proyecto destacado" class="project-image" />
+          <div class="project-content">
+            <h2 class="project-title">BULK</h2>
+            <a href="project.html?id=bulk" class="project-button">See More!</a>
+          </div>
+        </div>
+      </div>
+      <div class="box project-box">
+        <div class="project-image-wrapper">
+          <img src="img/portadas.png" alt="Proyecto 3" class="project-image" />
+          <div class="project-content">
+            <h2 class="project-title">Editorial Proyects</h2>
+            <a href="project.html?id=editorial" class="project-button">Watch Out!</a>
+          </div>
+        </div>
+      </div>
+      <div class="box project-box">
+        <div class="project-image-wrapper">
+          <img src="img/PUMP.png" alt="Proyecto 2" class="project-image" />
+          <div class="project-content">
+            <h2 class="project-title">PUMP</h2>
+            <a href="project.html?id=pump" class="project-button">Discover!</a>
+          </div>
+        </div>
+      </div>
+      <div class="box project-box">
+        <div class="project-image-wrapper">
+          <img src="img/webdesign1.jpg" alt="Proyecto 2" class="project-image" />
+          <div class="project-content">
+            <h2 class="project-title">Web Design</h2>
+            <a href="project.html?id=web" class="project-button">Learn More!</a>
+          </div>
+        </div>
+      </div>
+      <!-- ...puedes añadir más proyectos repitiendo el bloque anterior... -->
+    </section>
+  </main>
+  <button id="question-toggle" class="question-toggle" aria-label="Lanzar objeto geométrico">
+    <img src="img/PRE-LOGO.svg" alt="PRE-LOGO" style="width: 65%; height: 65%; object-fit: contain; display: block; margin: auto;" />
+  </button>
+  
+</body>
+</html>
+</html>
