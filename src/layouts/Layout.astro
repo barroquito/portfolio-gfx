@@ -1,0 +1,40 @@
+---
+import '@fontsource-variable/dm-sans';
+import '../styles/global.css';
+import '../styles/editorial.css';
+import BrandMark from '../components/BrandMark.astro';
+import { projects } from '../data/projects';
+const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráfico y dirección de arte. Del concepto publicitario a la expresión visual. Portfolio de Jorge Pindado, Madrid.', home = false } = Astro.props;
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="theme-color" content="#f5f4ef" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body class:list={{'listening-room':home}}>
+    <a href="#main" class="skip-link">Saltar al contenido</a>
+    <div class="scroll-progress" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="wordmark" href="/" aria-label="Jorge Pindado, inicio"><BrandMark /><span class="wordmark-name">Jorge Pindado<span>Diseñador gráfico</span></span></a>
+
+      <button class="menu-toggle" aria-label="Abrir menú" aria-controls="main-nav" aria-expanded="false"><span>Menú</span><i aria-hidden="true"></i></button>
+      <nav id="main-nav" aria-label="Navegación principal">
+        <a href={home ? '#proyectos' : '/#proyectos'} data-nav="proyectos">Colección <sup>{String(projects.length).padStart(2,'0')}</sup></a>
+        <a href={home ? '#sobre-mi' : '/#sobre-mi'} data-nav="sobre-mi">Sobre mí</a>
+        <a class="nav-contact" href={home ? '#contacto' : '/#contacto'} data-nav="contacto">Hablemos <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+    <slot />
+    <footer class="site-footer"><a href="/" class="footer-name" aria-label="Jorge Pindado, inicio"><BrandMark /><span>Jorge Pindado</span></a><span>MADRID, ES · {new Date().getFullYear()}</span><a href="#main">Volver arriba ↑</a></footer>
+    <div class="toast" role="status" aria-live="polite"></div>
+    <script src="../scripts/site.ts"></script>
+  </body>
+</html>

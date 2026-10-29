@@ -1,0 +1,49 @@
+---
+import Layout from '../layouts/Layout.astro';
+import BrandMark from '../components/BrandMark.astro';
+import RecordSleeve from '../components/RecordSleeve.astro';
+import { projects } from '../data/projects';
+import '../styles/record-room.css';
+---
+<Layout home title="Jorge Pindado — Una colección de ideas" description="Una colección de ideas, a mi manera. Diseño gráfico, concepto y dirección de arte. Elige un vinilo y descubre un proyecto de Jorge Pindado.">
+  <main id="main" class="record-room">
+    <div class="room-heading">
+      <div class="room-heading-copy"><h1>Ideas en<br/><strong>rotación.</strong></h1><p>Diseño gráfico.<br/>Dirección de arte.</p></div>
+      <div class="room-identity"><span class="identity-caption">JORGE PINDADO / PORTFOLIO</span><BrandMark tone="red" class="room-signature"/><span class="identity-note">CONCEPTO & DESARROLLO VISUAL</span></div>
+      <div class="room-intro"><span class="room-edition">SELECCIÓN PERSONAL<br/>VOL. 01 / {String(projects.length).padStart(2,'0')} PROYECTOS</span><p>De la <strong>idea</strong> a la forma.<br/>Con música de fondo.</p></div>
+    </div>
+
+    <section class="listening-table" aria-label="Expositor interactivo de proyectos en vinilo">
+      <div id="record-scene" aria-hidden="true"></div>
+      <div class="scene-fallback" aria-hidden="true"><div class="fallback-player"><span class="deck-signature"></span><span class="deck-id">JP—01 / 33⅓</span><b class="deck-switch" aria-hidden="true"></b><div class="fallback-platter"></div><i></i></div><div class="fallback-stack">{[...projects].reverse().map(project=><div class="fallback-sleeve"><RecordSleeve project={project}/></div>)}</div></div>
+      <div class="scene-action scene-action--player"><span class="object-caption">01 / EN EL PLATO</span><p id="player-description">Elige un proyecto.</p></div>
+      <button class="collection-hotspot" data-open-collection aria-label="Abrir la colección de cuatro vinilos y elegir un proyecto"><span class="hotspot-dot">+</span><span class="hotspot-hint">ABRIR COLECCIÓN</span></button>
+      <div class="scene-action scene-action--collection"><span class="object-caption">02 / LA COLECCIÓN</span><button class="collection-text-button" data-open-collection>Elige qué quieres ver <span aria-hidden="true">↗</span></button></div>
+
+    </section>
+
+    <div class="room-bottom"><span class="bottom-statement">CADA VINILO,<br/><strong>UN PROYECTO.</strong></span><button class="collection-main-button" data-open-collection>Explorar la colección <sup>{String(projects.length).padStart(2,'0')}</sup><i aria-hidden="true">↗</i></button><span class="bottom-location">MADRID, ES<br/>2026</span></div>
+    <p class="sr-only" id="room-status" role="status" aria-live="polite"></p>
+    <noscript><div class="no-js-projects"><p>Elige un proyecto:</p>{projects.map(project=><a href={`/proyectos/${project.slug}/`}>{project.title} ↗</a>)}<a href="/CV-Jorge-Pindado-ES.pdf">Mi CV</a><a href="mailto:jorgepindado.gfx@gmail.com">Contacto</a></div></noscript>
+  </main>
+
+  <dialog id="collection-dialog" class="collection-dialog" aria-labelledby="collection-title">
+    <div class="collection-heading"><div><span class="tiny-label">LADO A / TRABAJOS SELECCIONADOS</span><h2 id="collection-title">La <strong>colección.</strong></h2></div><button class="room-dialog-close" data-close-dialog aria-label="Cerrar colección">Cerrar <span aria-hidden="true">×</span></button></div>
+    <div class="collection-toolbar"><p>Elige una portada. Descubre una idea.</p><div class="collection-arrows"><button data-carousel-prev aria-label="Ver vinilo anterior">←</button><button data-carousel-next aria-label="Ver siguiente vinilo">→</button></div></div>
+    <div class="vinyl-carousel" tabindex="0" role="region" aria-label="Carrusel horizontal de proyectos. Usa las flechas del teclado para recorrerlo.">
+      {projects.map(project=><article class="vinyl-card" style={`--record-label:${project.record.color}`}><a class="vinyl-select" href={`/proyectos/${project.slug}/`} data-play-record={project.slug} aria-label={`Poner ${project.title} en el tocadiscos y abrir el proyecto`}><div class="record-package"><div class="package-disc"><span>JP—{project.number}</span></div><RecordSleeve project={project}/><span class="play-record"><span aria-hidden="true">↗</span> PONER EL DISCO</span></div><div class="vinyl-card-info"><span>{project.number} / {project.category}</span><h3>{project.title}<i aria-hidden="true">↗</i></h3><p>{project.subtitle}</p></div></a><span class="record-provenance">{project.original?'PROYECTO ORIGINAL · ARCHIVO BULK':'CUBIERTA EDITORIAL DEL CASO'}</span></article>)}
+    </div>
+    <div class="collection-footer"><span>DESLIZA PARA EXPLORAR <i aria-hidden="true">↔</i></span><p>Elige una portada para ponerla en el tocadiscos.</p><span class="collection-position" aria-live="polite">01 / {String(projects.length).padStart(2,'0')}</span></div>
+  </dialog>
+
+  <dialog id="about-dialog" class="info-dialog" aria-labelledby="about-dialog-title">
+    <button class="room-dialog-close" data-close-dialog aria-label="Cerrar sobre mí">Cerrar <span aria-hidden="true">×</span></button><span class="tiny-label">LADO B / DETRÁS DE LA SELECCIÓN</span><h2 id="about-dialog-title">Una idea.<br/><strong>Muchas formas.</strong></h2>
+    <div class="info-dialog-grid"><p class="info-lead">Entender qué necesita decir una marca.<br/><strong>Encontrar cómo hacerlo sentir.</strong></p><div><p>Soy Jorge Pindado, diseñador gráfico en Madrid. Trabajo entre el concepto, la identidad y la ejecución: de una propuesta visual a sus piezas, formatos y aplicaciones.</p><p>La música me acompaña cada día. Este expositor es mi manera de reunir lo que hago y algo que me representa: cada proyecto tiene su tono, su ritmo y su personalidad.</p><p>Disfruto cuando hay espacio para investigar, probar y construir. Busco seguir creciendo en estudios, agencias creativas y equipos de dirección de arte.</p></div></div>
+    <div class="room-experience"><div><span class="tiny-label">MANDALA GROUP</span><p>Diseño, branding y contenido visual</p></div><div><span class="tiny-label">GOOD REBELS</span><p>Dirección de arte junior</p></div></div><a class="text-link" href="/CV-Jorge-Pindado-ES.pdf" download>Mi recorrido, en PDF <span aria-hidden="true">↗</span></a>
+  </dialog>
+
+  <dialog id="contact-dialog" class="info-dialog contact-dialog" aria-labelledby="contact-dialog-title"><button class="room-dialog-close" data-close-dialog aria-label="Cerrar contacto">Cerrar <span aria-hidden="true">×</span></button><span class="tiny-label">LA SIGUIENTE PISTA</span><h2 id="contact-dialog-title">Hagamos algo<br/><strong>con carácter.</strong></h2><p class="contact-dialog-copy">Para estudios, agencias y equipos<br/>con una idea entre manos.</p><div class="room-contact-email"><a href="mailto:jorgepindado.gfx@gmail.com">jorgepindado.gfx@gmail.com ↗</a><button class="copy-email" aria-label="Copiar correo electrónico" title="Copiar correo">⧉</button></div><div class="room-contact-links"><a href="https://www.linkedin.com/in/jorge-pindado-badiola-4a3846191/" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a><a href="/CV-Jorge-Pindado-ES.pdf" download>Descargar CV ↗</a></div></dialog>
+  <div class="record-transition" aria-hidden="true"><span class="tiny-label">AHORA EN EL PLATO</span><strong></strong><span class="record-transition-subtitle"></span><span class="transition-line"></span></div>
+  <script id="record-project-data" type="application/json" set:html={JSON.stringify(projects.map(({slug,title,number,subtitle,record,theme})=>({slug,title,number,subtitle,record,theme})))}/>
+  <script src="../scripts/record-room.ts"></script>
+</Layout>

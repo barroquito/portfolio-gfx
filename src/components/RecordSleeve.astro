@@ -1,0 +1,12 @@
+---
+import type { Project } from '../data/projects';
+const { project } = Astro.props as { project: Project };
+---
+<div class:list={['record-sleeve', `sleeve--${project.theme}`]} style={`--sleeve-color:${project.record.color};--sleeve-ink:${project.record.ink}`} aria-hidden="true">
+  <div class="sleeve-top"><span>JORGE PINDADO</span><span>JP—{project.number}</span></div>
+  {project.theme === 'bulk' && <><img src="/images/bulk-drink.webp" alt="" width="832" height="1248" /><strong class="sleeve-title">BULK<span>®</span></strong><span class="sleeve-center-label">COMER BIEN.<br/>SUBIR EL VOLUMEN.</span></>}
+  {project.theme === 'one-more' && <><div class="sleeve-orbits"></div><strong class="sleeve-title">ONE<br/><em>MORE</em></strong><span class="sleeve-center-label">THE 2000s ARE CALLING.</span></>}
+  {project.theme === 'li-onna' && <><div class="sleeve-sun"></div><strong class="sleeve-title">Entre<br/><em>dos almas.</em></strong><span class="sleeve-center-label">LI-ONNA / CATA DE SAKES</span></>}
+  {project.theme === 'f1' && <><div class="sleeve-speed"></div><strong class="sleeve-title">F1<span class="week">WEEK</span></strong><span class="sleeve-center-label">UNA SEMANA. MUCHAS FORMAS.</span></>}
+  <div class="sleeve-bottom"><span>{project.record.label}</span><span>33⅓ RPM / SIDE A</span></div>
+</div>

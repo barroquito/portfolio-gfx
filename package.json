@@ -1,0 +1,18 @@
+{
+  "name": "jorge-pindado-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^5.16.0",
+    "gsap": "^3.14.2",
+    "@fontsource-variable/space-grotesk": "^5.2.10",
+    "@fontsource-variable/dm-sans": "^5.2.8",
+    "three": "^0.180.0"
+  }
+}
