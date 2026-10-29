@@ -1,0 +1,27 @@
+---
+import type { Project } from '../data/projects';
+const { project, hero = false } = Astro.props as { project: Project; hero?: boolean };
+---
+<div class:list={['artwork', `artwork--${project.theme}`, { 'artwork--hero': hero }]}>
+  {project.theme === 'bulk' && <>
+    <img src="/images/bulk-drink.webp" alt="Packaging Berry Recovery de BULK" width="832" height="1248" loading={hero ? 'eager' : 'lazy'} fetchpriority={hero ? 'high' : 'auto'} />
+    <div class="artwork-label"><span>BULK®</span><span>IDENTIDAD<br/>VISUAL.</span></div>
+  </>}
+  {project.theme === 'one-more' && <>
+    <span class="cover-top">NIGHT CULTURE / 2000s</span>
+    <div class="more-type" aria-hidden="true"><span>ONE</span><span>M<span class="more-orbit">O</span>RE</span><span class="more-echo">ONE MORE</span></div>
+    <span class="cover-bottom">VOLVER A SENTIRLO. ↗</span>
+  </>}
+  {project.theme === 'li-onna' && <>
+    <span class="cover-top">LI-ONNA / CATA DE SAKES</span>
+    <div class="sake-orbit" aria-hidden="true"><span>酒</span></div>
+    <div class="sake-type" aria-hidden="true">Entre<br/><em>dos almas.</em></div>
+    <span class="cover-bottom">JAPÓN × ALMA LATINA</span>
+  </>}
+  {project.theme === 'f1' && <>
+    <span class="cover-top">MANDALA GROUP / EVENT ACTIVATION</span>
+    <div class="speed-lines" aria-hidden="true"></div><div class="f1-type" aria-hidden="true">F1<span>WEEK</span></div>
+    <span class="cover-bottom">MISMO EVENTO. DISTINTAS MARCAS. ↗</span>
+  </>}
+  {!project.original && <span class="editorial-label">Cubierta editorial del caso</span>}
+</div>

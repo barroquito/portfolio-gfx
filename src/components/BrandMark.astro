@@ -1,0 +1,4 @@
+---
+const { tone = 'ink', class: className = '' } = Astro.props;
+---
+<span class:list={['brand-mark', className]} aria-hidden="true"><img src={`/brand/jorge-mark${tone === 'red' ? '-red' : ''}.svg`} alt="" width="795" height="493" /></span>
