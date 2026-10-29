@@ -1,6 +1,6 @@
 # Jorge Pindado — Ideas en forma
 
-Portfolio estático con Astro 5, TypeScript y GSAP/ScrollTrigger. Diseño responsive en español. Despliegue privado mediante Sites.
+Portfolio estático con Astro 5, Three.js, TypeScript y GSAP/ScrollTrigger. Diseño responsive en español. Publicado mediante GitHub Pages en https://www.jorgepindadogfx.com.
 
 ## Desarrollo
 
@@ -8,9 +8,11 @@ Usar Node.js 22.19 o posterior compatible con Astro 5 y las dependencias fijadas
 
 ## Traslado a GitHub — 30 de octubre de 2026
 
-Esta rama incorpora la versión 3 del portfolio privado de Sites, desde el commit `778b086f92d17a612698dcda5738685a5313db1f`. El código de la aplicación y los recursos se conservan sin cambios; la versión anterior de la web permanece en el historial de Git.
+La base visual procede de la versión 3 del portfolio privado de Sites, desde el commit `778b086f92d17a612698dcda5738685a5313db1f`. La versión anterior de la web permanece en el historial de Git.
 
-GitHub Pages está activado en el repositorio de destino. Esta propuesta no debe integrarse en la rama publicada hasta decidir cómo mantener la nueva web sin publicar. No incorpora automatizaciones de despliegue ni el antiguo `CNAME`. El repositorio es público: la privacidad del enlace de Sites no convierte el código de GitHub en privado.
+La publicación pública está autorizada por el propietario. En Settings → Pages, la fuente debe ser GitHub Actions y el dominio personalizado debe conservarse como `www.jorgepindadogfx.com`, con HTTPS activado. El workflow `.github/workflows/deploy.yml` instala las dependencias fijadas, compila Astro y publica únicamente `dist/` en cada actualización de `main`; también permite una ejecución manual. Los cambios en otras ramas no se publican.
+
+Para seguir mejorando la web, editar `src/` y `public/`, validar con `npm run build` y revisar los cambios antes de integrarlos en `main`. No editar la salida `dist/` a mano. El dominio, la URL canónica y `robots.txt` están preparados para la versión pública.
 
 Comprobación del traslado: `npm ci` y `npm run build` completados, con seis páginas estáticas generadas. Las verificaciones visuales descritas más abajo pertenecen a la versión original; este traslado no añade una nueva validación visual de WebGL.
 
@@ -34,7 +36,7 @@ Añadir un objeto en `src/data/projects.ts`, incluyendo `record.color`, `record.
 
 ## Privacidad
 
-El acceso se controla mediante el despliegue privado de Sites, no con una contraseña en JavaScript. Se incluye `noindex` y `robots.txt`. No cambiar el acceso ni conectar el dominio público sin aprobación del propietario.
+La web de GitHub Pages y los archivos del repositorio, incluido el CV, son públicos por autorización del propietario. La copia alojada en Sites conserva su acceso privado y se administra de forma independiente.
 
 ## Validación de la versión del expositor
 

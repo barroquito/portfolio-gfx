@@ -12,7 +12,7 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
     <meta name="theme-color" content="#f5f4ef" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
