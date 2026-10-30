@@ -16,7 +16,8 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
     <meta name="theme-color" content="#f5f4ef" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <link rel="icon" type="image/svg+xml" href="/brand/jorge-mark.svg" />
+    <link rel="icon" type="image/svg+xml" href="/brand/jorge-mark-red.svg" />
+    {home && <link rel="preload" href="/models/tocadiscos.glb" as="fetch" type="model/gltf-binary" crossorigin="anonymous" />}
     <title>{title}</title>
   </head>
   <body class:list={{'listening-room':home}}>

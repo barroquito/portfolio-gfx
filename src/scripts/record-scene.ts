@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { gsap } from 'gsap';
 
 type RecordProject = {slug:string;title:string;number:string;subtitle:string;theme:string;record:{color:string;ink:string;label:string}};
@@ -64,12 +65,14 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   function textCanvas(width:number,height:number,draw:(ctx:CanvasRenderingContext2D)=>void){const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d');if(!ctx)throw new Error('Canvas unavailable');draw(ctx);return texture(c);}
   const printFont='"DM Sans Variable", sans-serif';
   const deck=new THREE.Group();deck.position.set(-2.85,0,0);deck.rotation.y=.085;scene.add(deck);
-  for(const x of [-1.9,1.9]) for(const z of [-1.45,1.45]) cyl(deck,.23,.24,rubber,x,.12,z);
-  box(deck,5,.47,3.95,red,0,.39,0,.09);
-  box(deck,4.86,.075,3.81,top,0,.662,0,.045);
+  // Keep the lightweight procedural version as a fallback if the model fails to load.
+  const proceduralDeck=new THREE.Group();deck.add(proceduralDeck);
+  for(const x of [-1.9,1.9]) for(const z of [-1.45,1.45]) cyl(proceduralDeck,.23,.24,rubber,x,.12,z);
+  box(proceduralDeck,5,.47,3.95,red,0,.39,0,.09);
+  box(proceduralDeck,4.86,.075,3.81,top,0,.662,0,.045);
   // The platen is empty until a project is selected.
-  cyl(deck,1.72,.13,metal,-.5,.77,0);
-  cyl(deck,1.64,.035,rubber,-.5,.85,0);
+  cyl(proceduralDeck,1.72,.13,metal,-.5,.77,0);
+  cyl(proceduralDeck,1.64,.035,rubber,-.5,.85,0);
   const grooveTexture=textCanvas(1024,1024,ctx=>{
     ctx.fillStyle='#171c16';ctx.fillRect(0,0,1024,1024);
     for(let i=120;i<506;i+=3){ctx.beginPath();ctx.arc(512,512,i,0,Math.PI*2);ctx.strokeStyle=i%2?'#232b20':'#1c231a';ctx.lineWidth=1;ctx.stroke();}
@@ -77,9 +80,9 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(logoImage)ctx.drawImage(logoImage,437,461,150,93);else{ctx.fillStyle='#232b20';ctx.textAlign='center';ctx.font=`600 48px ${printFont}`;ctx.fillText('JP',512,520);}
   });
   const matPrint=new THREE.MeshPhysicalMaterial({map:grooveTexture,metalness:.03,roughness:.3,bumpMap:groovesMap,bumpScale:.007,clearcoat:.65,clearcoatRoughness:.2});materials.push(matPrint);
-  const platenPrint=mesh(deck,new THREE.CircleGeometry(1.63,96),matPrint,-.5,.873,0);platenPrint.rotation.x=-Math.PI/2;
-  cyl(deck,.044,.2,metal,-.5,.94,0);
-  const tonearm=new THREE.Group();tonearm.position.set(1.45,.81,-1.17);tonearm.rotation.y=.04;deck.add(tonearm);
+  const platenPrint=mesh(proceduralDeck,new THREE.CircleGeometry(1.63,96),matPrint,-.5,.873,0);platenPrint.rotation.x=-Math.PI/2;
+  cyl(proceduralDeck,.044,.2,metal,-.5,.94,0);
+  let tonearm:THREE.Object3D=new THREE.Group();tonearm.position.set(1.45,.81,-1.17);tonearm.rotation.y=.04;proceduralDeck.add(tonearm);
   cyl(tonearm,.26,.15,metal,0,0,0);cyl(tonearm,.18,.13,dark,0,.12,0);
   function rod(parent:THREE.Object3D,a:THREE.Vector3,b:THREE.Vector3,r:number,material:THREE.Material){const m=mesh(parent,new THREE.CylinderGeometry(r,r,a.distanceTo(b),16),material);m.position.copy(a).add(b).multiplyScalar(.5);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());return m;}
   rod(tonearm,new THREE.Vector3(0,.2,-.37),new THREE.Vector3(0,.2,1.95),.045,metal);
@@ -87,13 +90,20 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   box(tonearm,.22,.13,.4,dark,-.06,.16,2.0,.025);
   box(tonearm,.12,.04,.16,red,-.08,.08,2.12,.01);
   rod(tonearm,new THREE.Vector3(-.12,.2,1.87),new THREE.Vector3(-.32,.2,1.98),.02,metal);
-  cyl(deck,.11,.14,metal,1.56,.78,1.35);cyl(deck,.09,.03,dark,1.56,.87,1.35);
-  box(deck,.35,.03,.05,dark,1.56,.704,.77,.01);
-  box(deck,.16,.055,.09,ivory,1.56,.73,.77,.01);
-  const led=mesh(deck,new THREE.SphereGeometry(.035,12,8),new THREE.MeshBasicMaterial({color:'#d93222'}),-2.03,.731,1.42);
+  cyl(proceduralDeck,.11,.14,metal,1.56,.78,1.35);cyl(proceduralDeck,.09,.03,dark,1.56,.87,1.35);
+  box(proceduralDeck,.35,.03,.05,dark,1.56,.704,.77,.01);
+  box(proceduralDeck,.16,.055,.09,ivory,1.56,.73,.77,.01);
+  const led=mesh(proceduralDeck,new THREE.SphereGeometry(.035,12,8),new THREE.MeshBasicMaterial({color:'#d93222'}),-2.03,.731,1.42);
   const deckText=textCanvas(1024,90,ctx=>{ctx.fillStyle='#bfc4b9';ctx.fillRect(0,0,1024,90);if(logoImage)ctx.drawImage(logoImage,20,4,122,76);ctx.fillStyle='#2a3226';ctx.font=`500 18px ${printFont}`;ctx.fillText('JP—01 / PERSONAL SELECTION',185,53);ctx.fillText('33⅓   /   45',780,53);});
   const deckTextMat=new THREE.MeshStandardMaterial({map:deckText,metalness:.6,roughness:.46,roughnessMap:brushedMap});materials.push(deckTextMat);
-  const plaque=mesh(deck,new THREE.PlaneGeometry(3.4,.29),deckTextMat,-.25,.708,1.62);plaque.rotation.x=-Math.PI/2;
+  const plaque=mesh(proceduralDeck,new THREE.PlaneGeometry(3.4,.29),deckTextMat,-.25,.708,1.62);plaque.rotation.x=-Math.PI/2;
+  try{
+    const model=await new GLTFLoader().loadAsync('/models/tocadiscos.glb');
+    const modelArm=model.scene.getObjectByName('TONEARM_PIVOT');
+    if(!modelArm)throw new Error('Turntable arm pivot is missing');
+    model.scene.traverse(object=>{if(object instanceof THREE.Mesh){object.castShadow=true;object.receiveShadow=true;for(const material of (Array.isArray(object.material)?object.material:[object.material]))if(!materials.includes(material))materials.push(material);}});
+    deck.add(model.scene);proceduralDeck.visible=false;tonearm=modelArm;tonearm.rotation.y=.04;
+  }catch(error){console.warn('Turntable model unavailable; using the procedural fallback.',error);}
   // Each cover is generated from the same project metadata as the accessible carousel.
   const coverTextures=projects.map(p=>textCanvas(1024,1024,ctx=>{
     ctx.fillStyle=p.record.color;ctx.fillRect(0,0,1024,1024);
