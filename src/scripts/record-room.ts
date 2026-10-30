@@ -28,8 +28,8 @@ async function playFallback(project:typeof projects[number]){
       fallbackSpin=gsap.to(mounted,{rotation:360,duration:3.3,ease:'none',repeat:-1});
       gsap.to('.fallback-player i',{rotation:24,duration:.4,onComplete:resolve});
     }})
-    .to(disc,{left:source.x-size*.8,top:Math.max(90,target.y-70),rotation:7,duration:.65,ease:'power2.inOut'})
-    .to(disc,{left:target.x+(target.width-target.height)/2,top:target.y,width:target.height,height:target.height,rotation:0,rotationX:27,duration:.65,ease:'power2.inOut'});
+    .to(disc,{left:target.x+(target.width-target.height)/2,width:target.height,height:target.height,rotation:0,rotationX:27,duration:1.3,ease:'power1.inOut'},0)
+    .to(disc,{keyframes:[{top:Math.max(90,target.y-70),duration:.55,ease:'power1.out'},{top:target.y,duration:.75,ease:'power1.in'}]},0);
   });
 }
 let navigating=false,originFocus:HTMLElement|null=null;
@@ -94,7 +94,6 @@ for(const link of document.querySelectorAll<HTMLAnchorElement>('[data-play-recor
   try{
     if(!reduced.matches||scene)await Promise.race([scene?scene.play(project):playFallback(project),new Promise<void>(resolve=>setTimeout(resolve,2500))]);
     if(reduced.matches){location.assign(route);return;}
-    await new Promise<void>(resolve=>setTimeout(resolve,450));
     gsap.timeline({onComplete:()=>{clearTimeout(watchdog);location.assign(route);}})
       .to(transition,{autoAlpha:1,duration:.4,ease:'power2.inOut'})
       .fromTo(transition.querySelector('strong'),{y:20},{y:0,duration:.45,ease:'power3.out'},0)

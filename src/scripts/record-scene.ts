@@ -14,7 +14,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMappingExposure = .85;
   host.append(renderer.domElement);
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(-7,7,4,-4,.1,80);
@@ -23,18 +23,18 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   // A studio environment supplies broad reflections; the key supplies contact shadows.
   const pmrem=new THREE.PMREMGenerator(renderer);
   const studio=new RoomEnvironment();
-  const environment=pmrem.fromScene(studio,.055);
-  scene.environment=environment.texture;scene.environmentIntensity=.7;
+  const environment=pmrem.fromScene(studio,.03);
+  scene.environment=environment.texture;scene.environmentIntensity=.45;
   studio.dispose();pmrem.dispose();
-  scene.add(new THREE.HemisphereLight('#fffdf4','#8d9688',.8));
-  const key = new THREE.DirectionalLight('#fff7e8',2.7);
+  scene.add(new THREE.HemisphereLight('#fffdf4','#62675e',.55));
+  const key = new THREE.DirectionalLight('#fff7e8',2.15);
   key.position.set(-4,10,6); key.castShadow=true;
   key.shadow.mapSize.set(window.innerWidth<761?1024:2048,window.innerWidth<761?1024:2048);
   key.shadow.camera.left=-9; key.shadow.camera.right=9; key.shadow.camera.top=7; key.shadow.camera.bottom=-7;
   key.shadow.normalBias=.018; key.shadow.bias=-.00015; key.shadow.radius=4;
   scene.add(key);
-  const fill=new THREE.DirectionalLight('#e4eadf',.65);fill.position.set(6,5,-4);scene.add(fill);
-  const floor=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({color:'#33422b',opacity:.15}));
+  const fill=new THREE.DirectionalLight('#e4eadf',.4);fill.position.set(6,5,-4);scene.add(fill);
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({color:'#252a24',opacity:.24}));
   floor.rotation.x=-Math.PI/2;floor.position.y=-.08;floor.receiveShadow=true;scene.add(floor);
   const materials:THREE.Material[]=[];
   function mat(color:string,metalness=0,roughness=.5){const m=new THREE.MeshStandardMaterial({color,metalness,roughness});materials.push(m);return m;}
@@ -51,7 +51,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   }
   const brushedMap=surfaceMap('brushed'),paperMap=surfaceMap('paper'),groovesMap=surfaceMap('grooves');
   const red=new THREE.MeshPhysicalMaterial({color:'#292e27',metalness:.15,roughness:.3,clearcoat:.7,clearcoatRoughness:.22});
-  const top=new THREE.MeshPhysicalMaterial({color:'#bfc4b9',metalness:.88,roughness:.46,roughnessMap:brushedMap,bumpMap:brushedMap,bumpScale:.002,anisotropy:.35});
+  const top=new THREE.MeshPhysicalMaterial({color:'#777d76',metalness:.8,roughness:.38,roughnessMap:brushedMap,bumpMap:brushedMap,bumpScale:.003,anisotropy:.45});
   const dark=new THREE.MeshPhysicalMaterial({color:'#171c16',metalness:.05,roughness:.3,clearcoat:.65,clearcoatRoughness:.22});
   const rubber=mat('#171c15',0,.94),metal=mat('#c3c9ba',.95,.23),ivory=mat('#f1f1e5',0,.9);
   materials.push(red,top,dark);
@@ -109,8 +109,8 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   const stack=new THREE.Group();stack.position.set(3.05,.08,.0);scene.add(stack);
   for(let i=projects.length-1;i>=0;i--){
     const p=projects[i];const sleeve=new THREE.Group();sleeve.position.set((i-1)*.07,.10+(projects.length-i)*.105, (i-1)*.035);sleeve.rotation.y=[-.12,.10,-.18,.22][i%4];stack.add(sleeve);
-    const edge=mat(p.record.color,0,.92);box(sleeve,3.12,.072,3.12,edge,0,0,0,.015);
-    const coverMat=new THREE.MeshStandardMaterial({map:coverTextures[i],metalness:0,roughness:.9,bumpMap:paperMap,bumpScale:.0015,envMapIntensity:.25});materials.push(coverMat);const cover=mesh(sleeve,new THREE.PlaneGeometry(3.11,3.11),coverMat,0,.037,0);cover.rotation.x=-Math.PI/2;
+    const edge=mat(p.record.color,0,.92);box(sleeve,3.12,.095,3.12,edge,0,0,0,.018);
+    const coverMat=new THREE.MeshStandardMaterial({map:coverTextures[i],metalness:0,roughness:.86,bumpMap:paperMap,bumpScale:.003,envMapIntensity:.2});materials.push(coverMat);const cover=mesh(sleeve,new THREE.PlaneGeometry(3.10,3.10),coverMat,0,.049,0);cover.rotation.x=-Math.PI/2;
   }
   // A loose record peeks out from under the top sleeve.
   const loose=new THREE.Group();loose.position.set(3.82,.43,-.15);scene.add(loose);
@@ -144,11 +144,10 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(reduced.matches){movingRecord.position.copy(positionPlayer);movingRecord.rotation.z=0;tonearm.rotation.y=-.61;playing=true;render();return;}
     return new Promise<void>(resolve=>{
       const tl=gsap.timeline({onUpdate:render,onComplete:()=>{playing=true;resolve();}});
-      tl.to(movingRecord!.position,{x:-.7,y:2.65,z:.35,duration:.75,ease:'power2.inOut'})
-        .to(movingRecord!.rotation,{z:.07,duration:.75,ease:'power2.inOut'},0)
-        .to(movingRecord!.position,{x:positionPlayer.x,y:positionPlayer.y,z:positionPlayer.z,duration:.65,ease:'power2.inOut'})
-        .to(movingRecord!.rotation,{z:0,duration:.6},.75)
-        .to(tonearm.rotation,{y:-.61,duration:.55,ease:'power2.inOut'},1.5);
+      tl.to(movingRecord!.position,{x:positionPlayer.x,z:positionPlayer.z,duration:1.45,ease:'power1.inOut'},0)
+        .to(movingRecord!.position,{keyframes:[{y:2.45,duration:.65,ease:'power1.out'},{y:positionPlayer.y,duration:.8,ease:'power1.in'}]},0)
+        .to(movingRecord!.rotation,{z:0,duration:1.45,ease:'power1.inOut'},0)
+        .to(tonearm.rotation,{y:-.61,duration:.65,ease:'power2.inOut'},1.15);
     });
   }
   function dispose(){disposed=true;observer.disconnect();renderer.setAnimationLoop(null);document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',onMotionChange);scene.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();}});materials.forEach(m=>{const standard=m as THREE.MeshStandardMaterial;standard.map?.dispose();m.dispose();});coverTextures.forEach(t=>t.dispose());grooveTexture.dispose();deckText.dispose();brushedMap.dispose();paperMap.dispose();groovesMap.dispose();environment.dispose();renderer.dispose();}
