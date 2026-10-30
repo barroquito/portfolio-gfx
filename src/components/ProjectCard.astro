@@ -1,11 +1,12 @@
 ---
+import Icon from './Icon.astro';
 import type { Project } from '../data/projects';
 import ProjectArtwork from './ProjectArtwork.astro';
 const { project } = Astro.props as { project: Project };
 ---
 <article class:list={['project-card', `project-card--${project.theme}`]} data-category={project.category} data-reveal>
   <a class="project-link" href={`/proyectos/${project.slug}/`} aria-label={`Ver proyecto ${project.title}`}>
-    <div class="project-visual"><ProjectArtwork project={project} /><span class="project-open" aria-hidden="true">↗</span></div>
+    <div class="project-visual"><ProjectArtwork project={project} /><span class="project-open" aria-hidden="true"><Icon name="arrow" size={18} /></span></div>
     <div class="project-meta"><div><h3>{project.title}</h3><p>{project.subtitle}</p></div><span class="project-number">/{project.number}</span></div>
     <div class="project-tags"><span>{project.category}</span><span>{project.scope[0]}</span>{!project.original && <span>Ficha inicial</span>}</div>
   </a>

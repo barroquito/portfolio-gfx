@@ -1,0 +1,96 @@
+/* Scoped typography edit. No changes to paragraph styles, palette or artwork. */
+:root{--ui-tracking:-.05em}
+
+body .room-heading h1,
+body .collection-heading h2,
+body .info-dialog h2,
+body .vinyl-card-info h3,
+body .case-heading h1,
+body .project-meta h3,
+body .not-found h1,
+body .case-next>a:first-of-type,
+body .record-transition>strong,
+body .loader-copy>strong{
+  text-transform:uppercase;
+  letter-spacing:var(--ui-tracking);
+  line-height:.88;
+}
+/* The long .case-story-intro h2 is narrative copy; preserve it like the paragraphs. */
+body h1 :is(strong,em),
+body h2 :is(strong,em),
+body h3 :is(strong,em){letter-spacing:var(--ui-tracking)}
+
+/* Do not put tracking on card links or text containers: their paragraphs inherit it. */
+body button,
+body .wordmark,
+body #main-nav>a,
+body .text-link,
+body .back-link,
+body .room-contact-links>a,
+body .room-contact-email>a,
+body .site-footer>a,
+body .no-js-projects>a,
+body .static-collection-links>a,
+body .tiny-label,
+body .section-index,
+body .identity-caption,
+body .identity-note,
+body .room-edition,
+body .object-caption,
+body .bottom-statement,
+body .bottom-location,
+body .loader-edition,
+body .vinyl-card-info>span,
+body .record-provenance,
+body .collection-footer>span,
+body .collection-position,
+body .tag,
+body .project-number,
+body .case-gallery figcaption{letter-spacing:var(--ui-tracking)}
+body.listening-room .collection-main-button,
+body.listening-room .collection-text-button,
+body.listening-room .menu-toggle{letter-spacing:var(--ui-tracking)}
+
+/* Remove text underlines and the rules used as text underlines. */
+body .text-link,
+body .back-link,
+body .room-contact-email>a,
+body .room-contact-links>a,
+body .case-next>a:first-of-type,
+body .site-footer>a,
+body .loader-skip,
+body .no-js-projects>a,
+body .static-collection-links>a{border-bottom:0;text-decoration:none}
+body.listening-room .collection-text-button,
+body.listening-room .collection-main-button{border-bottom:0;text-decoration:none}
+body #main-nav>a{border-bottom:0;text-decoration:none}
+body #main-nav>a::after{display:none}
+body .scene-recovery button{text-decoration:none}
+body .room-dialog-close:focus-visible,
+body .lightbox-close:focus-visible,
+body .collection-arrows>button:focus-visible,
+body .loader-skip:focus-visible,
+body.listening-room .copy-email:focus-visible,
+body.listening-room .menu-toggle:focus-visible,
+body.listening-room .collection-main-button:focus-visible{text-decoration:none}
+/* Keyboard feedback follows the supplied glyph, rather than boxing in the close word. */
+body .room-dialog-close:focus-visible .user-icon,
+body .lightbox-close:focus-visible .user-icon,
+body .collection-arrows>button:focus-visible .user-icon,
+body .loader-skip:focus-visible .user-icon,
+body.listening-room .collection-main-button:focus-visible .user-icon{
+  outline:1px solid currentColor;outline-offset:3px;border-radius:50%;
+}
+body.listening-room .copy-email:focus-visible,
+body.listening-room .menu-toggle:focus-visible{outline:1px dotted currentColor;outline-offset:4px}
+
+/* SVG sizes are independent of the old text-glyph font sizes. No hamburger rules here. */
+body .room-dialog-close,
+body .lightbox-close{display:inline-flex;align-items:center}
+body .room-dialog-close>.user-icon,
+body .lightbox-close>.user-icon{--icon-size:18px}
+body .collection-arrows>button{display:inline-grid;place-content:center}
+body .collection-main-button>i,
+body .vinyl-card-info h3>i,
+body .case-next>a:first-of-type>i{display:inline-flex;align-items:center}
+body .room-contact-email .copy-email{font-size:11px;width:auto;min-width:44px;padding-inline:6px}
