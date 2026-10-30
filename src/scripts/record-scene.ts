@@ -10,7 +10,13 @@ export type RecordScene = { play:(project:RecordProject)=>Promise<void>; hoverAt
 
 export async function createRecordScene(host:HTMLElement, projects:RecordProject[],onProgress?:(value:number|null)=>void):Promise<RecordScene> {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
+  // Let Chrome select the available GPU. Some dual-GPU Macs cannot grant
+  // a context when a particular power preference is requested.
+  let renderer:THREE.WebGLRenderer;
+  try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});}
+  catch{renderer=new THREE.WebGLRenderer({antialias:false,alpha:true});}
+  let contextLost=false;
+  renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();contextLost=true;host.closest('.listening-table')?.classList.remove('scene-ready');host.dataset.renderState='context-lost';});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth<761?1.25:1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -132,10 +138,10 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   let renderFrame=0,previous=0;
   // All tweens share one render request, including the four sleeve animations.
   function render(){
-    if(disposed||!visible||renderFrame)return;
+    if(disposed||!visible||contextLost||renderFrame)return;
     renderFrame=requestAnimationFrame(time=>{
       renderFrame=0;
-      if(disposed||!visible)return;
+      if(disposed||!visible||contextLost)return;
       if(playing&&!reduced.matches&&movingRecord){
         const delta=previous?Math.min((time-previous)/1000,.05):0;
         movingRecord.rotation.y+=delta*1.9;
@@ -169,13 +175,17 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   function hoverCollection(){setHover('stack');}
   function resize(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;renderer.setSize(w,h);const ratio=w/h;const width=Math.max(window.innerWidth<761?13.1:15.4,ratio*4.65);const height=width/ratio;camera.left=-width/2;camera.right=width/2;camera.top=height/2;camera.bottom=-height/2;camera.updateProjectionMatrix();camera.lookAt(0,0,0);render();}
   const observer=new ResizeObserver(resize);observer.observe(host);resize();
-  await renderer.compileAsync(scene,camera);
+  // Shader polling can stall in a driver even though direct rendering works.
+  let compileTimer:ReturnType<typeof setTimeout>|undefined;
+  await Promise.race([renderer.compileAsync(scene,camera),new Promise<void>(resolve=>{compileTimer=setTimeout(resolve,4000);})]).finally(()=>clearTimeout(compileTimer));
+  if(contextLost||renderer.getContext().isContextLost())throw new Error('WEBGL_CONTEXT_LOST');
   renderer.render(scene,camera);
-  host.closest('.listening-table')?.classList.add('scene-ready');
+  host.closest('.listening-table')?.classList.add('scene-ready');host.dataset.renderState='ready';
   function visibility(){visible=!document.hidden;if(visible)render();}
   document.addEventListener('visibilitychange',visibility);
   function onMotionChange(){if(reduced.matches){hovered=null;gsap.killTweensOf(tonearm.rotation);gsap.set(tonearm.rotation,{y:playing?-.61:.04});for(const sleeve of sleeves){gsap.killTweensOf(sleeve.object.position);sleeve.object.position.y=sleeve.restY;}}render();}reduced.addEventListener('change',onMotionChange);
-  renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();host.closest('.listening-table')?.classList.remove('scene-ready');});
+  function restoreContext(){contextLost=false;host.dataset.renderState='ready';resize();host.closest('.listening-table')?.classList.add('scene-ready');render();}
+  renderer.domElement.addEventListener('webglcontextrestored',restoreContext);
   async function play(p:RecordProject){
     if(disposed)return;
     clearHover();transitioning=true;

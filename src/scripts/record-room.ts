@@ -102,7 +102,13 @@ async function initializeScene(){
       if(value!==null&&loaderProgress)loaderProgress.style.transform=`scaleX(${Math.max(.05,value)})`;
     });
     if(loaderProgress)loaderProgress.style.transform='scaleX(1)';
-  }catch(error){host.style.display='none';console.warn('3D unavailable; the same turntable poster and accessible collection remain active.',error);}
+  }catch(error){host.style.display='none';host.dataset.renderState='failed';
+    const message=document.createElement('p');message.className='scene-recovery';
+    const reason=error instanceof Error?error.message:String(error);
+    message.textContent=reason.includes('context')||reason.includes('WebGL')||reason.includes('WEBGL')?'Vista est�tica: Chrome no ha podido activar los gr�ficos 3D. ':'Vista est�tica: no se ha podido cargar el modelo 3D. ';
+    const retry=document.createElement('button');retry.textContent='Reintentar';retry.addEventListener('click',()=>location.reload());message.append(retry);
+    const detail=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Ver diagn�stico';detail.append(summary,document.createTextNode(reason));message.append(detail);table.append(message);
+    console.warn('3D unavailable; the same turntable poster and accessible collection remain active.',error);}
   requestAnimationFrame(finishLoading);
 }
 void initializeScene();

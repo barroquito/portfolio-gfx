@@ -18,3 +18,8 @@
 .room-static .static-collection-links a{color:var(--red);text-decoration:underline;text-underline-offset:4px}
 @media(max-width:760px){.room-loading .room-loader{gap:26px}.room-static .static-collection-links{font-size:9px;gap:12px}}
 @media(prefers-reduced-motion:reduce){.loader-track>span{transition:none}}
+
+.scene-recovery{position:absolute;bottom:19%;left:0;right:0;margin:auto;width:fit-content;max-width:90%;z-index:5;background:var(--paper);padding:8px 12px;font-size:11px;text-align:center;color:var(--muted)}
+.scene-recovery button{background:none;color:var(--red);text-decoration:underline;padding:4px}
+.scene-recovery details{font-size:10px;max-width:500px;overflow-wrap:anywhere}
+.scene-recovery summary{cursor:pointer;padding:4px}
