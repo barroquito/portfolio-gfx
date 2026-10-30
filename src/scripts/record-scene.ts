@@ -4,7 +4,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { gsap } from 'gsap';
 
 type RecordProject = {slug:string;title:string;number:string;subtitle:string;theme:string;record:{color:string;ink:string;label:string}};
-export type RecordScene = { play:(project:RecordProject)=>Promise<void>; reset:()=>void; dispose:()=>void };
+export type RecordScene = { play:(project:RecordProject)=>Promise<void>; hoverAt:(x:number,y:number)=>void; clearHover:()=>void; hoverCollection:()=>void; reset:()=>void; dispose:()=>void };
 
 export async function createRecordScene(host:HTMLElement, projects:RecordProject[]):Promise<RecordScene> {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -107,8 +107,10 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     ctx.fillStyle=p.record.ink;ctx.font=`600 18px ${printFont}`;ctx.fillText(p.record.label,70,956);ctx.textAlign='right';ctx.fillText('33⅓ RPM / SIDE A',954,956);
   }));
   const stack=new THREE.Group();stack.position.set(3.05,.08,.0);scene.add(stack);
+  const sleeves:{object:THREE.Group;restY:number;rank:number}[]=[];
   for(let i=projects.length-1;i>=0;i--){
     const p=projects[i];const sleeve=new THREE.Group();sleeve.position.set((i-1)*.07,.10+(projects.length-i)*.105, (i-1)*.035);sleeve.rotation.y=[-.12,.10,-.18,.22][i%4];stack.add(sleeve);
+    sleeves.push({object:sleeve,restY:sleeve.position.y,rank:projects.length-i-1});
     const edge=mat(p.record.color,0,.92);box(sleeve,3.12,.095,3.12,edge,0,0,0,.018);
     const coverMat=new THREE.MeshStandardMaterial({map:coverTextures[i],metalness:0,roughness:.86,bumpMap:paperMap,bumpScale:.003,envMapIntensity:.2});materials.push(coverMat);const cover=mesh(sleeve,new THREE.PlaneGeometry(3.10,3.10),coverMat,0,.049,0);cover.rotation.x=-Math.PI/2;
   }
@@ -117,9 +119,30 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   cyl(loose,1.4,.035,dark);
   const looseGrooves=mesh(loose,new THREE.CircleGeometry(1.39,96),matPrint,0,.022,0);looseGrooves.rotation.x=-Math.PI/2;
   stack.position.y=.10; // top sleeve rests above the loose record
-  let movingRecord:THREE.Group|null=null,playing=false,disposed=false,visible=!document.hidden;
+  let movingRecord:THREE.Group|null=null,playing=false,transitioning=false,disposed=false,visible=!document.hidden;
+  let hovered:'deck'|'stack'|null=null;
+  const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
   const positionPlayer=new THREE.Vector3();
   function render(){if(!disposed&&visible)renderer.render(scene,camera);}
+  function setHover(next:'deck'|'stack'|null){
+    if(disposed||transitioning||playing||reduced.matches)next=null;
+    if(next===hovered)return;
+    hovered=next;
+    gsap.to(tonearm.rotation,{y:next==='deck'?-.22:.04,duration:.7,ease:'power2.inOut',overwrite:'auto',onUpdate:render});
+    for(const sleeve of sleeves)gsap.to(sleeve.object.position,{y:sleeve.restY+(next==='stack'?sleeve.rank*.18:0),duration:.65,ease:'power2.out',overwrite:'auto',onUpdate:render});
+  }
+  function hoverAt(x:number,y:number){
+    const bounds=renderer.domElement.getBoundingClientRect();
+    if(!bounds.width||!bounds.height||x<bounds.left||x>bounds.right||y<bounds.top||y>bounds.bottom){setHover(null);return;}
+    pointer.set((x-bounds.left)/bounds.width*2-1,-((y-bounds.top)/bounds.height)*2+1);
+    raycaster.setFromCamera(pointer,camera);
+    const hit=raycaster.intersectObjects([deck,stack,loose],true)[0]?.object;
+    let object:THREE.Object3D|null=hit||null;
+    while(object&&object!==deck&&object!==stack&&object!==loose)object=object.parent;
+    setHover(object===deck?'deck':object===stack||object===loose?'stack':null);
+  }
+  function clearHover(){setHover(null);}
+  function hoverCollection(){setHover('stack');}
   function resize(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;renderer.setSize(w,h);const ratio=w/h;const width=Math.max(window.innerWidth<761?13.1:15.4,ratio*4.65);const height=width/ratio;camera.left=-width/2;camera.right=width/2;camera.top=height/2;camera.bottom=-height/2;camera.updateProjectionMatrix();camera.lookAt(0,0,0);render();}
   const observer=new ResizeObserver(resize);observer.observe(host);resize();
   host.closest('.listening-table')?.classList.add('scene-ready');
@@ -127,10 +150,12 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   renderer.setAnimationLoop(time=>{if(!visible||disposed)return;if(playing&&!reduced.matches&&movingRecord){const delta=Math.min((time-previous)/1000,.05);movingRecord.rotation.y+=delta*1.9;render();}previous=time;});
   function visibility(){visible=!document.hidden;if(visible)render();}
   document.addEventListener('visibilitychange',visibility);
-  function onMotionChange(){render();}reduced.addEventListener('change',onMotionChange);
+  function onMotionChange(){if(reduced.matches){hovered=null;gsap.killTweensOf(tonearm.rotation);gsap.set(tonearm.rotation,{y:playing?-.61:.04});for(const sleeve of sleeves){gsap.killTweensOf(sleeve.object.position);sleeve.object.position.y=sleeve.restY;}}render();}reduced.addEventListener('change',onMotionChange);
   renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();host.closest('.listening-table')?.classList.remove('scene-ready');});
   async function play(p:RecordProject){
     if(disposed)return;
+    clearHover();transitioning=true;
+    gsap.killTweensOf(tonearm.rotation);
     if(movingRecord)scene.remove(movingRecord);
     movingRecord=new THREE.Group();scene.add(movingRecord);
     cyl(movingRecord,1.60,.04,dark);
@@ -140,17 +165,17 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     const label=mesh(movingRecord,new THREE.CircleGeometry(.52,64),labelMat,0,.03,0);label.rotation.x=-Math.PI/2;
     cyl(movingRecord,.035,.06,ivory,0,.045,0);
     deck.updateMatrixWorld(true);deck.localToWorld(positionPlayer.set(-.5,.90,0));
-    movingRecord.position.set(3.1,1.3,0);movingRecord.rotation.z=-.12;
-    if(reduced.matches){movingRecord.position.copy(positionPlayer);movingRecord.rotation.z=0;tonearm.rotation.y=-.61;playing=true;render();return;}
+    movingRecord.position.set(3.1,.8,.15);movingRecord.rotation.z=-.12;
+    if(reduced.matches){movingRecord.position.copy(positionPlayer);movingRecord.rotation.z=0;tonearm.rotation.y=-.61;playing=true;transitioning=false;render();return;}
     return new Promise<void>(resolve=>{
-      const tl=gsap.timeline({onUpdate:render,onComplete:()=>{playing=true;resolve();}});
-      tl.to(movingRecord!.position,{x:positionPlayer.x,z:positionPlayer.z,duration:1.45,ease:'power1.inOut'},0)
-        .to(movingRecord!.position,{keyframes:[{y:2.45,duration:.65,ease:'power1.out'},{y:positionPlayer.y,duration:.8,ease:'power1.in'}]},0)
+      const tl=gsap.timeline({onUpdate:render,onComplete:()=>{playing=true;transitioning=false;resolve();}});
+      tl.to(movingRecord!.position,{x:positionPlayer.x,duration:1.45,ease:'power1.inOut'},0)
+        .to(movingRecord!.position,{keyframes:[{y:1.45,z:.55,duration:.65,ease:'power1.out'},{y:positionPlayer.y,z:positionPlayer.z,duration:.8,ease:'power1.in'}]},0)
         .to(movingRecord!.rotation,{z:0,duration:1.45,ease:'power1.inOut'},0)
         .to(tonearm.rotation,{y:-.61,duration:.65,ease:'power2.inOut'},1.15);
     });
   }
-  function dispose(){disposed=true;observer.disconnect();renderer.setAnimationLoop(null);document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',onMotionChange);scene.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();}});materials.forEach(m=>{const standard=m as THREE.MeshStandardMaterial;standard.map?.dispose();m.dispose();});coverTextures.forEach(t=>t.dispose());grooveTexture.dispose();deckText.dispose();brushedMap.dispose();paperMap.dispose();groovesMap.dispose();environment.dispose();renderer.dispose();}
-  function reset(){playing=false;if(movingRecord){scene.remove(movingRecord);movingRecord=null;}tonearm.rotation.y=.04;render();}
-  return {play,reset,dispose};
+  function dispose(){disposed=true;gsap.killTweensOf(tonearm.rotation);for(const sleeve of sleeves)gsap.killTweensOf(sleeve.object.position);observer.disconnect();renderer.setAnimationLoop(null);document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',onMotionChange);scene.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();}});materials.forEach(m=>{const standard=m as THREE.MeshStandardMaterial;standard.map?.dispose();m.dispose();});coverTextures.forEach(t=>t.dispose());grooveTexture.dispose();deckText.dispose();brushedMap.dispose();paperMap.dispose();groovesMap.dispose();environment.dispose();renderer.dispose();}
+  function reset(){playing=false;transitioning=false;hovered=null;if(movingRecord){scene.remove(movingRecord);movingRecord=null;}gsap.killTweensOf(tonearm.rotation);tonearm.rotation.y=.04;for(const sleeve of sleeves){gsap.killTweensOf(sleeve.object.position);sleeve.object.position.y=sleeve.restY;}render();}
+  return {play,hoverAt,clearHover,hoverCollection,reset,dispose};
 }

@@ -8,9 +8,29 @@ const contact=document.querySelector<HTMLDialogElement>('#contact-dialog')!;
 const carousel=document.querySelector<HTMLElement>('.vinyl-carousel')!;
 const projects=JSON.parse(document.getElementById('record-project-data')!.textContent||'[]');
 const host=document.getElementById('record-scene')!;
+const table=host.closest<HTMLElement>('.listening-table')!;
 const status=document.getElementById('room-status')!;
 let scene:RecordScene|null=null;
 let fallbackSpin:gsap.core.Tween|null=null;
+const fineHover=window.matchMedia('(hover: hover) and (pointer: fine)');
+let hoverFrame=0,hoverX=0,hoverY=0;
+function clearObjectHover(){if(hoverFrame)cancelAnimationFrame(hoverFrame);hoverFrame=0;scene?.clearHover();table.classList.remove('hover-deck','hover-stack');}
+table.addEventListener('pointermove',event=>{
+  if(!fineHover.matches||reduced.matches||event.pointerType==='touch'||navigating||dialogs.some(dialog=>dialog.open)){clearObjectHover();return;}
+  if(scene&&table.classList.contains('scene-ready')){
+    hoverX=event.clientX;hoverY=event.clientY;
+    if(!hoverFrame)hoverFrame=requestAnimationFrame(()=>{hoverFrame=0;scene?.hoverAt(hoverX,hoverY);});
+    return;
+  }
+  const bounds=table.getBoundingClientRect();
+  table.classList.toggle('hover-deck',event.clientX<bounds.left+bounds.width*.48);
+  table.classList.toggle('hover-stack',event.clientX>bounds.left+bounds.width*.56);
+});
+table.addEventListener('pointerleave',clearObjectHover);
+const stackHotspot=table.querySelector<HTMLElement>('.collection-hotspot')!;
+stackHotspot.addEventListener('focus',()=>{if(!reduced.matches){if(scene&&table.classList.contains('scene-ready'))scene.hoverCollection();else table.classList.add('hover-stack');}});
+stackHotspot.addEventListener('blur',clearObjectHover);
+reduced.addEventListener('change',clearObjectHover);
 function resetFallback(){fallbackSpin?.kill();fallbackSpin=null;document.querySelectorAll('.room-flying-record,.fallback-mounted-record').forEach(el=>el.remove());gsap.set('.fallback-player i',{clearProps:'transform'});}
 async function playFallback(project:typeof projects[number]){
   resetFallback();
@@ -29,7 +49,7 @@ async function playFallback(project:typeof projects[number]){
       gsap.to('.fallback-player i',{rotation:24,duration:.4,onComplete:resolve});
     }})
     .to(disc,{left:target.x+(target.width-target.height)/2,width:target.height,height:target.height,rotation:0,rotationX:27,duration:1.3,ease:'power1.inOut'},0)
-    .to(disc,{keyframes:[{top:Math.max(90,target.y-70),duration:.55,ease:'power1.out'},{top:target.y,duration:.75,ease:'power1.in'}]},0);
+    .to(disc,{keyframes:[{top:Math.max(table.getBoundingClientRect().top+8,Math.min(source.y,target.y)-12),duration:.55,ease:'power1.out'},{top:target.y,duration:.75,ease:'power1.in'}]},0);
   });
 }
 let navigating=false,originFocus:HTMLElement|null=null;
@@ -37,6 +57,7 @@ const dialogs=[collection,about,contact];
 
 function openDialog(dialog:HTMLDialogElement){
   if(navigating||dialog.open)return;
+  clearObjectHover();
   const current=dialogs.find(d=>d.open);if(current)current.close();
   originFocus=document.activeElement as HTMLElement;
   dialog.showModal();
@@ -80,6 +101,7 @@ void initializeScene();
 for(const link of document.querySelectorAll<HTMLAnchorElement>('[data-play-record]'))link.addEventListener('click',async event=>{
   if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
   event.preventDefault();if(navigating)return;navigating=true;
+  clearObjectHover();
   const project=projects.find((p:{slug:string})=>p.slug===link.dataset.playRecord);if(!project){location.assign(link.href);return;}
   const route=link.href;
   collection.close();
