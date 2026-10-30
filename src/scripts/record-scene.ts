@@ -10,8 +10,8 @@ export type RecordScene = { play:(project:RecordProject)=>Promise<void>; hoverAt
 
 export async function createRecordScene(host:HTMLElement, projects:RecordProject[],onProgress?:(value:number|null)=>void):Promise<RecordScene> {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+  const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth<761?1.25:1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -31,7 +31,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   scene.add(new THREE.HemisphereLight('#fffdf4','#62675e',.55));
   const key = new THREE.DirectionalLight('#fff7e8',2.15);
   key.position.set(-4,10,6); key.castShadow=true;
-  key.shadow.mapSize.set(window.innerWidth<761?1024:2048,window.innerWidth<761?1024:2048);
+  key.shadow.mapSize.set(1024,1024);
   key.shadow.camera.left=-9; key.shadow.camera.right=9; key.shadow.camera.top=7; key.shadow.camera.bottom=-7;
   key.shadow.normalBias=.018; key.shadow.bias=-.00015; key.shadow.radius=4;
   scene.add(key);
@@ -129,7 +129,27 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   let hovered:'deck'|'stack'|null=null;
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
   const positionPlayer=new THREE.Vector3();
-  function render(){if(!disposed&&visible)renderer.render(scene,camera);}
+  let renderFrame=0,previous=0;
+  // All tweens share one render request, including the four sleeve animations.
+  function render(){
+    if(disposed||!visible||renderFrame)return;
+    renderFrame=requestAnimationFrame(time=>{
+      renderFrame=0;
+      if(disposed||!visible)return;
+      if(playing&&!reduced.matches&&movingRecord){
+        const delta=previous?Math.min((time-previous)/1000,.05):0;
+        movingRecord.rotation.y+=delta*1.9;
+      }
+      previous=time;
+      renderer.render(scene,camera);
+      if(playing&&!reduced.matches)render();
+    });
+  }
+  deck.updateMatrixWorld(true);stack.updateMatrixWorld(true);loose.updateMatrixWorld(true);
+  const deckBounds=new THREE.Box3().setFromObject(deck);
+  const stackBounds=new THREE.Box3().setFromObject(stack).union(new THREE.Box3().setFromObject(loose));
+  stackBounds.max.y+=.7;
+  const hitPoint=new THREE.Vector3();
   function setHover(next:'deck'|'stack'|null){
     if(disposed||transitioning||playing||reduced.matches)next=null;
     if(next===hovered)return;
@@ -142,18 +162,16 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(!bounds.width||!bounds.height||x<bounds.left||x>bounds.right||y<bounds.top||y>bounds.bottom){setHover(null);return;}
     pointer.set((x-bounds.left)/bounds.width*2-1,-((y-bounds.top)/bounds.height)*2+1);
     raycaster.setFromCamera(pointer,camera);
-    const hit=raycaster.intersectObjects([deck,stack,loose],true)[0]?.object;
-    let object:THREE.Object3D|null=hit||null;
-    while(object&&object!==deck&&object!==stack&&object!==loose)object=object.parent;
-    setHover(object===deck?'deck':object===stack||object===loose?'stack':null);
+    // Hover needs an object region, not intersections with every model triangle.
+    setHover(raycaster.ray.intersectBox(deckBounds,hitPoint)?'deck':raycaster.ray.intersectBox(stackBounds,hitPoint)?'stack':null);
   }
   function clearHover(){setHover(null);}
   function hoverCollection(){setHover('stack');}
   function resize(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;renderer.setSize(w,h);const ratio=w/h;const width=Math.max(window.innerWidth<761?13.1:15.4,ratio*4.65);const height=width/ratio;camera.left=-width/2;camera.right=width/2;camera.top=height/2;camera.bottom=-height/2;camera.updateProjectionMatrix();camera.lookAt(0,0,0);render();}
   const observer=new ResizeObserver(resize);observer.observe(host);resize();
+  await renderer.compileAsync(scene,camera);
+  renderer.render(scene,camera);
   host.closest('.listening-table')?.classList.add('scene-ready');
-  let previous=0;
-  renderer.setAnimationLoop(time=>{if(!visible||disposed)return;if(playing&&!reduced.matches&&movingRecord){const delta=Math.min((time-previous)/1000,.05);movingRecord.rotation.y+=delta*1.9;render();}previous=time;});
   function visibility(){visible=!document.hidden;if(visible)render();}
   document.addEventListener('visibilitychange',visibility);
   function onMotionChange(){if(reduced.matches){hovered=null;gsap.killTweensOf(tonearm.rotation);gsap.set(tonearm.rotation,{y:playing?-.61:.04});for(const sleeve of sleeves){gsap.killTweensOf(sleeve.object.position);sleeve.object.position.y=sleeve.restY;}}render();}reduced.addEventListener('change',onMotionChange);
@@ -174,14 +192,14 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     movingRecord.position.set(3.1,.8,.15);movingRecord.rotation.z=-.12;
     if(reduced.matches){movingRecord.position.copy(positionPlayer);movingRecord.rotation.z=0;tonearm.rotation.y=-.61;playing=true;transitioning=false;render();return;}
     return new Promise<void>(resolve=>{
-      const tl=gsap.timeline({onUpdate:render,onComplete:()=>{playing=true;transitioning=false;resolve();}});
+      const tl=gsap.timeline({onUpdate:render,onComplete:()=>{playing=true;transitioning=false;previous=0;render();resolve();}});
       tl.to(movingRecord!.position,{x:positionPlayer.x,duration:1.45,ease:'power1.inOut'},0)
         .to(movingRecord!.position,{keyframes:[{y:1.45,z:.55,duration:.65,ease:'power1.out'},{y:positionPlayer.y,z:positionPlayer.z,duration:.8,ease:'power1.in'}]},0)
         .to(movingRecord!.rotation,{z:0,duration:1.45,ease:'power1.inOut'},0)
         .to(tonearm.rotation,{y:-.61,duration:.65,ease:'power2.inOut'},1.15);
     });
   }
-  function dispose(){disposed=true;gsap.killTweensOf(tonearm.rotation);for(const sleeve of sleeves)gsap.killTweensOf(sleeve.object.position);observer.disconnect();renderer.setAnimationLoop(null);document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',onMotionChange);scene.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();}});materials.forEach(m=>{const standard=m as THREE.MeshStandardMaterial;standard.map?.dispose();m.dispose();});coverTextures.forEach(t=>t.dispose());grooveTexture.dispose();brushedMap.dispose();paperMap.dispose();groovesMap.dispose();environment.dispose();renderer.dispose();}
+  function dispose(){disposed=true;gsap.killTweensOf(tonearm.rotation);for(const sleeve of sleeves)gsap.killTweensOf(sleeve.object.position);observer.disconnect();if(renderFrame)cancelAnimationFrame(renderFrame);document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',onMotionChange);scene.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();}});materials.forEach(m=>{const standard=m as THREE.MeshStandardMaterial;standard.map?.dispose();m.dispose();});coverTextures.forEach(t=>t.dispose());grooveTexture.dispose();brushedMap.dispose();paperMap.dispose();groovesMap.dispose();environment.dispose();renderer.dispose();}
   function reset(){playing=false;transitioning=false;hovered=null;if(movingRecord){scene.remove(movingRecord);movingRecord=null;}gsap.killTweensOf(tonearm.rotation);tonearm.rotation.y=.04;for(const sleeve of sleeves){gsap.killTweensOf(sleeve.object.position);sleeve.object.position.y=sleeve.restY;}render();}
   return {play,hoverAt,clearHover,hoverCollection,reset,dispose};
 }
