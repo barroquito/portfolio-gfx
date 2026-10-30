@@ -2,12 +2,13 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import { gsap } from 'gsap';
 
 type RecordProject = {slug:string;title:string;number:string;subtitle:string;theme:string;record:{color:string;ink:string;label:string}};
 export type RecordScene = { play:(project:RecordProject)=>Promise<void>; hoverAt:(x:number,y:number)=>void; clearHover:()=>void; hoverCollection:()=>void; reset:()=>void; dispose:()=>void };
 
-export async function createRecordScene(host:HTMLElement, projects:RecordProject[]):Promise<RecordScene> {
+export async function createRecordScene(host:HTMLElement, projects:RecordProject[],onProgress?:(value:number|null)=>void):Promise<RecordScene> {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
@@ -25,7 +26,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   const pmrem=new THREE.PMREMGenerator(renderer);
   const studio=new RoomEnvironment();
   const environment=pmrem.fromScene(studio,.03);
-  scene.environment=environment.texture;scene.environmentIntensity=.45;
+  scene.environment=environment.texture;scene.environmentIntensity=.8;
   studio.dispose();pmrem.dispose();
   scene.add(new THREE.HemisphereLight('#fffdf4','#62675e',.55));
   const key = new THREE.DirectionalLight('#fff7e8',2.15);
@@ -35,6 +36,9 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   key.shadow.normalBias=.018; key.shadow.bias=-.00015; key.shadow.radius=4;
   scene.add(key);
   const fill=new THREE.DirectionalLight('#e4eadf',.4);fill.position.set(6,5,-4);scene.add(fill);
+  RectAreaLightUniformsLib.init();
+  const softbox=new THREE.RectAreaLight('#f4f7ff',3.5,5.5,1.2);softbox.position.set(-1,5,-2);softbox.lookAt(-1,0,0);scene.add(softbox);
+  const strip=new THREE.RectAreaLight('#fff7ee',2,1.1,4);strip.position.set(5,4,2);strip.lookAt(2,0,0);scene.add(strip);
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({color:'#252a24',opacity:.24}));
   floor.rotation.x=-Math.PI/2;floor.position.y=-.08;floor.receiveShadow=true;scene.add(floor);
   const materials:THREE.Material[]=[];
@@ -45,17 +49,15 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     function random(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;}
     for(let y=0;y<size;y++){const line=random()*19;for(let x=0;x<size;x++){
       const radius=Math.hypot(x-size/2,y-size/2);
-      const value=kind==='brushed'?170+line+random()*12:kind==='paper'?180+random()*48:128+Math.sin(radius*3.2)*35;
+      const value=kind==='brushed'?170+line+random()*12:kind==='paper'?225+random()*30:128+Math.sin(radius*1.8)*22;
       const i=(y*size+x)*4;data[i]=data[i+1]=data[i+2]=value;data[i+3]=255;
     }}
     const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());t.needsUpdate=true;return t;
   }
   const brushedMap=surfaceMap('brushed'),paperMap=surfaceMap('paper'),groovesMap=surfaceMap('grooves');
-  const red=new THREE.MeshPhysicalMaterial({color:'#292e27',metalness:.15,roughness:.3,clearcoat:.7,clearcoatRoughness:.22});
-  const top=new THREE.MeshPhysicalMaterial({color:'#777d76',metalness:.8,roughness:.38,roughnessMap:brushedMap,bumpMap:brushedMap,bumpScale:.003,anisotropy:.45});
-  const dark=new THREE.MeshPhysicalMaterial({color:'#171c16',metalness:.05,roughness:.3,clearcoat:.65,clearcoatRoughness:.22});
-  const rubber=mat('#171c15',0,.94),metal=mat('#c3c9ba',.95,.23),ivory=mat('#f1f1e5',0,.9);
-  materials.push(red,top,dark);
+  paperMap.repeat.set(3,3);
+  const dark=new THREE.MeshPhysicalMaterial({color:'#0b0f12',metalness:0,roughness:.24,clearcoat:1,clearcoatRoughness:.12});
+  const ivory=mat('#f1f1e5',0,.9);materials.push(dark);
   async function loadImage(src:string):Promise<HTMLImageElement|null>{try{return await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src;});}catch{return null;}}
   const [logoImage,bulkImage]=await Promise.all([loadImage('/brand/jorge-mark.svg'),loadImage('/images/bulk-drink.webp')]);
   function mesh(parent:THREE.Object3D, geometry:THREE.BufferGeometry, material:THREE.Material|THREE.Material[],x=0,y=0,z=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
@@ -65,45 +67,35 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   function textCanvas(width:number,height:number,draw:(ctx:CanvasRenderingContext2D)=>void){const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d');if(!ctx)throw new Error('Canvas unavailable');draw(ctx);return texture(c);}
   const printFont='"DM Sans Variable", sans-serif';
   const deck=new THREE.Group();deck.position.set(-2.85,0,0);deck.rotation.y=.085;scene.add(deck);
-  // Keep the lightweight procedural version as a fallback if the model fails to load.
-  const proceduralDeck=new THREE.Group();deck.add(proceduralDeck);
-  for(const x of [-1.9,1.9]) for(const z of [-1.45,1.45]) cyl(proceduralDeck,.23,.24,rubber,x,.12,z);
-  box(proceduralDeck,5,.47,3.95,red,0,.39,0,.09);
-  box(proceduralDeck,4.86,.075,3.81,top,0,.662,0,.045);
-  // The platen is empty until a project is selected.
-  cyl(proceduralDeck,1.72,.13,metal,-.5,.77,0);
-  cyl(proceduralDeck,1.64,.035,rubber,-.5,.85,0);
   const grooveTexture=textCanvas(1024,1024,ctx=>{
-    ctx.fillStyle='#171c16';ctx.fillRect(0,0,1024,1024);
+    ctx.fillStyle='#080b0d';ctx.fillRect(0,0,1024,1024);
     for(let i=120;i<506;i+=3){ctx.beginPath();ctx.arc(512,512,i,0,Math.PI*2);ctx.strokeStyle=i%2?'#232b20':'#1c231a';ctx.lineWidth=1;ctx.stroke();}
     ctx.fillStyle='#f1f1e5';ctx.beginPath();ctx.arc(512,512,102,0,Math.PI*2);ctx.fill();
     if(logoImage)ctx.drawImage(logoImage,437,461,150,93);else{ctx.fillStyle='#232b20';ctx.textAlign='center';ctx.font=`600 48px ${printFont}`;ctx.fillText('JP',512,520);}
   });
-  const matPrint=new THREE.MeshPhysicalMaterial({map:grooveTexture,metalness:.03,roughness:.3,bumpMap:groovesMap,bumpScale:.007,clearcoat:.65,clearcoatRoughness:.2});materials.push(matPrint);
-  const platenPrint=mesh(proceduralDeck,new THREE.CircleGeometry(1.63,96),matPrint,-.5,.873,0);platenPrint.rotation.x=-Math.PI/2;
-  cyl(proceduralDeck,.044,.2,metal,-.5,.94,0);
-  let tonearm:THREE.Object3D=new THREE.Group();tonearm.position.set(1.45,.81,-1.17);tonearm.rotation.y=.04;proceduralDeck.add(tonearm);
-  cyl(tonearm,.26,.15,metal,0,0,0);cyl(tonearm,.18,.13,dark,0,.12,0);
-  function rod(parent:THREE.Object3D,a:THREE.Vector3,b:THREE.Vector3,r:number,material:THREE.Material){const m=mesh(parent,new THREE.CylinderGeometry(r,r,a.distanceTo(b),16),material);m.position.copy(a).add(b).multiplyScalar(.5);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());return m;}
-  rod(tonearm,new THREE.Vector3(0,.2,-.37),new THREE.Vector3(0,.2,1.95),.045,metal);
-  const counter=cyl(tonearm,.16,.3,dark,0,.2,-.45);counter.rotation.x=Math.PI/2;
-  box(tonearm,.22,.13,.4,dark,-.06,.16,2.0,.025);
-  box(tonearm,.12,.04,.16,red,-.08,.08,2.12,.01);
-  rod(tonearm,new THREE.Vector3(-.12,.2,1.87),new THREE.Vector3(-.32,.2,1.98),.02,metal);
-  cyl(proceduralDeck,.11,.14,metal,1.56,.78,1.35);cyl(proceduralDeck,.09,.03,dark,1.56,.87,1.35);
-  box(proceduralDeck,.35,.03,.05,dark,1.56,.704,.77,.01);
-  box(proceduralDeck,.16,.055,.09,ivory,1.56,.73,.77,.01);
-  const led=mesh(proceduralDeck,new THREE.SphereGeometry(.035,12,8),new THREE.MeshBasicMaterial({color:'#d93222'}),-2.03,.731,1.42);
-  const deckText=textCanvas(1024,90,ctx=>{ctx.fillStyle='#bfc4b9';ctx.fillRect(0,0,1024,90);if(logoImage)ctx.drawImage(logoImage,20,4,122,76);ctx.fillStyle='#2a3226';ctx.font=`500 18px ${printFont}`;ctx.fillText('JP—01 / PERSONAL SELECTION',185,53);ctx.fillText('33⅓   /   45',780,53);});
-  const deckTextMat=new THREE.MeshStandardMaterial({map:deckText,metalness:.6,roughness:.46,roughnessMap:brushedMap});materials.push(deckTextMat);
-  const plaque=mesh(proceduralDeck,new THREE.PlaneGeometry(3.4,.29),deckTextMat,-.25,.708,1.62);plaque.rotation.x=-Math.PI/2;
+  const matPrint=new THREE.MeshPhysicalMaterial({map:grooveTexture,metalness:0,roughness:.2,bumpMap:groovesMap,bumpScale:.0016,clearcoat:1,clearcoatRoughness:.12,anisotropy:.45,envMapIntensity:1.6});materials.push(matPrint);
+  let tonearm:THREE.Object3D;
+  const modelMaterials=new Map<THREE.Material,THREE.Material>();
   try{
-    const model=await new GLTFLoader().loadAsync('/models/tocadiscos.glb');
+    const model=await new GLTFLoader().loadAsync('/models/tocadiscos.glb?v=metal-02',event=>onProgress?.(event.lengthComputable?event.loaded/event.total:null));
     const modelArm=model.scene.getObjectByName('TONEARM_PIVOT');
     if(!modelArm)throw new Error('Turntable arm pivot is missing');
-    model.scene.traverse(object=>{if(object instanceof THREE.Mesh){object.castShadow=true;object.receiveShadow=true;for(const material of (Array.isArray(object.material)?object.material:[object.material]))if(!materials.includes(material))materials.push(material);}});
-    deck.add(model.scene);proceduralDeck.visible=false;tonearm=modelArm;tonearm.rotation.y=.04;
-  }catch(error){console.warn('Turntable model unavailable; using the procedural fallback.',error);}
+    model.scene.traverse(object=>{if(object instanceof THREE.Mesh){
+      object.castShadow=true;object.receiveShadow=true;
+      const source=Array.isArray(object.material)?object.material:[object.material];
+      object.material=source.map(material=>{
+        if(modelMaterials.has(material))return modelMaterials.get(material)!;
+        const m=material as THREE.MeshStandardMaterial;
+        if(m.metalness>.7){
+          const physical=new THREE.MeshPhysicalMaterial({color:m.color,map:m.map,metalness:.97,roughness:m.roughness,roughnessMap:brushedMap,bumpMap:brushedMap,bumpScale:.0015,anisotropy:.55,envMapIntensity:1.15});
+          modelMaterials.set(material,physical);material.dispose();materials.push(physical);return physical;
+        }
+        if(!materials.includes(material))materials.push(material);return material;
+      });
+      if(source.length===1)object.material=object.material[0];
+    }});
+    deck.add(model.scene);tonearm=modelArm;tonearm.rotation.y=.04;
+  }catch(error){renderer.dispose();environment.dispose();host.replaceChildren();throw error;}
   // Each cover is generated from the same project metadata as the accessible carousel.
   const coverTextures=projects.map(p=>textCanvas(1024,1024,ctx=>{
     ctx.fillStyle=p.record.color;ctx.fillRect(0,0,1024,1024);
@@ -115,6 +107,10 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     else if(p.theme==='li-onna'){ctx.globalAlpha=.45;ctx.beginPath();ctx.arc(840,465,310,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(840,465,240,0,Math.PI*2);ctx.stroke();ctx.font='300px serif';ctx.fillText('酒',690,575);ctx.globalAlpha=1;ctx.font=`500 180px ${printFont}`;ctx.fillText('Entre',65,490);ctx.font=`650 175px ${printFont}`;ctx.fillText('dos almas.',65,675);ctx.font=`600 24px ${printFont}`;ctx.fillText('LI-ONNA / CATA DE SAKES',70,840);}
     else {ctx.save();ctx.globalAlpha=.2;ctx.translate(512,512);ctx.rotate(-.4);for(let i=-700;i<700;i+=30){ctx.fillRect(-900,i,1800,3);}ctx.restore();ctx.save();ctx.transform(1,0,-.2,1,90,0);ctx.font=`600 460px ${printFont}`;ctx.fillText('F1',80,650);ctx.font=`600 130px ${printFont}`;ctx.fillText('WEEK',80,788);ctx.restore();}
     ctx.fillStyle=p.record.ink;ctx.font=`600 18px ${printFont}`;ctx.fillText(p.record.label,70,956);ctx.textAlign='right';ctx.fillText('33⅓ RPM / SIDE A',954,956);
+    // Print grain lives in the albedo as well as the paper bump/roughness maps.
+    const print=ctx.getImageData(0,0,1024,1024);let seed=781;
+    for(let i=0;i<print.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;const grain=((seed>>>24)-128)/32;print.data[i]+=grain;print.data[i+1]+=grain;print.data[i+2]+=grain;}
+    ctx.putImageData(print,0,0);
   }));
   const stack=new THREE.Group();stack.position.set(3.05,.08,.0);scene.add(stack);
   const sleeves:{object:THREE.Group;restY:number;rank:number}[]=[];
@@ -122,7 +118,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     const p=projects[i];const sleeve=new THREE.Group();sleeve.position.set((i-1)*.07,.10+(projects.length-i)*.105, (i-1)*.035);sleeve.rotation.y=[-.12,.10,-.18,.22][i%4];stack.add(sleeve);
     sleeves.push({object:sleeve,restY:sleeve.position.y,rank:projects.length-i-1});
     const edge=mat(p.record.color,0,.92);box(sleeve,3.12,.095,3.12,edge,0,0,0,.018);
-    const coverMat=new THREE.MeshStandardMaterial({map:coverTextures[i],metalness:0,roughness:.86,bumpMap:paperMap,bumpScale:.003,envMapIntensity:.2});materials.push(coverMat);const cover=mesh(sleeve,new THREE.PlaneGeometry(3.10,3.10),coverMat,0,.049,0);cover.rotation.x=-Math.PI/2;
+    const coverMat=new THREE.MeshStandardMaterial({map:coverTextures[i],metalness:0,roughness:.98,roughnessMap:paperMap,bumpMap:paperMap,bumpScale:.009,envMapIntensity:.35});materials.push(coverMat);const cover=mesh(sleeve,new THREE.PlaneGeometry(3.10,3.10),coverMat,0,.049,0);cover.rotation.x=-Math.PI/2;
   }
   // A loose record peeks out from under the top sleeve.
   const loose=new THREE.Group();loose.position.set(3.82,.43,-.15);scene.add(loose);
@@ -185,7 +181,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
         .to(tonearm.rotation,{y:-.61,duration:.65,ease:'power2.inOut'},1.15);
     });
   }
-  function dispose(){disposed=true;gsap.killTweensOf(tonearm.rotation);for(const sleeve of sleeves)gsap.killTweensOf(sleeve.object.position);observer.disconnect();renderer.setAnimationLoop(null);document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',onMotionChange);scene.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();}});materials.forEach(m=>{const standard=m as THREE.MeshStandardMaterial;standard.map?.dispose();m.dispose();});coverTextures.forEach(t=>t.dispose());grooveTexture.dispose();deckText.dispose();brushedMap.dispose();paperMap.dispose();groovesMap.dispose();environment.dispose();renderer.dispose();}
+  function dispose(){disposed=true;gsap.killTweensOf(tonearm.rotation);for(const sleeve of sleeves)gsap.killTweensOf(sleeve.object.position);observer.disconnect();renderer.setAnimationLoop(null);document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',onMotionChange);scene.traverse(obj=>{if(obj instanceof THREE.Mesh){obj.geometry.dispose();}});materials.forEach(m=>{const standard=m as THREE.MeshStandardMaterial;standard.map?.dispose();m.dispose();});coverTextures.forEach(t=>t.dispose());grooveTexture.dispose();brushedMap.dispose();paperMap.dispose();groovesMap.dispose();environment.dispose();renderer.dispose();}
   function reset(){playing=false;transitioning=false;hovered=null;if(movingRecord){scene.remove(movingRecord);movingRecord=null;}gsap.killTweensOf(tonearm.rotation);tonearm.rotation.y=.04;for(const sleeve of sleeves){gsap.killTweensOf(sleeve.object.position);sleeve.object.position.y=sleeve.restY;}render();}
   return {play,hoverAt,clearHover,hoverCollection,reset,dispose};
 }

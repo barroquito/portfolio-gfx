@@ -11,7 +11,6 @@ const host=document.getElementById('record-scene')!;
 const table=host.closest<HTMLElement>('.listening-table')!;
 const status=document.getElementById('room-status')!;
 let scene:RecordScene|null=null;
-let fallbackSpin:gsap.core.Tween|null=null;
 const fineHover=window.matchMedia('(hover: hover) and (pointer: fine)');
 let hoverFrame=0,hoverX=0,hoverY=0;
 function clearObjectHover(){if(hoverFrame)cancelAnimationFrame(hoverFrame);hoverFrame=0;scene?.clearHover();table.classList.remove('hover-deck','hover-stack');}
@@ -31,27 +30,8 @@ const stackHotspot=table.querySelector<HTMLElement>('.collection-hotspot')!;
 stackHotspot.addEventListener('focus',()=>{if(!reduced.matches){if(scene&&table.classList.contains('scene-ready'))scene.hoverCollection();else table.classList.add('hover-stack');}});
 stackHotspot.addEventListener('blur',clearObjectHover);
 reduced.addEventListener('change',clearObjectHover);
-function resetFallback(){fallbackSpin?.kill();fallbackSpin=null;document.querySelectorAll('.room-flying-record,.fallback-mounted-record').forEach(el=>el.remove());gsap.set('.fallback-player i',{clearProps:'transform'});}
-async function playFallback(project:typeof projects[number]){
-  resetFallback();
-  const stack=document.querySelector<HTMLElement>('.fallback-stack')!;
-  const platter=document.querySelector<HTMLElement>('.fallback-platter')!;
-  const player=document.querySelector<HTMLElement>('.fallback-player')!;
-  const source=stack.getBoundingClientRect(),target=platter.getBoundingClientRect();
-  const disc=document.createElement('div');disc.className='room-flying-record';
-  const label=document.createElement('span');label.style.background=project.record.color;label.style.color=project.record.ink;label.textContent=project.title;disc.append(label);document.body.append(disc);
-  const size=Math.min(source.width,source.height)*.9;
-  gsap.set(disc,{width:size,height:size,left:source.x+source.width/2-size/2,top:source.y+source.height/2-size/2,rotation:-10,rotationX:22});
-  await new Promise<void>(resolve=>{
-    gsap.timeline({onComplete:()=>{
-      disc.remove();const mounted=disc.cloneNode(true) as HTMLElement;mounted.className='fallback-mounted-record';mounted.removeAttribute('style');player.append(mounted);
-      fallbackSpin=gsap.to(mounted,{rotation:360,duration:3.3,ease:'none',repeat:-1});
-      gsap.to('.fallback-player i',{rotation:24,duration:.4,onComplete:resolve});
-    }})
-    .to(disc,{left:target.x+(target.width-target.height)/2,width:target.height,height:target.height,rotation:0,rotationX:27,duration:1.3,ease:'power1.inOut'},0)
-    .to(disc,{keyframes:[{top:Math.max(table.getBoundingClientRect().top+8,Math.min(source.y,target.y)-12),duration:.55,ease:'power1.out'},{top:target.y,duration:.75,ease:'power1.in'}]},0);
-  });
-}
+function resetFallback(){document.querySelectorAll('.room-flying-record,.fallback-mounted-record').forEach(el=>el.remove());}
+async function playFallback(){/* The static poster remains still; project navigation is always available. */}
 let navigating=false,originFocus:HTMLElement|null=null;
 const dialogs=[collection,about,contact];
 
@@ -72,7 +52,7 @@ for(const dialog of dialogs){
   dialog.addEventListener('close',()=>{if(!navigating)originFocus?.focus({preventScroll:true});});
 }
 // The same URL fragments work from project pages and direct links.
-function navigateHash(hash:string){if(hash==='#proyectos')openDialog(collection);else if(hash==='#sobre-mi')openDialog(about);else if(hash==='#contacto')openDialog(contact);}
+function navigateHash(hash:string){if(document.documentElement.classList.contains('room-loading'))return;if(hash==='#proyectos')openDialog(collection);else if(hash==='#sobre-mi')openDialog(about);else if(hash==='#contacto')openDialog(contact);}
 document.querySelectorAll<HTMLAnchorElement>('#main-nav a').forEach(link=>link.addEventListener('click',event=>{
   event.preventDefault();navigateHash(new URL(link.href).hash);
 }));
@@ -92,9 +72,38 @@ collection.addEventListener('toggle',updateCarousel);
 // The browser's back/forward cache must restore an interactive room.
 window.addEventListener('pageshow',e=>{if(e.persisted){navigating=false;scene?.reset();resetFallback();document.querySelectorAll<HTMLButtonElement>('[data-open-collection]').forEach(b=>b.disabled=false);const caption=document.getElementById('player-description');if(caption)caption.textContent='Elige un proyecto.';gsap.set('.record-transition',{autoAlpha:0});gsap.set('.transition-line',{scaleX:0});status.textContent='';}});
 
+const root=document.documentElement;
+const loader=document.getElementById('room-loader');
+const loaderMessage=document.getElementById('loader-message');
+const loaderProgress=document.getElementById('loader-progress');
+const skip=document.getElementById('loader-skip') as HTMLButtonElement|null;
+let entered=false;
+const skipTimer=window.setTimeout(()=>{if(skip)skip.hidden=false;},5000);
+function finishLoading(){
+  if(entered)return;entered=true;clearTimeout(skipTimer);
+  const wasLoading=root.classList.contains('room-loading');
+  loader?.classList.add('is-leaving');
+  root.classList.remove('room-loading','room-static');root.classList.add('room-loaded');
+  if(location.hash)navigateHash(location.hash);
+  if(document.activeElement===skip&&!dialogs.some(dialog=>dialog.open))document.querySelector<HTMLButtonElement>('.collection-main-button')?.focus({preventScroll:true});
+  if(reduced.matches||!wasLoading){loader?.remove();return;}
+  const elements=document.querySelectorAll('.site-header,.room-heading-copy,.room-identity,.room-intro,.listening-table,.room-bottom');
+  gsap.timeline()
+    .to(loader,{opacity:0,duration:.35,ease:'power2.out',onComplete:()=>loader?.remove()},0)
+    .fromTo(elements,{y:16,autoAlpha:0},{y:0,autoAlpha:1,duration:.7,stagger:.065,ease:'power3.out',clearProps:'transform,opacity,visibility'},.08);
+}
+skip?.addEventListener('click',()=>{finishLoading();openDialog(collection);});
 async function initializeScene(){
-  try{await document.fonts.ready;const {createRecordScene}=await import('./record-scene');scene=await createRecordScene(host,projects);}
-  catch(error){host.style.display='none';console.warn('3D unavailable; accessible record collection remains active.',error);}
+  try{
+    await document.fonts.ready;
+    const {createRecordScene}=await import('./record-scene');
+    if(loaderMessage)loaderMessage.textContent='Cargando el tocadiscos';
+    scene=await createRecordScene(host,projects,value=>{
+      if(value!==null&&loaderProgress)loaderProgress.style.transform=`scaleX(${Math.max(.05,value)})`;
+    });
+    if(loaderProgress)loaderProgress.style.transform='scaleX(1)';
+  }catch(error){host.style.display='none';console.warn('3D unavailable; the same turntable poster and accessible collection remain active.',error);}
+  requestAnimationFrame(finishLoading);
 }
 void initializeScene();
 
@@ -114,7 +123,7 @@ for(const link of document.querySelectorAll<HTMLAnchorElement>('[data-play-recor
   // Hard upper bound: a failed GPU or motion callback must never block a project link.
   const watchdog=window.setTimeout(()=>location.assign(route),6500);
   try{
-    if(!reduced.matches||scene)await Promise.race([scene?scene.play(project):playFallback(project),new Promise<void>(resolve=>setTimeout(resolve,2500))]);
+    if(!reduced.matches||scene)await Promise.race([scene?scene.play(project):playFallback(),new Promise<void>(resolve=>setTimeout(resolve,2500))]);
     if(reduced.matches){location.assign(route);return;}
     gsap.timeline({onComplete:()=>{clearTimeout(watchdog);location.assign(route);}})
       .to(transition,{autoAlpha:1,duration:.4,ease:'power2.inOut'})

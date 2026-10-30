@@ -31,8 +31,8 @@ def material(name, hex_value, metallic=0, roughness=.5):
     bsdf.inputs['Roughness'].default_value = roughness
     return m
 
-graphite = material('01 · Anodizado grafito', '#434845', .76, .34)
-edge = material('02 · Aluminio satinado', '#a3aaa6', .86, .30)
+graphite = material('01 · Anodizado grafito', '#9ba3a5', .96, .26)
+edge = material('02 · Aluminio satinado', '#b8c1c4', .98, .19)
 edge_dark = material('03 · Aluminio oscuro', '#656e6a', .8, .31)
 chassis = material('04 · Chasis de grafito', '#222725', .26, .35)
 rubber = material('05 · Caucho mate', '#161b19', .02, .91)
@@ -53,7 +53,7 @@ for y in range(size):
     line = rng.uniform(-.011, .011)
     for x in range(size):
         grain = rng.uniform(-.006, .006) + line
-        pixels.extend((max(0, .263+grain), max(0, .282+grain), max(0, .271+grain), 1.0))
+        pixels.extend((max(0, .57+grain), max(0, .60+grain), max(0, .61+grain), 1.0))
 image.pixels.foreach_set(pixels)
 image.pack()
 nodes = graphite.node_tree.nodes

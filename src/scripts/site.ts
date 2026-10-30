@@ -35,9 +35,27 @@ window.matchMedia('(min-width: 761px)').addEventListener('change', event => { if
 // Case pages keep the same editorial reveals. The room owns its own motion.
 const mm = gsap.matchMedia();
 mm.add('(prefers-reduced-motion: no-preference)', () => {
+  let cleanupCase = () => {};
+  const casePage = document.querySelector<HTMLElement>('.case-page');
+  if (casePage) {
+    const heading = casePage.querySelectorAll<HTMLElement>('.back-link, .case-topline, .case-heading h1');
+    const cover = casePage.querySelector<HTMLElement>('.case-cover');
+    const entrance = gsap.timeline({ defaults: { ease: 'power2.out' } });
+    entrance.fromTo(heading, { y: 16, opacity: .25 }, { y: 0, opacity: 1, duration: .6, stagger: .07, clearProps: 'transform,opacity' });
+    if (cover) entrance.fromTo(cover, { y: 20, opacity: .55 }, { y: 0, opacity: 1, duration: .75, clearProps: 'transform,opacity' }, .16);
+    const restoreCase = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      entrance.kill();
+      gsap.set([...heading, ...(cover ? [cover] : [])], { clearProps: 'transform,opacity' });
+    };
+    window.addEventListener('pageshow', restoreCase);
+    cleanupCase = () => window.removeEventListener('pageshow', restoreCase);
+  }
   gsap.utils.toArray<HTMLElement>('[data-reveal]').forEach(element => {
-    gsap.from(element, { y: 26, opacity: 0, duration: .7, ease: 'power2.out', scrollTrigger: { trigger: element, start: 'top 95%', once: true } });
+    if (element.closest('.case-heading')) return;
+    gsap.fromTo(element, { y: 20, opacity: .35 }, { y: 0, opacity: 1, duration: .65, ease: 'power2.out', immediateRender: false, clearProps: 'transform,opacity', scrollTrigger: { trigger: element, start: 'top 95%', once: true } });
   });
+  return cleanupCase;
 });
 
 let toastTimer: ReturnType<typeof setTimeout>;

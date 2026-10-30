@@ -4,6 +4,7 @@ import BrandMark from '../components/BrandMark.astro';
 import RecordSleeve from '../components/RecordSleeve.astro';
 import { projects } from '../data/projects';
 import '../styles/record-room.css';
+import '../styles/room-loading.css';
 ---
 <Layout home title="Jorge Pindado — Una colección de ideas" description="Una colección de ideas, a mi manera. Diseño gráfico, concepto y dirección de arte. Elige un vinilo y descubre un proyecto de Jorge Pindado.">
   <main id="main" class="record-room">
@@ -15,7 +16,7 @@ import '../styles/record-room.css';
 
     <section class="listening-table" aria-label="Expositor interactivo de proyectos en vinilo">
       <div id="record-scene" aria-hidden="true"></div>
-      <div class="scene-fallback" aria-hidden="true"><div class="fallback-player"><span class="deck-signature"></span><span class="deck-id">JP—01 / 33⅓</span><b class="deck-switch" aria-hidden="true"></b><div class="fallback-platter"></div><i></i></div><div class="fallback-stack">{[...projects].reverse().map(project=><div class="fallback-sleeve"><RecordSleeve project={project}/></div>)}</div></div>
+      <div class="scene-fallback" aria-hidden="true"><div class="fallback-model"><img src="/models/tocadiscos-poster.webp" alt="" width="1100" height="850" /></div><div class="fallback-stack">{[...projects].reverse().map(project=><div class="fallback-sleeve"><RecordSleeve project={project}/></div>)}</div></div>
       <div class="scene-action scene-action--player"><span class="object-caption">01 / EN EL PLATO</span><p id="player-description">Elige un proyecto.</p></div>
       <button class="collection-hotspot" data-open-collection aria-label="Abrir la colección de cuatro vinilos y elegir un proyecto"><span class="hotspot-dot">+</span><span class="hotspot-hint">ABRIR COLECCIÓN</span></button>
       <div class="scene-action scene-action--collection"><span class="object-caption">02 / LA COLECCIÓN</span><button class="collection-text-button" data-open-collection>Elige qué quieres ver <span aria-hidden="true">↗</span></button></div>
@@ -24,6 +25,7 @@ import '../styles/record-room.css';
 
     <div class="room-bottom"><span class="bottom-statement">CADA VINILO,<br/><strong>UN PROYECTO.</strong></span><button class="collection-main-button" data-open-collection>Explorar la colección <sup>{String(projects.length).padStart(2,'0')}</sup><i aria-hidden="true">↗</i></button><span class="bottom-location">MADRID, ES<br/>2026</span></div>
     <p class="sr-only" id="room-status" role="status" aria-live="polite"></p>
+    <div class="static-collection-links">{projects.map(project=><a href={`/proyectos/${project.slug}/`}>{project.title} ↗</a>)}</div>
     <noscript><div class="no-js-projects"><p>Elige un proyecto:</p>{projects.map(project=><a href={`/proyectos/${project.slug}/`}>{project.title} ↗</a>)}<a href="/CV-Jorge-Pindado-ES.pdf">Mi CV</a><a href="mailto:jorgepindado.gfx@gmail.com">Contacto</a></div></noscript>
   </main>
 
