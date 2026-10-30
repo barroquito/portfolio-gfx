@@ -21,7 +21,7 @@ body h2 :is(strong,em),
 body h3 :is(strong,em){letter-spacing:var(--ui-tracking)}
 
 /* Do not put tracking on card links or text containers: their paragraphs inherit it. */
-body button,
+body button:not(.menu-toggle),
 body .wordmark,
 body #main-nav>a,
 body .text-link,
@@ -48,8 +48,7 @@ body .tag,
 body .project-number,
 body .case-gallery figcaption{letter-spacing:var(--ui-tracking)}
 body.listening-room .collection-main-button,
-body.listening-room .collection-text-button,
-body.listening-room .menu-toggle{letter-spacing:var(--ui-tracking)}
+body.listening-room .collection-text-button{letter-spacing:var(--ui-tracking)}
 
 /* Remove text underlines and the rules used as text underlines. */
 body .text-link,
@@ -81,15 +80,18 @@ body .loader-skip:focus-visible .user-icon,
 body.listening-room .collection-main-button:focus-visible .user-icon{
   outline:1px solid currentColor;outline-offset:3px;border-radius:50%;
 }
-body.listening-room .copy-email:focus-visible,
-body.listening-room .menu-toggle:focus-visible{outline:1px dotted currentColor;outline-offset:4px}
+body.listening-room .copy-email:focus-visible{outline:1px dotted currentColor;outline-offset:4px}
+body.listening-room .menu-toggle:focus-visible i{outline:1px dotted currentColor;outline-offset:4px}
 
 /* SVG sizes are independent of the old text-glyph font sizes. No hamburger rules here. */
 body .room-dialog-close,
 body .lightbox-close{display:inline-flex;align-items:center}
 body .room-dialog-close>.user-icon,
-body .lightbox-close>.user-icon{--icon-size:18px}
-body .collection-arrows>button{display:inline-grid;place-content:center}
+body .lightbox-close>.user-icon{--icon-size:23px}
+body .collection-arrows>button{display:inline-grid;place-content:center;width:auto;min-width:44px;font-size:11px;padding-inline:8px;letter-spacing:var(--ui-tracking)}
+body .collection-arrows>button:focus-visible,
+body .room-dialog-close--text:focus-visible{outline:1px dotted currentColor;outline-offset:4px}
+body .gallery-zoom>.zoom-label{width:auto;height:auto;border-radius:0;padding:8px 10px;font-size:11px;line-height:1.2;letter-spacing:var(--ui-tracking)}
 body .collection-main-button>i,
 body .vinyl-card-info h3>i,
 body .case-next>a:first-of-type>i{display:inline-flex;align-items:center}

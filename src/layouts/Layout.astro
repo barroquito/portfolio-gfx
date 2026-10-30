@@ -1,5 +1,4 @@
 ---
-import Icon from '../components/Icon.astro';
 import '@fontsource-variable/dm-sans';
 import '../styles/global.css';
 import '../styles/editorial.css';
@@ -38,7 +37,7 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
       <BrandMark tone="red" class="loader-signature" />
       <div class="loader-copy"><strong>Ideas en rotación.</strong><span id="loader-message">Preparando la colección</span></div>
       <div class="loader-track" aria-hidden="true"><span id="loader-progress"></span></div>
-      <button class="loader-skip" id="loader-skip" hidden>Explorar mientras carga <Icon name="arrow" size={18} /></button>
+      <button class="loader-skip" id="loader-skip" hidden>Explorar mientras carga </button>
     </div>}
     <a href="#main" class="skip-link">Saltar al contenido</a>
     <div class="scroll-progress" aria-hidden="true"></div>
@@ -49,11 +48,11 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
       <nav id="main-nav" aria-label="Navegación principal">
         <a href={home ? '#proyectos' : '/#proyectos'} data-nav="proyectos">Colección <sup>{String(projects.length).padStart(2,'0')}</sup></a>
         <a href={home ? '#sobre-mi' : '/#sobre-mi'} data-nav="sobre-mi">Sobre mí</a>
-        <a class="nav-contact" href={home ? '#contacto' : '/#contacto'} data-nav="contacto">Hablemos <Icon name="arrow" size={18} /></a>
+        <a class="nav-contact" href={home ? '#contacto' : '/#contacto'} data-nav="contacto">Hablemos </a>
       </nav>
     </header>
     <slot />
-    <footer class="site-footer"><a href="/" class="footer-name" aria-label="Jorge Pindado, inicio"><BrandMark /><span>Jorge Pindado</span></a><span>MADRID, ES · {new Date().getFullYear()}</span><a href="#main">Volver arriba <Icon name="arrow" size={18} rotate={-45} /></a></footer>
+    <footer class="site-footer"><a href="/" class="footer-name" aria-label="Jorge Pindado, inicio"><BrandMark /><span>Jorge Pindado</span></a><span>MADRID, ES · {new Date().getFullYear()}</span><a href="#main">Volver arriba </a></footer>
     <div class="toast" role="status" aria-live="polite"></div>
     <script src="../scripts/site.ts"></script>
   </body>

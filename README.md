@@ -58,3 +58,10 @@ Las siete imágenes de REFES.zip guían el contraste entre firma gestual, grotes
 La iluminación Three.js incorpora RoomEnvironment + PMREM para reflejos de estudio. Laca de grafito con clearcoat, aluminio satinado con anisotropía y microtextura, vinilo con surcos y barniz, cubiertas mate con textura de papel y materiales que reciben luz. Exposición y luz principal reducidas; mapa de sombras adaptado al dispositivo. La alternativa CSS comparte paleta y acabados. El entorno de QA sigue sin WebGL: estos materiales se compilan pero requieren revisión visual en un dispositivo compatible.
 
 Validación de esta edición: compilación de las seis rutas; revisión visual del expositor y colección a 1363 × 936; layouts de 390 × 844, 360 × 800 y 844 × 390; menú y diálogo Sobre mí en móvil; carrusel y apertura de Li-Onna en escritorio y F1 Week en móvil; regreso a la colección y cierre con Escape. SVG original cargado en todas sus aplicaciones, sin deformación. Sin desbordamiento horizontal en las vistas medidas. La iluminación WebGL mantiene el límite de verificación descrito arriba.
+
+
+## Regla de iconos de interfaz
+
+Cada SVG de interfaz se usa como máximo una vez por página, incluidos los diálogos ocultos. La portada reserva la flecha al CTA principal, el signo más a la pila de vinilos y la cruz al cierre de la colección. Los demás controles usan texto. Las fichas reservan la flecha al siguiente proyecto, la cruz al visor y, cuando hay galería, el signo más a su primera imagen. Tamaño actual: 23 px. El menú conserva su dibujo CSS original y su espaciado anterior.
+
+La compilación ejecuta `tools/check-icon-usage.mjs` sobre todas las páginas generadas y falla si un símbolo de interfaz se repite.

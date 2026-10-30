@@ -1,11 +1,11 @@
 ---
 interface Props {
-  name: 'arrow' | 'close';
+  name: 'arrow' | 'close' | 'plus';
   size?: number;
   rotate?: number;
   class?: string;
 }
-const { name, size = 18, rotate = 0, class: className = '' } = Astro.props;
+const { name, size = 23, rotate = 0, class: className = '' } = Astro.props;
 ---
 <span
   class:list={['user-icon', `user-icon--${name}`, className]}
@@ -15,8 +15,8 @@ const { name, size = 18, rotate = 0, class: className = '' } = Astro.props;
 <style>
   .user-icon {
     display: inline-block;
-    width: var(--icon-size, 18px);
-    height: var(--icon-size, 18px);
+    width: var(--icon-size, 23px);
+    height: var(--icon-size, 23px);
     flex: 0 0 auto;
     vertical-align: -.16em;
     background: currentColor;
