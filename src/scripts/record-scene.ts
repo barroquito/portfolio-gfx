@@ -32,20 +32,21 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   const pmrem=new THREE.PMREMGenerator(renderer);
   const studio=new RoomEnvironment();
   const environment=pmrem.fromScene(studio,.03);
-  scene.environment=environment.texture;scene.environmentIntensity=.8;
+  scene.environment=environment.texture;scene.environmentIntensity=.64;
+  scene.environmentRotation.y=.35;
   studio.dispose();pmrem.dispose();
-  scene.add(new THREE.HemisphereLight('#fffdf4','#62675e',.55));
-  const key = new THREE.DirectionalLight('#fff7e8',2.15);
-  key.position.set(-4,10,6); key.castShadow=true;
+  scene.add(new THREE.HemisphereLight('#fff4df','#4a4640',.24));
+  const key = new THREE.DirectionalLight('#fff1d9',1.8);
+  key.position.set(-5,8,5); key.castShadow=true;
   key.shadow.mapSize.set(1024,1024);
   key.shadow.camera.left=-9; key.shadow.camera.right=9; key.shadow.camera.top=7; key.shadow.camera.bottom=-7;
   key.shadow.normalBias=.018; key.shadow.bias=-.00015; key.shadow.radius=4;
   scene.add(key);
-  const fill=new THREE.DirectionalLight('#e4eadf',.4);fill.position.set(6,5,-4);scene.add(fill);
+  const fill=new THREE.DirectionalLight('#e4e9ed',.16);fill.position.set(6,5,-4);scene.add(fill);
   RectAreaLightUniformsLib.init();
-  const softbox=new THREE.RectAreaLight('#f4f7ff',3.5,5.5,1.2);softbox.position.set(-1,5,-2);softbox.lookAt(-1,0,0);scene.add(softbox);
-  const strip=new THREE.RectAreaLight('#fff7ee',2,1.1,4);strip.position.set(5,4,2);strip.lookAt(2,0,0);scene.add(strip);
-  const floor=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({color:'#252a24',opacity:.24}));
+  const softbox=new THREE.RectAreaLight('#f4f7ff',2.4,5.5,1.2);softbox.position.set(-1,5,-2);softbox.lookAt(-1,0,0);scene.add(softbox);
+  const strip=new THREE.RectAreaLight('#fff0d9',2.7,1.1,4);strip.position.set(5,4,2);strip.lookAt(2,0,0);scene.add(strip);
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({color:'#2a251e',opacity:.29}));
   floor.rotation.x=-Math.PI/2;floor.position.y=-.08;floor.receiveShadow=true;scene.add(floor);
   const materials:THREE.Material[]=[];
   function mat(color:string,metalness=0,roughness=.5){const m=new THREE.MeshStandardMaterial({color,metalness,roughness});materials.push(m);return m;}
@@ -53,9 +54,9 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   function surfaceMap(kind:'brushed'|'paper'|'grooves'){
     const size=512,data=new Uint8Array(size*size*4);let seed=47;
     function random(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;}
-    for(let y=0;y<size;y++){const line=random()*19;for(let x=0;x<size;x++){
+    for(let y=0;y<size;y++){const line=random()*8;for(let x=0;x<size;x++){
       const radius=Math.hypot(x-size/2,y-size/2);
-      const value=kind==='brushed'?170+line+random()*12:kind==='paper'?225+random()*30:128+Math.sin(radius*1.8)*22;
+      const value=kind==='brushed'?210+line+random()*5:kind==='paper'?225+random()*30:128+Math.sin(radius*1.8)*12;
       const i=(y*size+x)*4;data[i]=data[i+1]=data[i+2]=value;data[i+3]=255;
     }}
     const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());t.needsUpdate=true;return t;
@@ -75,11 +76,11 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   const deck=new THREE.Group();deck.position.set(-2.85,0,0);deck.rotation.y=.085;scene.add(deck);
   const grooveTexture=textCanvas(1024,1024,ctx=>{
     ctx.fillStyle='#080b0d';ctx.fillRect(0,0,1024,1024);
-    for(let i=120;i<506;i+=3){ctx.beginPath();ctx.arc(512,512,i,0,Math.PI*2);ctx.strokeStyle=i%2?'#232b20':'#1c231a';ctx.lineWidth=1;ctx.stroke();}
+    for(let i=120;i<506;i+=3){ctx.beginPath();ctx.arc(512,512,i,0,Math.PI*2);ctx.strokeStyle=i%2?'#101416':'#0d1113';ctx.lineWidth=1;ctx.stroke();}
     ctx.fillStyle='#f1f1e5';ctx.beginPath();ctx.arc(512,512,102,0,Math.PI*2);ctx.fill();
     if(logoImage)ctx.drawImage(logoImage,437,461,150,93);else{ctx.fillStyle='#232b20';ctx.textAlign='center';ctx.font=`600 48px ${printFont}`;ctx.fillText('JP',512,520);}
   });
-  const matPrint=new THREE.MeshPhysicalMaterial({map:grooveTexture,metalness:0,roughness:.2,bumpMap:groovesMap,bumpScale:.0016,clearcoat:1,clearcoatRoughness:.12,anisotropy:.45,envMapIntensity:1.6});materials.push(matPrint);
+  const matPrint=new THREE.MeshPhysicalMaterial({map:grooveTexture,metalness:0,roughness:.2,bumpMap:groovesMap,bumpScale:.0011,clearcoat:1,clearcoatRoughness:.12,anisotropy:0,envMapIntensity:1.6});materials.push(matPrint);
   let tonearm:THREE.Object3D;
   const modelMaterials=new Map<THREE.Material,THREE.Material>();
   try{
@@ -93,7 +94,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
         if(modelMaterials.has(material))return modelMaterials.get(material)!;
         const m=material as THREE.MeshStandardMaterial;
         if(m.metalness>.7){
-          const physical=new THREE.MeshPhysicalMaterial({color:m.color,map:m.map,metalness:.97,roughness:m.roughness,roughnessMap:brushedMap,bumpMap:brushedMap,bumpScale:.0015,anisotropy:.55,envMapIntensity:1.15});
+          const physical=new THREE.MeshPhysicalMaterial({color:m.color,map:m.map,metalness:.97,roughness:m.roughness,roughnessMap:brushedMap,bumpMap:brushedMap,bumpScale:.0007,anisotropy:.55,envMapIntensity:1.15});
           modelMaterials.set(material,physical);material.dispose();materials.push(physical);return physical;
         }
         if(!materials.includes(material))materials.push(material);return material;
@@ -124,7 +125,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     const p=projects[i];const sleeve=new THREE.Group();sleeve.position.set((i-1)*.07,.10+(projects.length-i)*.105, (i-1)*.035);sleeve.rotation.y=[-.12,.10,-.18,.22][i%4];stack.add(sleeve);
     sleeves.push({object:sleeve,restY:sleeve.position.y,rank:projects.length-i-1});
     const edge=mat(p.record.color,0,.92);box(sleeve,3.12,.095,3.12,edge,0,0,0,.018);
-    const coverMat=new THREE.MeshStandardMaterial({map:coverTextures[i],metalness:0,roughness:.98,roughnessMap:paperMap,bumpMap:paperMap,bumpScale:.009,envMapIntensity:.35});materials.push(coverMat);const cover=mesh(sleeve,new THREE.PlaneGeometry(3.10,3.10),coverMat,0,.049,0);cover.rotation.x=-Math.PI/2;
+    const coverMat=new THREE.MeshStandardMaterial({map:coverTextures[i],metalness:0,roughness:.98,roughnessMap:paperMap,bumpMap:paperMap,bumpScale:.0035,envMapIntensity:.35});materials.push(coverMat);const cover=mesh(sleeve,new THREE.PlaneGeometry(3.10,3.10),coverMat,0,.049,0);cover.rotation.x=-Math.PI/2;
   }
   // A loose record peeks out from under the top sleeve.
   const loose=new THREE.Group();loose.position.set(3.82,.43,-.15);scene.add(loose);
