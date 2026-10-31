@@ -10,18 +10,14 @@ const { project } = Astro.props;
 ---
 <Layout title={`${project.title} — Jorge Pindado`} description={project.intro}>
   <main id="main" class="case-page">
-    <header class="case-heading case-heading--description section-shell" aria-labelledby="case-title">
-      <div class="case-description">
-        <h1 id="case-title" data-reveal>{project.title}</h1>
-        <p class="case-lead">{project.intro}</p>
-      </div>
-      <dl class="case-facts">
-        <div><dt>Contexto</dt><dd>{project.context}</dd></div>
-        <div><dt>Concepto</dt><dd>{project.subtitle}</dd></div>
-        <div><dt>Alcance</dt><dd><ul>{project.scope.map((tag: string) => <li>{tag}</li>)}</ul></dd></div>
-      </dl>
-    </header>
-    <section class="case-story case-story--details section-shell" aria-label="Desarrollo del proyecto">
+    <section class="case-heading section-shell" aria-labelledby="case-title">
+      <a class="back-link" href="/#proyectos">Volver a la colección</a>
+      <div class="case-topline"><span class="section-index">LADO A / DISCO {project.number}</span><span class="tiny-label">{project.context}</span></div>
+      <h1 id="case-title" data-reveal>{project.title}<span>/{project.number}</span></h1>
+      <div class="case-intro"><p>{project.subtitle}</p><div>{project.scope.map((tag: string) => <span class="tag">{tag}</span>)}</div></div>
+    </section>
+    <section class="case-story case-story--details section-shell" aria-labelledby="case-story-title">
+      <div class="case-story-intro" data-reveal><h2 id="case-story-title">{project.intro}</h2></div>
       <div class="case-story-grid">
         <div data-reveal><h2>El reto</h2><p>{project.challenge}</p></div>
         <div data-reveal><h2>El enfoque</h2><p>{project.approach}</p></div>

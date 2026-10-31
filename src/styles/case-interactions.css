@@ -1,13 +1,5 @@
-.case-page .case-heading--description{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,.42fr);column-gap:clamp(40px,7vw,110px);row-gap:36px;padding-top:clamp(44px,6vw,84px);padding-bottom:64px}
-.case-description{min-width:0}
-.case-page .case-description h1{margin:0;color:var(--ink);font-size:22px;font-weight:700;line-height:.95;letter-spacing:-.05em;text-transform:uppercase}
-.case-lead{max-width:38ch;margin-top:24px;font-size:clamp(28px,2.65vw,36px);font-weight:450;line-height:1.32;letter-spacing:normal;color:var(--ink);text-wrap:pretty}
-.case-facts{display:grid;align-content:start;gap:26px;margin:0;padding-top:2px}
-.case-facts dt{font-size:12px;font-weight:700;line-height:1.1;letter-spacing:-.05em;text-transform:uppercase;color:var(--ink)}
-.case-facts dd{margin:9px 0 0;font-size:15px;line-height:1.55;color:var(--ink)}
-.case-facts ul{list-style:none;margin:0;padding:0}
 .case-page .case-story--details{padding-top:0;padding-bottom:90px}
-.case-story--details .case-story-grid{margin-top:0;padding-top:0;border-top:0;gap:clamp(28px,4vw,60px)}
+.case-story--details .case-story-grid{margin-top:48px;padding-top:0;border-top:0;gap:clamp(28px,4vw,60px)}
 .case-story--details .case-story-grid h2{font-size:16px;font-weight:700;line-height:.95;letter-spacing:-.05em;text-transform:uppercase}
 .case-story--details .case-story-grid p{max-width:38ch;margin-top:18px;font-size:16px;line-height:1.65;color:var(--ink)}
 .case-story--details .case-note{max-width:780px;margin-top:42px;padding:0;border:0;background:none}
@@ -22,7 +14,7 @@
 .gallery-motion:focus-visible{outline:1px dotted currentColor;outline-offset:5px}
 .gallery-motion:disabled{opacity:.6;cursor:default}
 .bento-gallery{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:clamp(190px,20vw,280px) clamp(150px,14vw,200px) clamp(220px,23vw,320px) clamp(160px,17vw,240px);gap:24px}
-.case-gallery .bento-tile{position:relative;min-width:0;margin:0;overflow:hidden;background:var(--ink)}
+.case-gallery .bento-tile{position:relative;min-width:0;margin:0;overflow:hidden;border-radius:20px;background:var(--ink)}
 .bento-tile:nth-child(1){grid-area:1 / 1 / 3 / 6}
 .bento-tile:nth-child(2){grid-area:1 / 6 / 2 / 10}
 .bento-tile:nth-child(3){grid-area:1 / 10 / 3 / 13}
@@ -31,7 +23,7 @@
 .bento-tile:nth-child(6){grid-area:3 / 8 / 5 / 13}
 .bento-tile:nth-child(7){grid-area:4 / 1 / 5 / 4}
 .bento-tile:nth-child(8){grid-area:4 / 4 / 5 / 8}
-.bento-tile .gallery-zoom{display:block;position:relative;width:100%;height:100%;padding:0;border:0;border-radius:0;perspective:1300px;overflow:visible;background:transparent;cursor:zoom-in}
+.bento-tile .gallery-zoom{display:block;position:relative;width:100%;height:100%;padding:0;border:0;border-radius:inherit;perspective:1300px;overflow:visible;background:transparent;cursor:zoom-in}
 .bento-tile .gallery-zoom:focus-visible{outline:2px solid var(--red);outline-offset:-4px}
 /* Clipping belongs to the outer tile: overflow on this cube would flatten it. */
 .bento-tile .gallery-zoom>.bento-cube{--cube-depth:100px;--cube-angle:0deg;display:block;position:relative;inset:auto;width:100%;height:100%;border-radius:0;background:transparent;transform-style:preserve-3d;transform:translateZ(calc(-1 * var(--cube-depth))) rotateX(var(--cube-angle))}
@@ -56,21 +48,9 @@
 .project-navigator__link:hover{color:var(--red)}
 .project-navigator__link:focus-visible{outline:1px dotted var(--red);outline-offset:5px}
 .case-browse>.text-link{display:inline-block;margin-top:32px}
-@media(max-width:1000px){
-  .case-page .case-heading--description{grid-template-columns:1fr;gap:34px;padding-top:44px;padding-bottom:54px}
-  .case-lead{max-width:38ch;font-size:32px}
-  .case-facts{grid-template-columns:repeat(3,minmax(0,1fr));gap:26px;padding-top:0}
-}
 @media(max-width:760px){
-  .case-page .case-heading--description{padding-top:36px;padding-bottom:42px;gap:30px}
-  .case-page .case-description h1{font-size:18px}
-  .case-lead{margin-top:20px;font-size:24px;line-height:1.4}
-  .case-facts{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
-  .case-facts>div:first-child{grid-column:1 / -1}
-  .case-facts dt{font-size:11px}
-  .case-facts dd{font-size:14px;margin-top:8px}
   .case-page .case-story--details{padding-bottom:58px}
-  .case-story--details .case-story-grid{grid-template-columns:1fr;gap:30px}
+  .case-story--details .case-story-grid{grid-template-columns:1fr;gap:30px;margin-top:34px}
   .case-story--details .case-story-grid h2{font-size:15px}
   .case-story--details .case-story-grid p{margin-top:13px;max-width:42ch}
   .case-story--details .case-note{margin-top:34px}
@@ -80,6 +60,7 @@
   .bento-heading h2>span{font-size:10px;margin-top:0}
   .gallery-motion{font-size:10px;max-width:96px;padding:0;min-height:44px;text-align:right}
   .bento-gallery{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:130px 130px 120px 160px 200px 140px 170px;grid-template-areas:'a a' 'a a' 'b c' 'd c' 'e e' 'f g' 'f h';gap:12px}
+  .case-gallery .bento-tile{border-radius:16px}
   .bento-tile:nth-child(1){grid-area:a}.bento-tile:nth-child(2){grid-area:b}.bento-tile:nth-child(3){grid-area:c}.bento-tile:nth-child(4){grid-area:d}.bento-tile:nth-child(5){grid-area:e}.bento-tile:nth-child(6){grid-area:f}.bento-tile:nth-child(7){grid-area:g}.bento-tile:nth-child(8){grid-area:h}
   .case-page .case-browse{padding-top:20px;padding-bottom:48px}
   .project-navigator>summary{font-size:clamp(30px,8.5vw,50px);gap:18px;min-height:100px;padding-block:22px}
