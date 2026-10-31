@@ -100,7 +100,7 @@ body .room-contact-email .copy-email{font-size:11px;width:auto;min-width:44px;pa
 /* The collection uses the supplied plus alone, with no badge in any state. */
 body.listening-room .collection-hotspot .hotspot-dot{
   width:194px;height:194px;border:0;border-radius:0;background:transparent;
-  box-shadow:none;outline:none;transform:rotate(0deg);color:var(--ink);
+  box-shadow:none;outline:none;transform:rotate(0deg);color:var(--red);
   transition:transform .55s cubic-bezier(.22,1,.36,1),color .2s;
 }
 body.listening-room .collection-hotspot:is(:hover,:focus-visible) .hotspot-dot{
@@ -109,7 +109,9 @@ body.listening-room .collection-hotspot:is(:hover,:focus-visible) .hotspot-dot{
 }
 
 @media(max-width:760px){
-  body.listening-room .collection-hotspot{left:auto;right:0;width:194px;transform:none}
+  body.listening-room .collection-hotspot{left:auto;right:6%;top:50%;width:56px;height:56px;transform:translateY(-50%)}
+  body.listening-room .collection-hotspot .hotspot-dot{width:48px;height:48px}
+  body.listening-room .collection-hotspot .hotspot-dot .user-icon{width:48px;height:48px}
 }
 @media(prefers-reduced-motion:reduce){
   body.listening-room .collection-hotspot .hotspot-dot{transition:none}
