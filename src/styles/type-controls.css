@@ -87,7 +87,7 @@ body.listening-room .menu-toggle:focus-visible i{outline:1px dotted currentColor
 body .room-dialog-close,
 body .lightbox-close{display:inline-flex;align-items:center}
 body .room-dialog-close>.user-icon,
-body .lightbox-close>.user-icon{--icon-size:30px}
+body .lightbox-close>.user-icon{--icon-size:60px}
 body .collection-arrows>button{display:inline-grid;place-content:center;width:auto;min-width:44px;font-size:11px;padding-inline:8px;letter-spacing:var(--ui-tracking)}
 body .collection-arrows>button:focus-visible,
 body .room-dialog-close--text:focus-visible{outline:1px dotted currentColor;outline-offset:4px}
@@ -99,10 +99,19 @@ body .room-contact-email .copy-email{font-size:11px;width:auto;min-width:44px;pa
 
 /* The collection uses the supplied plus alone, with no badge in any state. */
 body.listening-room .collection-hotspot .hotspot-dot{
-  width:44px;height:44px;border:0;border-radius:0;background:transparent;
-  box-shadow:none;outline:none;transform:none;color:var(--ink);
+  width:194px;height:194px;border:0;border-radius:0;background:transparent;
+  box-shadow:none;outline:none;transform:rotate(0deg);color:var(--ink);
+  transition:transform .55s cubic-bezier(.22,1,.36,1),color .2s;
 }
 body.listening-room .collection-hotspot:is(:hover,:focus-visible) .hotspot-dot{
   border:0;border-radius:0;background:transparent;box-shadow:none;
-  outline:none;transform:none;color:var(--red);
+  outline:none;transform:rotate(90deg);color:var(--red);
+}
+
+@media(max-width:760px){
+  body.listening-room .collection-hotspot{left:auto;right:0;width:194px;transform:none}
+}
+@media(prefers-reduced-motion:reduce){
+  body.listening-room .collection-hotspot .hotspot-dot{transition:none}
+  body.listening-room .collection-hotspot:is(:hover,:focus-visible) .hotspot-dot{transform:none}
 }
