@@ -62,7 +62,7 @@ Validación de esta edición: compilación de las seis rutas; revisión visual d
 
 ## Regla de iconos de interfaz
 
-Cada SVG de interfaz se usa como máximo una vez por página, incluidos los diálogos ocultos. La portada reserva la flecha al CTA principal, el signo más a la pila de vinilos y la cruz al cierre de la colección. Los demás controles usan texto. Las fichas reservan la flecha al siguiente proyecto, la cruz al visor y, cuando hay galería, el signo más a su primera imagen. Tamaño actual: 60 px; el signo más de la pila es rojo desde el inicio, mide 160 px en escritorio y 48 px en móvil (área de pulsación de 56 px), y se muestra sin círculo. Al pasar el cursor gira 90 grados y vuelve al salir; respeta la preferencia de movimiento reducido. El menú conserva su dibujo CSS original y su espaciado anterior.
+Cada SVG de interfaz se usa como máximo una vez por página, incluidos los diálogos ocultos. La portada reserva la flecha al CTA principal, el signo más a la pila de vinilos y la cruz al cierre de la colección. Los demás controles usan texto. Las fichas reservan la cruz al visor y el signo más al acordeón de todos los proyectos; las imágenes se amplían sin repetir iconos. Tamaño actual: 60 px; el signo más de la pila es rojo desde el inicio, mide 160 px en escritorio y 48 px en móvil (área de pulsación de 56 px), y se muestra sin círculo. Los iconos giran 90 grados al pasar el cursor o recibir foco de teclado y vuelven al salir; respetan la preferencia de movimiento reducido. El menú conserva su dibujo CSS original y su espaciado anterior.
 
 La compilación ejecuta `tools/check-icon-usage.mjs` sobre todas las páginas generadas y falla si un símbolo de interfaz se repite.
 
@@ -70,3 +70,13 @@ La compilación ejecuta `tools/check-icon-usage.mjs` sobre todas las páginas ge
 ## Edición de claridad e Inter
 
 La web utiliza Inter Variable alojada con los assets del sitio; también los rótulos generados en canvas. Se retiran las instrucciones duplicadas de portada y colección y las leyendas que rodeaban la firma. La composición de portada pasa a título/firma, objetos y acción principal. El título conserva sus colores, aumenta a peso 800 y usa tracking −0.075em. El plus de escritorio baja a 160 px; en móvil conserva 48 px y su zona de pulsación. Se mantienen los avisos de procedencia de cada proyecto y la regla de iconos únicos.
+
+## Navegación entre casos y galería animada
+
+`ProjectNavigator.astro` muestra los cuatro trabajos en un acordeón nativo al final de cada ficha. Con JavaScript, seleccionar otro caso pasa por `/?play=slug`, espera la entrada del expositor y coloca su vinilo antes de abrirlo. La petición se consume una sola vez y la navegación temporal se sustituye para que Atrás vuelva al caso anterior. Sin JavaScript, los enlaces abren directamente cada ficha. Los límites de carga y navegación y la alternativa estática siguen disponibles; movimiento reducido evita la secuencia larga.
+
+`BentoGallery.astro` y `project-gallery.ts` preparan ocho encuadres con dos caras por celda. BULK usa sus cinco imágenes originales, con detalles y distintos recortes; no son ocho piezas originales distintas. Los otros casos no muestran una galería vacía: basta incorporar sus imágenes en `projects.ts` para utilizar el mismo componente. Las fuentes se reutilizan desde la caché, sin añadir imágenes pesadas.
+
+`bento-gallery.ts` coordina giros de cubo de 0,9–1,2 segundos con esperas irregulares de 6–15 segundos y un máximo de dos giros simultáneos. Solo se animan las celdas visibles; se detienen al ocultar la pestaña, abrir el menú o visor y al activar movimiento reducido. Hover, foco y el botón de pausa asientan suavemente la imagen; el visor abre siempre la cara visible. Se limpian los temporizadores y animaciones al abandonar la página. `case-interactions.css` contiene las composiciones de escritorio y móvil, sin cambiar los materiales del tocadiscos.
+
+Validación de esta edición: build de las seis rutas y regla de iconos únicos correctos; Chrome a 1920 px, 1366 × 900, 390 × 844 y 360 × 800 sin desbordamiento horizontal; ocho dimensiones distintas de celda. Giros y pausa, visor de la cara visible, acordeón, cambio a One More a través del expositor y Atrás a BULK comprobados en la compilación local. La escena WebGL cargó correctamente en este Chrome. Los tamaños móviles son simulaciones de viewport, no pruebas en teléfonos físicos.

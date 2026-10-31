@@ -1,0 +1,26 @@
+---
+import type { Project } from '../data/projects';
+import { getBentoGallery } from '../data/project-gallery';
+interface Props { project: Project }
+const { project } = Astro.props;
+const tiles = getBentoGallery(project);
+---
+{tiles.length > 0 && <section class="case-gallery bento-section section-shell" aria-labelledby="gallery-heading">
+  <div class="bento-heading">
+    <h2 id="gallery-heading">En imágenes<span>/{String(tiles.length).padStart(2, '0')}</span></h2>
+    <button type="button" class="gallery-motion" data-gallery-motion aria-pressed="true" hidden><span data-gallery-motion-label>Pausar animación</span></button>
+  </div>
+  <div class="bento-gallery">
+    {tiles.map((tile, index) => <figure class="bento-tile" data-index={index}>
+      <button type="button" class="gallery-zoom" data-src={tile.front.src} data-alt={tile.front.alt} aria-label={`Ampliar imagen: ${tile.front.alt}`}>
+        <span class="bento-cube">
+          {[tile.front, tile.next].map((face, side) => <span class:list={['bento-face', side === 0 ? 'bento-face--front' : 'bento-face--next']} data-src={face.src} data-alt={face.alt} data-caption={face.caption} aria-hidden={side === 1 ? 'true' : 'false'}>
+            <img src={face.src} alt="" loading="lazy" decoding="async" width={face.width} height={face.height} style={`object-position:${face.position}`} />
+          </span>)}
+        </span>
+      </button>
+      <figcaption class="sr-only" data-bento-caption>{tile.front.caption}</figcaption>
+    </figure>)}
+  </div>
+</section>}
+<script src="../scripts/bento-gallery.ts"></script>

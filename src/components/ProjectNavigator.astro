@@ -1,0 +1,37 @@
+---
+import Icon from './Icon.astro';
+import { projects } from '../data/projects';
+
+interface Props {
+  currentSlug: string;
+}
+const { currentSlug } = Astro.props;
+---
+<details class="project-navigator">
+  <summary>
+    <span>Todos los proyectos</span>
+    <Icon name="plus" size={60} />
+  </summary>
+  <nav aria-label="Navegar entre proyectos">
+    <ol class="project-navigator__list">
+      {projects.map(project => <li>
+        {project.slug === currentSlug
+          ? <span class="project-navigator__current" aria-current="page">
+              <span class="project-navigator__number">{project.number}</span>
+              <span class="project-navigator__title">{project.title}</span>
+              <span class="sr-only">Proyecto actual</span>
+            </span>
+          : <a class="project-navigator__link" href={`/proyectos/${project.slug}/`} data-replay-project={project.slug}>
+              <span class="project-navigator__number">{project.number}</span>
+              <span class="project-navigator__title">{project.title}</span>
+            </a>}
+      </li>)}
+    </ol>
+  </nav>
+</details>
+<script>
+  // Native case links still work when JavaScript is unavailable.
+  document.querySelectorAll<HTMLAnchorElement>('[data-replay-project]').forEach(link => {
+    link.href = `/?play=${encodeURIComponent(link.dataset.replayProject || '')}`;
+  });
+</script>

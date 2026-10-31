@@ -97,6 +97,12 @@ body .vinyl-card-info h3>i,
 body .case-next>a:first-of-type>i{display:inline-flex;align-items:center}
 body .room-contact-email .copy-email{font-size:11px;width:auto;min-width:44px;padding-inline:6px}
 
+body .user-icon{transition:transform .55s cubic-bezier(.22,1,.36,1)}
+@media(hover:hover){
+  body :is(a,button,summary):not(.collection-hotspot):hover .user-icon{transform:rotate(calc(var(--icon-rotation,0deg) + 90deg))}
+}
+body :is(a,button,summary):not(.collection-hotspot):focus-visible .user-icon{transform:rotate(calc(var(--icon-rotation,0deg) + 90deg))}
+
 /* The collection uses the supplied plus alone, with no badge in any state. */
 body.listening-room .collection-hotspot .hotspot-dot{
   width:160px;height:160px;border:0;border-radius:0;background:transparent;
@@ -114,6 +120,8 @@ body.listening-room .collection-hotspot:is(:hover,:focus-visible) .hotspot-dot{
   body.listening-room .collection-hotspot .hotspot-dot .user-icon{width:48px;height:48px}
 }
 @media(prefers-reduced-motion:reduce){
+  body .user-icon{transition:none}
+  body :is(a,button,summary):not(.collection-hotspot):is(:hover,:focus-visible) .user-icon{transform:rotate(var(--icon-rotation,0deg))}
   body.listening-room .collection-hotspot .hotspot-dot{transition:none}
   body.listening-room .collection-hotspot:is(:hover,:focus-visible) .hotspot-dot{transform:none}
 }
