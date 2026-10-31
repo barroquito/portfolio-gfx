@@ -5,7 +5,7 @@ interface Props {
   rotate?: number;
   class?: string;
 }
-const { name, size = 23, rotate = 0, class: className = '' } = Astro.props;
+const { name, size = 30, rotate = 0, class: className = '' } = Astro.props;
 ---
 <span
   class:list={['user-icon', `user-icon--${name}`, className]}
@@ -15,8 +15,8 @@ const { name, size = 23, rotate = 0, class: className = '' } = Astro.props;
 <style>
   .user-icon {
     display: inline-block;
-    width: var(--icon-size, 23px);
-    height: var(--icon-size, 23px);
+    width: var(--icon-size, 30px);
+    height: var(--icon-size, 30px);
     flex: 0 0 auto;
     vertical-align: -.16em;
     background: currentColor;

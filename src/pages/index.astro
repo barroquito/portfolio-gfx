@@ -19,19 +19,19 @@ import '../styles/room-loading.css';
       <div id="record-scene" aria-hidden="true"></div>
       <div class="scene-fallback" aria-hidden="true"><div class="fallback-model"><img src="/models/tocadiscos-poster.webp" alt="" width="1100" height="850" /></div><div class="fallback-stack">{[...projects].reverse().map(project=><div class="fallback-sleeve"><RecordSleeve project={project}/></div>)}</div></div>
       <div class="scene-action scene-action--player"><span class="object-caption">01 / EN EL PLATO</span><p id="player-description">Elige un proyecto.</p></div>
-      <button class="collection-hotspot" data-open-collection aria-label="Abrir la colección de cuatro vinilos y elegir un proyecto"><span class="hotspot-dot"><Icon name="plus" size={23} /></span><span class="hotspot-hint">ABRIR COLECCIÓN</span></button>
+      <button class="collection-hotspot" data-open-collection aria-label="Abrir la colección de cuatro vinilos y elegir un proyecto"><span class="hotspot-dot"><Icon name="plus" size={44} /></span><span class="hotspot-hint">ABRIR COLECCIÓN</span></button>
       <div class="scene-action scene-action--collection"><span class="object-caption">02 / LA COLECCIÓN</span><button class="collection-text-button" data-open-collection>Elige qué quieres ver </button></div>
 
     </section>
 
-    <div class="room-bottom"><span class="bottom-statement">CADA VINILO,<br/><strong>UN PROYECTO.</strong></span><button class="collection-main-button" data-open-collection>Explorar la colección <sup>{String(projects.length).padStart(2,'0')}</sup><i aria-hidden="true"><Icon name="arrow" size={23} /></i></button><span class="bottom-location">MADRID, ES<br/>2026</span></div>
+    <div class="room-bottom"><span class="bottom-statement">CADA VINILO,<br/><strong>UN PROYECTO.</strong></span><button class="collection-main-button" data-open-collection>Explorar la colección <sup>{String(projects.length).padStart(2,'0')}</sup><i aria-hidden="true"><Icon name="arrow" size={30} /></i></button><span class="bottom-location">MADRID, ES<br/>2026</span></div>
     <p class="sr-only" id="room-status" role="status" aria-live="polite"></p>
     <div class="static-collection-links">{projects.map(project=><a href={`/proyectos/${project.slug}/`}>{project.title} </a>)}</div>
     <noscript><div class="no-js-projects"><p>Elige un proyecto:</p>{projects.map(project=><a href={`/proyectos/${project.slug}/`}>{project.title} </a>)}<a href="/CV-Jorge-Pindado-ES.pdf">Mi CV</a><a href="mailto:jorgepindado.gfx@gmail.com">Contacto</a></div></noscript>
   </main>
 
   <dialog id="collection-dialog" class="collection-dialog" aria-labelledby="collection-title">
-    <div class="collection-heading"><div><span class="tiny-label">LADO A / TRABAJOS SELECCIONADOS</span><h2 id="collection-title">La <strong>colección.</strong></h2></div><button class="room-dialog-close" data-close-dialog aria-label="Cerrar colección">Cerrar <Icon name="close" size={23} /></button></div>
+    <div class="collection-heading"><div><span class="tiny-label">LADO A / TRABAJOS SELECCIONADOS</span><h2 id="collection-title">La <strong>colección.</strong></h2></div><button class="room-dialog-close" data-close-dialog aria-label="Cerrar colección">Cerrar <Icon name="close" size={30} /></button></div>
     <div class="collection-toolbar"><p>Elige una portada. Descubre una idea.</p><div class="collection-arrows"><button data-carousel-prev aria-label="Ver vinilo anterior">Anterior</button><button data-carousel-next aria-label="Ver siguiente vinilo">Siguiente</button></div></div>
     <div class="vinyl-carousel" tabindex="0" role="region" aria-label="Carrusel horizontal de proyectos. Usa las flechas del teclado para recorrerlo.">
       {projects.map(project=><article class="vinyl-card" style={`--record-label:${project.record.color}`}><a class="vinyl-select" href={`/proyectos/${project.slug}/`} data-play-record={project.slug} aria-label={`Poner ${project.title} en el tocadiscos y abrir el proyecto`}><div class="record-package"><div class="package-disc"><span>JP—{project.number}</span></div><RecordSleeve project={project}/><span class="play-record"> PONER EL DISCO</span></div><div class="vinyl-card-info"><span>{project.number} / {project.category}</span><h3>{project.title}</h3><p>{project.subtitle}</p></div></a><span class="record-provenance">{project.original?'PROYECTO ORIGINAL · ARCHIVO BULK':'CUBIERTA EDITORIAL DEL CASO'}</span></article>)}

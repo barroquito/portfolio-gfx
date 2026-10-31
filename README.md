@@ -62,6 +62,6 @@ Validación de esta edición: compilación de las seis rutas; revisión visual d
 
 ## Regla de iconos de interfaz
 
-Cada SVG de interfaz se usa como máximo una vez por página, incluidos los diálogos ocultos. La portada reserva la flecha al CTA principal, el signo más a la pila de vinilos y la cruz al cierre de la colección. Los demás controles usan texto. Las fichas reservan la flecha al siguiente proyecto, la cruz al visor y, cuando hay galería, el signo más a su primera imagen. Tamaño actual: 23 px. El menú conserva su dibujo CSS original y su espaciado anterior.
+Cada SVG de interfaz se usa como máximo una vez por página, incluidos los diálogos ocultos. La portada reserva la flecha al CTA principal, el signo más a la pila de vinilos y la cruz al cierre de la colección. Los demás controles usan texto. Las fichas reservan la flecha al siguiente proyecto, la cruz al visor y, cuando hay galería, el signo más a su primera imagen. Tamaño actual: 30 px; el signo más de la pila mide 44 px y se muestra sin círculo. El menú conserva su dibujo CSS original y su espaciado anterior.
 
 La compilación ejecuta `tools/check-icon-usage.mjs` sobre todas las páginas generadas y falla si un símbolo de interfaz se repite.
