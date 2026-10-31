@@ -99,7 +99,7 @@ body .room-contact-email .copy-email{font-size:11px;width:auto;min-width:44px;pa
 
 /* The collection uses the supplied plus alone, with no badge in any state. */
 body.listening-room .collection-hotspot .hotspot-dot{
-  width:194px;height:194px;border:0;border-radius:0;background:transparent;
+  width:160px;height:160px;border:0;border-radius:0;background:transparent;
   box-shadow:none;outline:none;transform:rotate(0deg);color:var(--red);
   transition:transform .55s cubic-bezier(.22,1,.36,1),color .2s;
 }

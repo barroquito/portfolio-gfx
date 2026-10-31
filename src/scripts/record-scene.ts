@@ -71,7 +71,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   function cyl(parent:THREE.Object3D,r:number,h:number,material:THREE.Material,x=0,y=0,z=0){return mesh(parent,new THREE.CylinderGeometry(r,r,h,80),material,x,y,z);}
   function texture(canvas:HTMLCanvasElement){const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());return t;}
   function textCanvas(width:number,height:number,draw:(ctx:CanvasRenderingContext2D)=>void){const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d');if(!ctx)throw new Error('Canvas unavailable');draw(ctx);return texture(c);}
-  const printFont='"DM Sans Variable", sans-serif';
+  const printFont='"Inter Variable", sans-serif';
   const deck=new THREE.Group();deck.position.set(-2.85,0,0);deck.rotation.y=.085;scene.add(deck);
   const grooveTexture=textCanvas(1024,1024,ctx=>{
     ctx.fillStyle='#080b0d';ctx.fillRect(0,0,1024,1024);

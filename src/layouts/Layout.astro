@@ -1,8 +1,9 @@
 ---
-import '@fontsource-variable/dm-sans';
+import '@fontsource-variable/inter';
 import '../styles/global.css';
 import '../styles/editorial.css';
 import '../styles/type-controls.css';
+import '../styles/selection.css';
 import BrandMark from '../components/BrandMark.astro';
 import { projects } from '../data/projects';
 const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráfico y dirección de arte. Del concepto publicitario a la expresión visual. Portfolio de Jorge Pindado, Madrid.', home = false } = Astro.props;
@@ -33,7 +34,6 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
   </head>
   <body class:list={{'listening-room':home}}>
     {home && <div id="room-loader" class="room-loader" role="status" aria-live="polite">
-      <span class="loader-edition">JORGE PINDADO / VOL. 01</span>
       <BrandMark tone="red" class="loader-signature" />
       <div class="loader-copy"><strong>Ideas en rotación.</strong><span id="loader-message">Preparando la colección</span></div>
       <div class="loader-track" aria-hidden="true"><span id="loader-progress"></span></div>
@@ -42,7 +42,7 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
     <a href="#main" class="skip-link">Saltar al contenido</a>
     <div class="scroll-progress" aria-hidden="true"></div>
     <header class="site-header">
-      <a class="wordmark" href="/" aria-label="Jorge Pindado, inicio"><span class="wordmark-name">Jorge Pindado<span>Diseñador gráfico</span></span></a>
+      <a class="wordmark" href="/" aria-label="Jorge Pindado, inicio"><span class="wordmark-name">Jorge Pindado{!home && <span>Diseñador gráfico</span>}</span></a>
 
       <button class="menu-toggle" aria-label="Abrir menú" aria-controls="main-nav" aria-expanded="false"><span>Menú</span><i aria-hidden="true"></i></button>
       <nav id="main-nav" aria-label="Navegación principal">

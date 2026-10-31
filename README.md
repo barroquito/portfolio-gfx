@@ -62,6 +62,11 @@ Validación de esta edición: compilación de las seis rutas; revisión visual d
 
 ## Regla de iconos de interfaz
 
-Cada SVG de interfaz se usa como máximo una vez por página, incluidos los diálogos ocultos. La portada reserva la flecha al CTA principal, el signo más a la pila de vinilos y la cruz al cierre de la colección. Los demás controles usan texto. Las fichas reservan la flecha al siguiente proyecto, la cruz al visor y, cuando hay galería, el signo más a su primera imagen. Tamaño actual: 60 px; el signo más de la pila es rojo desde el inicio, mide 194 px en escritorio y 48 px en móvil (área de pulsación de 56 px), y se muestra sin círculo. Al pasar el cursor gira 90 grados y vuelve al salir; respeta la preferencia de movimiento reducido. El menú conserva su dibujo CSS original y su espaciado anterior.
+Cada SVG de interfaz se usa como máximo una vez por página, incluidos los diálogos ocultos. La portada reserva la flecha al CTA principal, el signo más a la pila de vinilos y la cruz al cierre de la colección. Los demás controles usan texto. Las fichas reservan la flecha al siguiente proyecto, la cruz al visor y, cuando hay galería, el signo más a su primera imagen. Tamaño actual: 60 px; el signo más de la pila es rojo desde el inicio, mide 160 px en escritorio y 48 px en móvil (área de pulsación de 56 px), y se muestra sin círculo. Al pasar el cursor gira 90 grados y vuelve al salir; respeta la preferencia de movimiento reducido. El menú conserva su dibujo CSS original y su espaciado anterior.
 
 La compilación ejecuta `tools/check-icon-usage.mjs` sobre todas las páginas generadas y falla si un símbolo de interfaz se repite.
+
+
+## Edición de claridad e Inter
+
+La web utiliza Inter Variable alojada con los assets del sitio; también los rótulos generados en canvas. Se retiran las instrucciones duplicadas de portada y colección y las leyendas que rodeaban la firma. La composición de portada pasa a título/firma, objetos y acción principal. El título conserva sus colores, aumenta a peso 800 y usa tracking −0.075em. El plus de escritorio baja a 160 px; en móvil conserva 48 px y su zona de pulsación. Se mantienen los avisos de procedencia de cada proyecto y la regla de iconos únicos.
