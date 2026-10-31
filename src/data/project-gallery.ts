@@ -10,6 +10,15 @@ const sizes: Record<string, [number, number]> = {
   '/images/bulk-burger.webp': [832, 1248],
   '/images/bulk-bag.webp': [832, 1248],
   '/images/bulk-hero.webp': [517, 343],
+  '/images/one-more-cover.svg': [1200, 1200],
+  '/images/li-onna-cover.svg': [1200, 1200],
+  '/images/formula-1-cover.svg': [1200, 1200],
+};
+
+const placeholderCovers: Record<string, string> = {
+  'one-more': '/images/one-more-cover.svg',
+  'li-onna': '/images/li-onna-cover.svg',
+  'formula-1': '/images/formula-1-cover.svg',
 };
 
 // Eight views of the five original pieces, including details. The small facade
@@ -26,13 +35,22 @@ const bulkViews = [
 ] as const;
 
 export function getBentoGallery(project: Project): BentoTile[] {
-  if (!project.gallery.length) return [];
+  const cover = placeholderCovers[project.slug];
+  const images = project.gallery.length ? project.gallery : cover ? [{
+    src: cover,
+    alt: `Portada provisional de ${project.title}; pendiente de incorporar las piezas originales`,
+    caption: `${project.title} — Portada provisional`,
+  }] : [];
+  if (!images.length) return [];
   const face = (index: number, position = '50% 50%'): BentoFace => {
-    const item = project.gallery[index % project.gallery.length];
+    const item = images[index % images.length];
     const [width, height] = sizes[item.src] || [];
     return { ...item, position, width, height };
   };
   if (project.slug === 'bulk') return bulkViews.map(([front, next, a, b]) => ({ front: face(front, a), next: face(next, b) }));
-  // Other cases become ready as soon as their own original images are added.
-  return Array.from({ length: 8 }, (_, index) => ({ front: face(index), next: face(index + 1) }));
+  // Temporary covers occupy the same eight cells until originals replace them.
+  return Array.from({ length: 8 }, (_, index) => ({
+    front: face(index, index % 2 ? '50% 40%' : '50% 60%'),
+    next: face(index + 1, index % 2 ? '50% 60%' : '50% 40%'),
+  }));
 }

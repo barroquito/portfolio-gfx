@@ -1,3 +1,18 @@
+.case-page .case-heading--description{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,.42fr);column-gap:clamp(40px,7vw,110px);row-gap:36px;padding-top:clamp(44px,6vw,84px);padding-bottom:64px}
+.case-description{min-width:0}
+.case-page .case-description h1{margin:0;color:var(--ink);font-size:22px;font-weight:700;line-height:.95;letter-spacing:-.05em;text-transform:uppercase}
+.case-lead{max-width:38ch;margin-top:24px;font-size:clamp(28px,2.65vw,36px);font-weight:450;line-height:1.32;letter-spacing:normal;color:var(--ink);text-wrap:pretty}
+.case-facts{display:grid;align-content:start;gap:26px;margin:0;padding-top:2px}
+.case-facts dt{font-size:12px;font-weight:700;line-height:1.1;letter-spacing:-.05em;text-transform:uppercase;color:var(--ink)}
+.case-facts dd{margin:9px 0 0;font-size:15px;line-height:1.55;color:var(--ink)}
+.case-facts ul{list-style:none;margin:0;padding:0}
+.case-page .case-story--details{padding-top:0;padding-bottom:90px}
+.case-story--details .case-story-grid{margin-top:0;padding-top:0;border-top:0;gap:clamp(28px,4vw,60px)}
+.case-story--details .case-story-grid h2{font-size:16px;font-weight:700;line-height:.95;letter-spacing:-.05em;text-transform:uppercase}
+.case-story--details .case-story-grid p{max-width:38ch;margin-top:18px;font-size:16px;line-height:1.65;color:var(--ink)}
+.case-story--details .case-note{max-width:780px;margin-top:42px;padding:0;border:0;background:none}
+.case-story--details .case-note strong{font-size:13px;font-weight:650;line-height:1.4}
+.case-story--details .case-note p{margin-top:9px;font-size:13px;line-height:1.65}
 .case-page .bento-section{display:block;padding-bottom:110px}
 .bento-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:30px}
 .bento-heading h2{display:flex;align-items:start;gap:12px;margin:0;font-size:clamp(30px,4vw,58px);font-weight:700;line-height:.9;letter-spacing:-.05em;text-transform:uppercase}
@@ -41,7 +56,24 @@
 .project-navigator__link:hover{color:var(--red)}
 .project-navigator__link:focus-visible{outline:1px dotted var(--red);outline-offset:5px}
 .case-browse>.text-link{display:inline-block;margin-top:32px}
+@media(max-width:1000px){
+  .case-page .case-heading--description{grid-template-columns:1fr;gap:34px;padding-top:44px;padding-bottom:54px}
+  .case-lead{max-width:38ch;font-size:32px}
+  .case-facts{grid-template-columns:repeat(3,minmax(0,1fr));gap:26px;padding-top:0}
+}
 @media(max-width:760px){
+  .case-page .case-heading--description{padding-top:36px;padding-bottom:42px;gap:30px}
+  .case-page .case-description h1{font-size:18px}
+  .case-lead{margin-top:20px;font-size:24px;line-height:1.4}
+  .case-facts{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+  .case-facts>div:first-child{grid-column:1 / -1}
+  .case-facts dt{font-size:11px}
+  .case-facts dd{font-size:14px;margin-top:8px}
+  .case-page .case-story--details{padding-bottom:58px}
+  .case-story--details .case-story-grid{grid-template-columns:1fr;gap:30px}
+  .case-story--details .case-story-grid h2{font-size:15px}
+  .case-story--details .case-story-grid p{margin-top:13px;max-width:42ch}
+  .case-story--details .case-note{margin-top:34px}
   .case-page .bento-section{padding-bottom:64px}
   .bento-heading{align-items:start;gap:14px;margin-bottom:22px}
   .bento-heading h2{font-size:30px;max-width:180px;flex-wrap:wrap;gap:7px}

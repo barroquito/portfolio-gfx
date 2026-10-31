@@ -1,7 +1,6 @@
 ---
 import Icon from '../../components/Icon.astro';
 import Layout from '../../layouts/Layout.astro';
-import ProjectArtwork from '../../components/ProjectArtwork.astro';
 import ProjectNavigator from '../../components/ProjectNavigator.astro';
 import BentoGallery from '../../components/BentoGallery.astro';
 import { projects } from '../../data/projects';
@@ -11,10 +10,24 @@ const { project } = Astro.props;
 ---
 <Layout title={`${project.title} — Jorge Pindado`} description={project.intro}>
   <main id="main" class="case-page">
-    <section class="case-heading section-shell"><a class="back-link" href="/#proyectos"> Volver a la colección</a><div class="case-topline"><span class="section-index">LADO A / DISCO {project.number}</span><span class="tiny-label">{project.context}</span></div><h1 data-reveal>{project.title}<span>/{project.number}</span></h1><div class="case-intro"><p>{project.subtitle}</p><div>{project.scope.map((tag: string) => <span class="tag">{tag}</span>)}</div></div></section>
-    <div class:list={['case-cover', `case-cover--${project.theme}`]}><ProjectArtwork project={project} hero /></div>
-    <section class="case-story section-shell" aria-labelledby="case-story-title"><div class="case-story-intro" data-reveal><h2 id="case-story-title">{project.intro}</h2></div><div class="case-story-grid"><div data-reveal><span class="tiny-label">01 / EL RETO</span><p>{project.challenge}</p></div><div data-reveal><span class="tiny-label">02 / EL ENFOQUE</span><p>{project.approach}</p></div><div data-reveal><span class="tiny-label">03 / MI APORTACIÓN</span><p>{project.contribution}</p></div></div>
-      {!project.original && <aside class="case-note"><div><strong>Sobre esta ficha inicial</strong><p>La cubierta es una composición editorial creada para presentar el caso en este portfolio; no reproduce una pieza entregada al cliente. Las piezas originales y el desarrollo completo del proceso están pendientes de incorporarse.</p></div></aside>}
+    <header class="case-heading case-heading--description section-shell" aria-labelledby="case-title">
+      <div class="case-description">
+        <h1 id="case-title" data-reveal>{project.title}</h1>
+        <p class="case-lead">{project.intro}</p>
+      </div>
+      <dl class="case-facts">
+        <div><dt>Contexto</dt><dd>{project.context}</dd></div>
+        <div><dt>Concepto</dt><dd>{project.subtitle}</dd></div>
+        <div><dt>Alcance</dt><dd><ul>{project.scope.map((tag: string) => <li>{tag}</li>)}</ul></dd></div>
+      </dl>
+    </header>
+    <section class="case-story case-story--details section-shell" aria-label="Desarrollo del proyecto">
+      <div class="case-story-grid">
+        <div data-reveal><h2>El reto</h2><p>{project.challenge}</p></div>
+        <div data-reveal><h2>El enfoque</h2><p>{project.approach}</p></div>
+        <div data-reveal><h2>Mi aportación</h2><p>{project.contribution}</p></div>
+      </div>
+      {!project.original && <aside class="case-note"><div><strong>Sobre las portadas de la galería</strong><p>Son composiciones editoriales creadas para presentar el caso en este portfolio; no reproducen piezas entregadas al cliente. Las piezas originales y el desarrollo completo del proceso están pendientes de incorporarse.</p></div></aside>}
     </section>
     <BentoGallery project={project} />
     <section class="case-browse section-shell" aria-label="Explorar otros trabajos"><ProjectNavigator currentSlug={project.slug} /><a class="text-link" href="mailto:jorgepindado.gfx@gmail.com">Hablemos de un proyecto</a></section>

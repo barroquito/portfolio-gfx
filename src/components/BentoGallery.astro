@@ -4,8 +4,9 @@ import { getBentoGallery } from '../data/project-gallery';
 interface Props { project: Project }
 const { project } = Astro.props;
 const tiles = getBentoGallery(project);
+const placeholder = project.gallery.length === 0;
 ---
-{tiles.length > 0 && <section class="case-gallery bento-section section-shell" aria-labelledby="gallery-heading">
+{tiles.length > 0 && <section class="case-gallery bento-section section-shell" aria-labelledby="gallery-heading" data-placeholder={placeholder ? 'true' : undefined}>
   <div class="bento-heading">
     <h2 id="gallery-heading">En imágenes<span>/{String(tiles.length).padStart(2, '0')}</span></h2>
     <button type="button" class="gallery-motion" data-gallery-motion aria-pressed="true" hidden><span data-gallery-motion-label>Pausar animación</span></button>
