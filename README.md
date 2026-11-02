@@ -73,7 +73,7 @@ La web utiliza Inter Variable alojada con los assets del sitio; también los ró
 
 ## Navegación entre casos y galería animada
 
-`ProjectNavigator.astro` muestra los cuatro trabajos en un acordeón nativo al final de cada ficha. Con JavaScript, seleccionar otro caso pasa por `/?play=slug`, espera la entrada del expositor y coloca su vinilo antes de abrirlo. La petición se consume una sola vez y la navegación temporal se sustituye para que Atrás vuelva al caso anterior. Sin JavaScript, los enlaces abren directamente cada ficha. Los límites de carga y navegación y la alternativa estática siguen disponibles; movimiento reducido evita la secuencia larga.
+`ProjectNavigator.astro` muestra los cinco discos en un acordeón nativo al final de cada ficha. Con JavaScript, seleccionar otro caso pasa por `/?play=slug`, espera la entrada del expositor y coloca su vinilo antes de abrirlo. La petición se consume una sola vez y la navegación temporal se sustituye para que Atrás vuelva al caso anterior. Sin JavaScript, los enlaces abren directamente cada ficha. Los límites de carga y navegación y la alternativa estática siguen disponibles; movimiento reducido evita la secuencia larga.
 
 `BentoGallery.astro` y `project-gallery.ts` preparan ocho encuadres con dos caras por celda. BULK usa sus cinco imágenes originales, con detalles y distintos recortes; no son ocho piezas originales distintas. One More, Li-Onna y F1 Week usan sus portadas editoriales como placeholders en las ocho celdas hasta incorporar imágenes originales en `projects.ts`. Las fuentes se reutilizan desde la caché, sin añadir imágenes pesadas.
 
@@ -84,3 +84,16 @@ Validación de esta edición: build de las seis rutas y regla de iconos únicos 
 Las cuatro fichas conservan su cabecera original: título grande, número de disco rojo, contexto, subtítulo y etiquetas. La descripción aparece inmediatamente debajo, seguida de reto, enfoque y aportación. Se elimina la imagen de apertura: el bento es su única zona de imágenes. Sus esquinas se redondean a 20 px en escritorio y 16 px en móvil, con el recorte fuera del cubo para conservar los giros 3D. Las portadas provisionales de los casos sin material se identifican como composiciones editoriales y se sirven como SVG locales.
 
 En la portada móvil vertical, la acción de explorar la colección ocupa una fila propia y los textos inferiores otra, para evitar que se junten a 360 px. En horizontal el botón cabe completo y el signo más conserva sus 48 px. Revisión de esta edición en Chrome con viewports 390 × 844, 360 × 800, 360 × 640 y 844 × 390: menú, colección, selección del vinilo y llegada al caso, visor con cierre, scroll y ausencia de desbordamiento horizontal comprobados. Son tamaños simulados, no pruebas en teléfonos físicos.
+
+
+## Colección en la escena y quinto disco — noviembre de 2026
+
+La pantalla inicial conserva su composición. Al abrir la colección se expande el mismo canvas, se centra el tocadiscos y las cinco fundas salen de la pila hacia una órbita. La proyección inicial se conserva durante el cambio de tamaño para evitar un salto antes del movimiento de cámara. El encuadre de selección usa el espacio disponible entre los controles, con posiciones distintas en vertical y horizontal.
+
+El scroll, el deslizamiento, las flechas del teclado y los botones recorren la colección. Pulsar la portada activa o «Ver contraportada» gira la funda física; la descripción también está disponible en HTML. «Poner vinilo» extrae un disco reutilizable y sigue una trayectoria continua hasta el plato, acompañada de cámara y aguja. Se conservan el replay entre proyectos, los límites de espera, el retorno de foco y la recuperación al volver con el navegador. Si falla el modelo, la misma colección ofrece portadas y enlaces accesibles en HTML.
+
+Sobre mí es el disco 05, con una ficha propia: recorrido, identidad personal y desarrollo del portfolio. Sus textos se basan en los datos anteriores del propietario, su firma y el proceso real de este sitio. La galería reutiliza la identidad y el render del modelo; no añade imágenes de trabajos inexistentes. Los otros casos pasan a una redacción más directa en primera persona y mantienen sus avisos de imágenes provisionales.
+
+Revisión del modelo: GLB existente de 2.59 MB, 43 948 triángulos, 21 primitivas y diez materiales. Se conserva su geometría. Las fundas comparten mapas de papel; las contraportadas tienen texturas legibles sin alteración del tono. Se moderan la iluminación de impresión y las sombras de las fundas. El disco de transición se reutiliza, solo cambia la etiqueta. El renderer continúa bajo demanda, con DPR limitado y una sola sombra de 1024 px; los giros, recursos y eventos se limpian al salir. No se añade audio automático.
+
+Referencias técnicas consultadas: [cámara ortográfica de Three.js](https://threejs.org/docs/pages/OrthographicCamera.html) y [Pointer Events de MDN](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events). Las notas de validación de las secciones anteriores corresponden a sus respectivas ediciones.

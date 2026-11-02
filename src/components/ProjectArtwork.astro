@@ -23,5 +23,6 @@ const { project, hero = false } = Astro.props as { project: Project; hero?: bool
     <div class="speed-lines" aria-hidden="true"></div><div class="f1-type" aria-hidden="true">F1<span>WEEK</span></div>
     <span class="cover-bottom">MISMO EVENTO. DISTINTAS MARCAS.</span>
   </>}
+  {project.theme === 'personal' && <img src="/images/sobre-mi-cover.svg" alt="Firma e identidad personal de Jorge Pindado" width="1200" height="1200" loading={hero ? 'eager' : 'lazy'} />}
   {!project.original && <span class="editorial-label">Cubierta editorial del caso</span>}
 </div>

@@ -13,6 +13,8 @@ const sizes: Record<string, [number, number]> = {
   '/images/one-more-cover.svg': [1200, 1200],
   '/images/li-onna-cover.svg': [1200, 1200],
   '/images/formula-1-cover.svg': [1200, 1200],
+  '/images/sobre-mi-cover.svg': [1200, 1200],
+  '/models/tocadiscos-poster.webp': [1100, 850],
 };
 
 const placeholderCovers: Record<string, string> = {
@@ -48,7 +50,7 @@ export function getBentoGallery(project: Project): BentoTile[] {
     return { ...item, position, width, height };
   };
   if (project.slug === 'bulk') return bulkViews.map(([front, next, a, b]) => ({ front: face(front, a), next: face(next, b) }));
-  // Temporary covers occupy the same eight cells until originals replace them.
+  // Reuse the available pieces as eight views, also for incomplete case galleries.
   return Array.from({ length: 8 }, (_, index) => ({
     front: face(index, index % 2 ? '50% 40%' : '50% 60%'),
     next: face(index + 1, index % 2 ? '50% 60%' : '50% 40%'),

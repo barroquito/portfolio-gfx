@@ -8,5 +8,10 @@ const { project } = Astro.props as { project: Project };
   {project.theme === 'one-more' && <><div class="sleeve-orbits"></div><strong class="sleeve-title">ONE<br/><em>MORE</em></strong><span class="sleeve-center-label">THE 2000s ARE CALLING.</span></>}
   {project.theme === 'li-onna' && <><div class="sleeve-sun"></div><strong class="sleeve-title">Entre<br/><em>dos almas.</em></strong><span class="sleeve-center-label">LI-ONNA / CATA DE SAKES</span></>}
   {project.theme === 'f1' && <><div class="sleeve-speed"></div><strong class="sleeve-title">F1<span class="week">WEEK</span></strong><span class="sleeve-center-label">UNA SEMANA. MUCHAS FORMAS.</span></>}
+  {project.theme === 'personal' && <img class="personal-cover" src="/images/sobre-mi-cover.svg" alt="" width="1200" height="1200" />}
   <div class="sleeve-bottom"><span>{project.record.label}</span><span>33⅓ RPM / SIDE A</span></div>
 </div>
+<style>
+  .sleeve--personal .personal-cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .sleeve--personal .sleeve-top, .sleeve--personal .sleeve-bottom { visibility: hidden; }
+</style>
