@@ -34,4 +34,25 @@ const { currentSlug } = Astro.props;
   document.querySelectorAll<HTMLAnchorElement>('[data-replay-project]').forEach(link => {
     link.href = `/?play=${encodeURIComponent(link.dataset.replayProject || '')}`;
   });
+
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  document.querySelectorAll<HTMLDetailsElement>('.project-navigator').forEach(details => {
+    const panel = details.querySelector('nav');
+    if (!panel || typeof panel.animate !== 'function') return;
+
+    let opening: Animation | undefined;
+    details.addEventListener('toggle', () => {
+      opening?.cancel();
+      opening = undefined;
+      if (!details.open || reducedMotion.matches) return;
+      opening = panel.animate([
+        { height: '0px', overflow: 'hidden' },
+        { height: `${panel.offsetHeight}px`, overflow: 'hidden' },
+      ], { duration: 300, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+    });
+
+    // Keyboard navigation can reach a link while the panel is still opening.
+    panel.addEventListener('focusin', () => opening?.cancel());
+    reducedMotion.addEventListener('change', () => opening?.cancel());
+  });
 </script>
