@@ -4,6 +4,7 @@ import '../styles/global.css';
 import '../styles/editorial.css';
 import '../styles/type-controls.css';
 import '../styles/selection.css';
+import '../styles/film.css';
 import BrandMark from '../components/BrandMark.astro';
 import { projects } from '../data/projects';
 const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráfico y dirección de arte. Del concepto publicitario a la expresión visual. Portfolio de Jorge Pindado, Madrid.', home = false } = Astro.props;
@@ -15,7 +16,7 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
-    <meta name="theme-color" content="#f5f4ef" />
+    <meta name="theme-color" content="#f0ede5" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/brand/jorge-mark-red.svg" />

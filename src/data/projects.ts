@@ -63,21 +63,17 @@ export const projects: Project[] = [
     gallery: []
   },
   {
-    slug: 'sobre-mi', number: '05', title: 'Sobre mí', subtitle: 'Quién soy y cómo he construido este portfolio.',
-    description: 'Soy Jorge Pindado, diseñador gráfico en Madrid. Aquí cuento mi recorrido, mi identidad y cómo ha ido tomando forma este portfolio.',
+    slug: 'sobre-mi', number: '05', title: 'Sobre mí', subtitle: 'Una forma de mirar.',
+    description: 'Soy Jorge Pindado. Diseño desde la curiosidad y me interesa cómo una idea acaba tomando forma.',
     record: {color:'#ce3024',ink:'#f5f4ef',label:'JORGE PINDADO / DISEÑO GRÁFICO'},
-    category: 'Personal', context: 'Jorge Pindado · Marca personal y portfolio',
-    scope: ['Identidad personal', 'Dirección visual', 'Diseño web'], theme: 'personal', original: true,
-    intro: 'Soy Jorge Pindado, diseñador gráfico en Madrid. Trabajo con identidades, campañas y contenido visual. Me interesa participar desde la idea y seguir implicado cuando hay que convertirla en piezas concretas.',
+    category: 'Personal', context: 'Jorge Pindado', scope: [], theme: 'personal', original: true,
+    intro: 'Soy Jorge Pindado, diseñador gráfico en Madrid. Me gusta entender de dónde sale una idea y seguir con ella hasta que se puede ver, tocar o usar.',
     challenge: '', approach: '', contribution: '',
     story: [
-      {title:'Mi recorrido', text:'He desarrollado branding y contenido visual para Mandala Group y he trabajado en dirección de arte junior en Good Rebels. BULK, mi proyecto de fin de grado en UDIT, reúne otra parte de mi trabajo: partir de un concepto y desarrollar una identidad completa. Quiero seguir aprendiendo en estudios, agencias y equipos de dirección de arte.'},
-      {title:'Mi identidad', text:'La firma de esta web la diseñé yo. Quería una identidad que pudiera sentir como propia y que dejara espacio a los trabajos. El rojo, la tipografía y la forma de ordenar la información salen de esa misma búsqueda. He ido ajustando el conjunto, quitando lo que sobraba y dando más peso a lo que quería contar.'},
-      {title:'Este portfolio', text:'Quería que elegir un proyecto se pareciera a elegir un disco. De ahí salen las portadas, el tocadiscos y el movimiento entre trabajos. El modelo se ha trabajado en Blender y la web se ha desarrollado con apoyo de herramientas de IA. Mi papel ha sido definir la dirección visual y revisar las decisiones de tipografía, materiales, luz e interacción hasta que funcionaran juntas.'},
+      {title:'', text:'Me reconozco en las ganas de probar otra versión aunque la primera ya funcione. A veces el cambio está en algo pequeño: mover un texto, bajar un poco la luz o quitar un elemento que lleva ahí desde el principio. Cuando acierto, la pieza se entiende mejor y se parece más a lo que quería decir.'},
+      {title:'', text:'Diseñé mi firma porque quería que mi nombre se sintiera mío también al verlo. En este portfolio me interesaba que elegir un trabajo tuviera algo del gesto de sacar un disco de su funda. Me gusta ese momento en el que puedes acercarte a un objeto y descubrir un detalle a tu ritmo. Es una forma de mirar que también intento llevar a mis proyectos.'},
+      {title:'', text:'En el trabajo disfruto al pasar de una idea a sus aplicaciones. Una identidad cambia cuando sale de la pantalla y tiene que funcionar en un envase, una publicación o un evento. Ahí aparecen preguntas que el primer boceto no tenía, y esa parte del proceso es la que más me interesa.'},
     ],
-    gallery: [
-      {src:'/images/sobre-mi-cover.svg', alt:'Firma de Jorge Pindado y composición de su identidad personal en rojo y papel', caption:'01 — La firma y la identidad del portfolio'},
-      {src:'/models/tocadiscos-poster.webp', alt:'Vista del modelo del tocadiscos creado para este portfolio', caption:'02 — El modelo del tocadiscos'},
-    ]
+    gallery: []
   }
 ];

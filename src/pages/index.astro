@@ -28,31 +28,17 @@ import '../styles/collection-orbit.css';
     <noscript><div class="no-js-projects"><p>Proyectos</p>{projects.map(project=><a href={`/proyectos/${project.slug}/`}>{project.title} </a>)}<a href="/CV-Jorge-Pindado-ES.pdf">Mi CV</a><a href="mailto:jorgepindado.gfx@gmail.com">Contacto</a></div></noscript>
   </main>
 
-  <dialog id="collection-dialog" class="orbit-dialog" aria-labelledby="collection-title" aria-describedby="collection-help">
-    <header class="orbit-heading">
-      <div><span class="orbit-eyebrow">LADO A / LA COLECCIÓN</span><h2 id="collection-title">Elige un <strong>vinilo.</strong></h2></div>
-      <button class="room-dialog-close" data-close-collection aria-label="Cerrar colección">Cerrar <Icon name="close" size={60} /></button>
-    </header>
-    <div class="orbit-stage" tabindex="0" role="region" aria-label="Vinilos alrededor del tocadiscos" aria-describedby="collection-help">
-      <div class="orbit-fallback" aria-hidden="true">{projects.map((project,index)=><div class="orbit-fallback-record" data-fallback-record={index} hidden={index!==0}><div class="orbit-fallback-front"><RecordSleeve project={project}/></div><div class="orbit-fallback-back" style={`--sleeve-color:${project.record.color};--sleeve-ink:${project.record.ink}`}><span>LADO B / {project.number}</span><strong>{project.title}</strong><p>{project.description}</p></div></div>)}</div>
+  <dialog id="collection-dialog" class="orbit-dialog" aria-label="Colección de vinilos">
+    <div class="orbit-stage" tabindex="0" role="region" aria-label="Vinilos. Usa las flechas para recorrerlos y Enter para abrir un proyecto.">
+      <div class="orbit-fallback">
+        {projects.map((project,index)=><a class="orbit-fallback-record" data-fallback-record={index} href={`/proyectos/${project.slug}/`} aria-label={project.title}>
+          <div class="orbit-fallback-front"><RecordSleeve project={project}/></div>
+          <div class="orbit-fallback-back"><strong>{project.title}</strong><p>{project.description}</p></div>
+        </a>)}
+      </div>
+      <div class="sr-only" aria-live="polite" data-orbit-status></div>
     </div>
-    <footer class="orbit-footer">
-      <div class="orbit-current" aria-live="polite" aria-atomic="true">
-        <span class="orbit-position">01 / {String(projects.length).padStart(2,'0')}</span>
-        <h3 data-orbit-title>{projects[0].title}</h3>
-        <div class="orbit-copy"><p data-orbit-subtitle>{projects[0].subtitle}</p><p class="orbit-description" data-orbit-description hidden>{projects[0].description}</p></div>
-      </div>
-      <div class="orbit-actions">
-        <button class="orbit-flip" data-orbit-flip aria-pressed="false">Ver contraportada</button>
-        <a class="orbit-play" href={`/proyectos/${projects[0].slug}/`} data-orbit-play>Poner vinilo</a>
-      </div>
-      <div class="orbit-navigation" aria-label="Recorrer la colección">
-        <button data-orbit-prev aria-label="Vinilo anterior">Anterior</button>
-        <div class="orbit-index">{projects.map((project,index)=><button data-orbit-index={index} aria-label={`Seleccionar ${project.title}`} aria-current={index===0?'true':undefined}>{project.number}</button>)}</div>
-        <button data-orbit-next aria-label="Vinilo siguiente">Siguiente</button>
-      </div>
-      <p id="collection-help" class="orbit-help">Desliza o usa el scroll para cambiar de vinilo. Pulsa la portada para darle la vuelta.</p>
-    </footer>
+    <button class="orbit-close" data-close-collection aria-label="Cerrar colección"><Icon name="close" size={60} /></button>
   </dialog>
 
   <dialog id="contact-dialog" class="info-dialog contact-dialog" aria-labelledby="contact-dialog-title"><button class="room-dialog-close room-dialog-close--text" data-close-dialog aria-label="Cerrar contacto">Cerrar </button><h2 id="contact-dialog-title">¿Tienes algo<br/><strong>en mente?</strong></h2><div class="room-contact-email"><a href="mailto:jorgepindado.gfx@gmail.com">jorgepindado.gfx@gmail.com </a><button class="copy-email" aria-label="Copiar correo electrónico" title="Copiar correo">Copiar</button></div><div class="room-contact-links"><a href="https://www.linkedin.com/in/jorge-pindado-badiola-4a3846191/" target="_blank" rel="noopener noreferrer">LinkedIn </a><a href="/CV-Jorge-Pindado-ES.pdf" download>Descargar CV </a></div></dialog>

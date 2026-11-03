@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import { gsap } from 'gsap';
@@ -8,7 +7,8 @@ import { gsap } from 'gsap';
 export type RecordProject = {slug:string;title:string;number:string;subtitle:string;description?:string;intro?:string;theme:string;record:{color:string;ink:string;label:string}};
 export type RecordScene = {
   openCollection:(index?:number)=>Promise<void>; closeCollection:()=>Promise<void>;
-  select:(index:number)=>void; flip:(back:boolean)=>void; pick:(x:number,y:number)=>number|null;
+  scrollBy:(delta:number)=>void; rotate:(index:number,dx:number,dy:number)=>void; centeredIndex:()=>number;
+  select:(index:number)=>void; pick:(x:number,y:number)=>number|null;
   play:(project:RecordProject)=>Promise<void>; hoverAt:(x:number,y:number)=>void;
   clearHover:()=>void; hoverCollection:()=>void; reset:()=>void; dispose:()=>void;
 };
@@ -27,6 +27,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth<761?1.25:1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = .85;
@@ -48,7 +49,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   key.shadow.camera.left=-9; key.shadow.camera.right=9; key.shadow.camera.top=7; key.shadow.camera.bottom=-7;
   key.shadow.normalBias=.018; key.shadow.bias=-.00015; key.shadow.radius=4;
   scene.add(key);
-  const fill=new THREE.DirectionalLight('#e4eadf',.4);fill.position.set(6,5,-4);scene.add(fill);
+  const fill=new THREE.DirectionalLight('#d4e2ff',.6);fill.position.set(6,5,-4);scene.add(fill);
   RectAreaLightUniformsLib.init();
   const softbox=new THREE.RectAreaLight('#f4f7ff',3.5,5.5,1.2);softbox.position.set(-1,5,-2);softbox.lookAt(-1,0,0);scene.add(softbox);
   const strip=new THREE.RectAreaLight('#fff7ee',2,1.1,4);strip.position.set(5,4,2);strip.lookAt(2,0,0);scene.add(strip);
@@ -74,7 +75,6 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   async function loadImage(src:string):Promise<HTMLImageElement|null>{try{return await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src;});}catch{return null;}}
   const [logoImage,redLogoImage,bulkImage,personalCover]=await Promise.all([loadImage('/brand/jorge-mark.svg'),loadImage('/brand/jorge-mark-red.svg'),loadImage('/images/bulk-drink.webp'),loadImage('/images/sobre-mi-cover.svg')]);
   function mesh(parent:THREE.Object3D, geometry:THREE.BufferGeometry, material:THREE.Material|THREE.Material[],x=0,y=0,z=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
-  function box(parent:THREE.Object3D,w:number,h:number,d:number,material:THREE.Material,x=0,y=0,z=0,r=.03){return mesh(parent,new RoundedBoxGeometry(w,h,d,3,r),material,x,y,z);}
   function cyl(parent:THREE.Object3D,r:number,h:number,material:THREE.Material,x=0,y=0,z=0){return mesh(parent,new THREE.CylinderGeometry(r,r,h,80),material,x,y,z);}
   function texture(canvas:HTMLCanvasElement){const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());return t;}
   function textCanvas(width:number,height:number,draw:(ctx:CanvasRenderingContext2D)=>void){const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d');if(!ctx)throw new Error('Canvas unavailable');draw(ctx);return texture(c);}
@@ -146,22 +146,32 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     ctx.font='600 23px '+printFont;ctx.fillText(p.record.label,70,940,800);
   }));
   const stack=new THREE.Group();stack.position.set(3.05,.10,0);scene.add(stack);
-  type Sleeve={object:THREE.Group;index:number;home:THREE.Vector3;homeQuaternion:THREE.Quaternion;rank:number;hit:THREE.Mesh;progress:number;turn:number};
+  type Sleeve={object:THREE.Group;index:number;home:THREE.Vector3;homeQuaternion:THREE.Quaternion;rank:number;orientation:THREE.Quaternion};
   const sleeves:Sleeve[]=[];
   const hitMeshes:THREE.Mesh[]=[];
+  // The paper and edge share a gentle bow, including their raycast geometry.
+  function bow(geometry:THREE.BufferGeometry,face=0){
+    const positions=geometry.getAttribute('position');
+    for(let j=0;j<positions.count;j++){
+      const curve=.12*(1-(positions.getX(j)/1.56)**2);
+      if(face)positions.setZ(j,positions.getZ(j)+curve*face);
+      else positions.setY(j,positions.getY(j)+curve);
+    }
+    positions.needsUpdate=true;geometry.computeVertexNormals();return geometry;
+  }
   for(let i=0;i<projects.length;i++){
     const p=projects[i],sleeve=new THREE.Group();
     sleeve.position.set((i-1)*.07,.10+(projects.length-i)*.105,(i-1)*.035);
     sleeve.rotation.y=[-.12,.10,-.18,.22][i%4];stack.add(sleeve);
     const edge=mat(p.record.color,0,.86);
-    box(sleeve,3.12,.095,3.12,edge,0,0,0,.018);
+    mesh(sleeve,bow(new THREE.BoxGeometry(3.12,.095,3.12,24,1,1)),edge);
     const frontMat=new THREE.MeshStandardMaterial({map:coverTextures[i],color:'#d4d4d4',metalness:0,roughness:.9,roughnessMap:paperMap,bumpMap:paperMap,bumpScale:.004,envMapIntensity:.3});materials.push(frontMat);
-    const front=mesh(sleeve,new THREE.PlaneGeometry(3.10,3.10),frontMat,0,.049,0);front.rotation.x=-Math.PI/2;
+    const front=mesh(sleeve,bow(new THREE.PlaneGeometry(3.10,3.10,24,1),1),frontMat,0,.049,0);front.rotation.x=-Math.PI/2;
     // Avoid tone mapping the printed reverse so its small text stays legible.
     const backMat=new THREE.MeshBasicMaterial({map:backTextures[i],toneMapped:false});materials.push(backMat);
-    const back=mesh(sleeve,new THREE.PlaneGeometry(3.10,3.10),backMat,0,-.049,0);back.rotation.set(Math.PI/2,0,Math.PI);
+    const back=mesh(sleeve,bow(new THREE.PlaneGeometry(3.10,3.10,24,1),-1),backMat,0,-.049,0);back.rotation.set(Math.PI/2,0,Math.PI);
     front.userData.recordIndex=i;back.userData.recordIndex=i;hitMeshes.push(front,back);
-    sleeves.push({object:sleeve,index:i,home:sleeve.position.clone().add(stack.position),homeQuaternion:sleeve.quaternion.clone(),rank:projects.length-i-1,hit:front,progress:0,turn:0});
+    sleeves.push({object:sleeve,index:i,home:sleeve.position.clone().add(stack.position),homeQuaternion:sleeve.quaternion.clone(),rank:projects.length-i-1,orientation:new THREE.Quaternion()});
   }
   // Once home coordinates are captured, world-space siblings make orbit paths
   // and the extraction path independent of the old stack transform.
@@ -180,38 +190,47 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
 
   type SceneMode='home'|'opening'|'collection'|'closing'|'playing';
   let mode:SceneMode='home',activeIndex=0,orbitTarget=0,disposed=false,visible=!document.hidden,playing=false;
-  let hovered:'deck'|'stack'|null=null,backRequested=false;
-  const layout={collection:0,orbit:0,flip:0,focus:0,flight:0,needle:0,hoverStack:0,hoverDeck:0};
+  let hovered:'deck'|'stack'|null=null;
+  const layout={collection:0,orbit:0,focus:0,flight:0,needle:0,hoverStack:0,hoverDeck:0};
   const tau=Math.PI*2,step=tau/projects.length;
   const wrap=(index:number)=>((index%projects.length)+projects.length)%projects.length;
   const smooth=(value:number)=>{const t=THREE.MathUtils.clamp(value,0,1);return t*t*(3-2*t);};
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),hitPoint=new THREE.Vector3();
   const cameraTarget=new THREE.Vector3(),orbitPosition=new THREE.Vector3();
-  const facing=new THREE.Quaternion(),yaw=new THREE.Quaternion();
+  const facing=new THREE.Quaternion(),yaw=new THREE.Quaternion(),dragRotation=new THREE.Quaternion();
+  const horizontal=new THREE.Vector3(1,0,0);
   const upright=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),Math.PI/2);
   const vertical=new THREE.Vector3(0,1,0),flightStartQuaternion=new THREE.Quaternion(),flightEndQuaternion=new THREE.Quaternion();
   const flightCurve=new THREE.CubicBezierCurve3(new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3());
   const flightPosition=new THREE.Vector3();
   let renderFrame=0,previous=0,lastStats=0,renderedFrames=0;
   let ownedTransition:gsap.core.Timeline|null=null,settleTransition:(()=>void)|null=null;
-  let orbitTween:gsap.core.Tween|null=null,flipTween:gsap.core.Tween|null=null,hoverTween:gsap.core.Tween|null=null;
+  let hoverTween:gsap.core.Tween|null=null;
+  let layoutDirty=false;
   let homeRect=initialHomeFrame?.host||host.getBoundingClientRect();
   const table=host.closest<HTMLElement>('.listening-table')!;
   let homeTableRect=initialHomeFrame?.table||table.getBoundingClientRect();
   let width=host.clientWidth,height=host.clientHeight;
 
+  let frameBounds=host.getBoundingClientRect(),frameHome=liveHomeFrame();
+  let frameSafe=host.ownerDocument.querySelector<HTMLElement>('.orbit-stage')?.getBoundingClientRect();
   function updateData(){
     host.dataset.sceneMode=mode;host.dataset.activeRecord=projects[activeIndex]?.slug||'';
-    host.dataset.recordFace=sleeves[activeIndex]?.turn>.5?'back':'front';
   }
   function render(){
     if(disposed||!visible||contextLost||renderFrame)return;
     renderFrame=requestAnimationFrame(time=>{
       renderFrame=0;if(disposed||!visible||contextLost)return;
+      const dt=previous?Math.min((time-previous)/1000,.05):1/60;
+      if(mode==='collection'&&Math.abs(orbitTarget-layout.orbit)>.0001){
+        layout.orbit=reduced.matches?orbitTarget:THREE.MathUtils.lerp(layout.orbit,orbitTarget,1-Math.exp(-dt*8));
+        activeIndex=wrap(Math.round(layout.orbit));layoutDirty=true;
+      }
+      if(layoutDirty){layoutDirty=false;applyLayout(false);}
       if(playing&&!reduced.matches){const delta=previous?Math.min((time-previous)/1000,.05):0;movingRecord.rotation.y+=delta*1.9;}
       previous=time;renderer.render(scene,camera);renderedFrames++;
-      if(time-lastStats>500){host.dataset.renderedFrames=String(renderedFrames);host.dataset.drawCalls=String(renderer.info.render.calls);host.dataset.triangles=String(renderer.info.render.triangles);lastStats=time;}
-      if(playing&&!reduced.matches)render();
+      if(time-lastStats>500){host.dataset.orbitProgress=layout.orbit.toFixed(4);host.dataset.renderedFrames=String(renderedFrames);host.dataset.drawCalls=String(renderer.info.render.calls);host.dataset.triangles=String(renderer.info.render.triangles);lastStats=time;}
+      if((playing&&!reduced.matches)||(mode==='collection'&&Math.abs(orbitTarget-layout.orbit)>.0001))render();
     });
   }
   function liveHomeFrame(){
@@ -220,19 +239,19 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     return {left:rect.left+(homeRect.left-homeTableRect.left)*sx,top:rect.top+(homeRect.top-homeTableRect.top)*sy,width:homeRect.width*sx,height:homeRect.height*sy};
   }
   function applyCamera(){
-    const bounds=host.getBoundingClientRect(),home=liveHomeFrame();
+    const bounds=frameBounds,home=frameHome;
     const homeWidth=Math.max(window.innerWidth<761?13.1:15.4,(home.width/Math.max(1,home.height))*4.65);
     const units=homeWidth/Math.max(1,home.width);
     const startWidth=units*width,startHeight=units*height;
     const offsetX=(bounds.left+width/2-home.left-home.width/2)*units;
     const offsetY=(home.top+home.height/2-bounds.top-height/2)*units;
     const portrait=width/height<.85,ratio=width/Math.max(1,height);
-    const safe=host.ownerDocument.querySelector<HTMLElement>('.orbit-stage')?.getBoundingClientRect();
+    const safe=frameSafe;
     const safeWidth=safe&&safe.width>0?safe.width:width;
     const safeHeight=safe&&safe.height>0?safe.height:height;
-    const collectionWidth=portrait?Math.max(9.4*width/safeWidth,8.8*width/safeHeight):Math.max(15.8*width/safeWidth,6.4*width/safeHeight);
-    const safeOffsetX=safe?(width/2-safe.left-safe.width/2):0;
-    const safeOffsetY=safe?(safe.top+safe.height/2-height/2):0;
+    const collectionWidth=portrait?Math.max(7.2*width/safeWidth,7.6*width/safeHeight):Math.max(12.8*width/safeWidth,7.1*width/safeHeight);
+    const safeOffsetX=safe?(bounds.left+width/2-safe.left-safe.width/2):0;
+    const safeOffsetY=safe?(safe.top+safe.height/2-bounds.top-height/2):0;
     const focusWidth=portrait?8.5:Math.max(8.8,ratio*7.1);
     const blend=Math.max(layout.collection,layout.focus);
     const endWidth=THREE.MathUtils.lerp(collectionWidth,focusWidth,layout.focus);
@@ -246,7 +265,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     camera.position.set(0,THREE.MathUtils.lerp(10.7,9.5,blend),THREE.MathUtils.lerp(10.7,12.8,blend));
     camera.lookAt(cameraTarget);camera.updateProjectionMatrix();camera.updateMatrixWorld(true);
   }
-  function applyLayout(){
+  function applyLayout(requestRender=true){
     if(disposed)return;
     applyCamera();
     const portrait=width/height<.85;
@@ -256,37 +275,43 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       // A short stagger lets each jacket leave the pile separately, without
       // chaining pauses between lift, turn and arrival.
       const delay=sleeve.index*.045;
-      const progress=smooth((layout.collection-delay)/(1-delay));sleeve.progress=progress;
-      const angle=(sleeve.index-layout.orbit)*step;
+      const progress=smooth((layout.collection-delay)/(1-delay));
+      // Floating jackets use direct studio light, leaving the static floor shadow clean.
+      for(const face of sleeve.object.children)if(face instanceof THREE.Mesh)face.castShadow=progress<.01;
+      const angle=((sleeve.index-layout.orbit)%projects.length)*step;
       const front=Math.pow(Math.max(0,Math.cos(angle)),3);
-      const radiusX=portrait?3.45:6.05,radiusZ=portrait?5.2:2.65;
-      orbitPosition.set(Math.sin(angle)*radiusX-(portrait?0:4.05)*front,1.55-front*.35,Math.cos(angle)*radiusZ);
+      const radiusX=portrait?4.1:6.0,radiusZ=3.4;
+      orbitPosition.set(Math.sin(angle)*radiusX,Math.sin(angle)*1.05,Math.cos(angle)*radiusZ);
+      orbitPosition.applyQuaternion(camera.quaternion).add(cameraTarget);
       sleeve.object.position.lerpVectors(sleeve.home,orbitPosition,progress);
       sleeve.object.position.y+=Math.sin(progress*Math.PI)*1.1+(1-progress)*layout.hoverStack*sleeve.rank*.18;
       // During playback the jackets retreat while the actual record stays in view.
       sleeve.object.position.x+=Math.sin(angle)*layout.focus*1.8;
       sleeve.object.position.y-=layout.focus*.7;
-      yaw.setFromAxisAngle(vertical,Math.sin(angle)*-.22+sleeve.turn*Math.PI);
-      facing.copy(camera.quaternion).multiply(yaw).multiply(upright);
+      yaw.setFromAxisAngle(vertical,angle);
+      facing.copy(camera.quaternion).multiply(yaw).multiply(sleeve.orientation).multiply(upright);
       sleeve.object.quaternion.slerpQuaternions(sleeve.homeQuaternion,facing,progress);
-      const orbitScale=THREE.MathUtils.lerp(portrait?.59:.74,portrait?1.24:1.08,front);
+      const exit = 1 - smooth((Math.acos(Math.cos(angle)) - 1.38) / .7);
+      const orbitScale=THREE.MathUtils.lerp(.95,1.5,front)*exit;
       const scale=THREE.MathUtils.lerp(1,orbitScale,progress)*(1-layout.focus*.82);
       sleeve.object.scale.setScalar(scale);sleeve.object.visible=scale>.03;
     }
-    loose.scale.setScalar(1-layout.collection*.95-layout.focus*.05);loose.visible=layout.collection<.96&&layout.focus<.8;
+    loose.scale.setScalar(1-layout.collection*.95-layout.focus*.05);loose.visible=layout.collection<.77&&layout.focus<.8;
     tonearm.rotation.y=THREE.MathUtils.lerp(.04,-.61,layout.needle)-layout.hoverDeck*.26;
     if(mode==='playing'&&!playing){
       flightCurve.getPoint(layout.flight,flightPosition);movingRecord.position.copy(flightPosition);
       movingRecord.quaternion.slerpQuaternions(flightStartQuaternion,flightEndQuaternion,smooth(layout.flight));
     }
-    scene.updateMatrixWorld(true);updateData();render();
+    // Keep the heavy static deck shadow pass out of reel motion.
+    renderer.shadowMap.needsUpdate=renderer.shadowMap.needsUpdate||mode==='home'||mode==='opening'||mode==='closing'||(mode==='playing'&&!playing);
+    updateData();if(requestRender)render();
   }
   function stopTransition(){
     ownedTransition?.kill();ownedTransition=null;
     const resolve=settleTransition;settleTransition=null;resolve?.();
   }
   function stopTweens(){
-    stopTransition();orbitTween?.kill();flipTween?.kill();hoverTween?.kill();for(const sleeve of sleeves)gsap.killTweensOf(sleeve);orbitTween=flipTween=hoverTween=null;
+    stopTransition();hoverTween?.kill();hoverTween=null;layoutDirty=false;
   }
   function animate(build:(timeline:gsap.core.Timeline)=>void,complete:()=>void):Promise<void>{
     stopTransition();
@@ -303,9 +328,10 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     // Parent expands the same canvas synchronously before openCollection/play.
     // Never replace the saved home frame with that fullscreen rectangle.
     if(mode==='home'&&!document.body.classList.contains('collection-open')){homeRect=bounds;homeTableRect=table.getBoundingClientRect();}
-    width=bounds.width;height=bounds.height;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio,window.innerWidth<761?1.25:1.5));
-    renderer.setSize(width,height);applyLayout();
+    width=bounds.width;height=bounds.height;frameBounds=bounds;frameHome=liveHomeFrame();
+    frameSafe=host.ownerDocument.querySelector<HTMLElement>('.orbit-stage')?.getBoundingClientRect();
+    const ratio=Math.min(window.devicePixelRatio,1.5,Math.sqrt(1800000/Math.max(1,width*height)));
+    renderer.setDrawingBufferSize(width,height,ratio);applyLayout();
   }
   function clearHover(){setHover(null);}
   function setHover(next:'deck'|'stack'|null){
@@ -328,32 +354,38 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   function hoverCollection(){setHover('stack');}
   function pick(x:number,y:number){
     if(mode!=='collection'||contextLost||!setPointer(x,y))return null;
-    const hit=raycaster.intersectObjects(hitMeshes,false)[0];return hit?Number(hit.object.userData.recordIndex):null;
+    scene.updateMatrixWorld(true);
+    const hit=raycaster.intersectObjects(hitMeshes.filter(mesh=>mesh.parent?.visible),false)[0];return hit?Number(hit.object.userData.recordIndex):null;
   }
   async function openCollection(index=0){
     if(disposed||contextLost)return;
-    stopTweens();backRequested=false;for(const sleeve of sleeves)sleeve.turn=0;activeIndex=wrap(index);layout.orbit=orbitTarget=activeIndex;layout.flip=0;layout.focus=0;layout.hoverDeck=layout.hoverStack=0;playing=false;movingRecord.visible=false;
+    stopTweens();for(const sleeve of sleeves)sleeve.orientation.identity();activeIndex=wrap(index);layout.orbit=orbitTarget=activeIndex;layout.focus=0;layout.hoverDeck=layout.hoverStack=0;playing=false;movingRecord.visible=false;
     mode='opening';resize();
-    return animate(timeline=>{timeline.to(layout,{collection:1,duration:1.55,ease:'power2.inOut'});},()=>{mode='collection';});
+    return animate(timeline=>{timeline.to(layout,{collection:1,duration:1.55,ease:'power2.inOut'});},()=>{mode='collection';renderer.shadowMap.needsUpdate=true;});
   }
   async function closeCollection(){
     if(disposed)return;
-    stopTweens();playing=false;mode='closing';layout.flip=0;movingRecord.visible=false;for(const sleeve of sleeves)gsap.to(sleeve,{turn:0,duration:reduced.matches?0:.6,onUpdate:applyLayout});
+    stopTweens();playing=false;mode='closing';movingRecord.visible=false;
     return animate(timeline=>{timeline.to(layout,{collection:0,focus:0,needle:0,duration:1.1,ease:'power2.inOut'});},()=>{mode='home';layout.orbit=activeIndex=0;});
+  }
+  function centeredIndex(){return wrap(Math.round(layout.orbit));}
+  function scrollBy(delta:number){
+    if(mode!=='collection'||disposed||contextLost||!Number.isFinite(delta))return;
+    orbitTarget+=delta/560;
+    if(reduced.matches){layout.orbit=orbitTarget;activeIndex=centeredIndex();applyLayout();}else render();
+  }
+  function rotate(index:number,dx:number,dy:number){
+    if(mode!=='collection'||disposed||contextLost||!Number.isFinite(dx)||!Number.isFinite(dy))return;
+    const sleeve=sleeves[wrap(index)];if(!sleeve)return;
+    dragRotation.setFromAxisAngle(vertical,dx*.007);sleeve.orientation.premultiply(dragRotation);
+    dragRotation.setFromAxisAngle(horizontal,dy*.007);sleeve.orientation.premultiply(dragRotation).normalize();layoutDirty=true;render();
   }
   function select(index:number){
     if(mode!=='collection'||disposed)return;
-    const next=wrap(index);if(next===activeIndex)return;backRequested=false;
-    for(const sleeve of sleeves)gsap.to(sleeve,{turn:0,duration:reduced.matches?0:.55,ease:'power2.inOut',overwrite:true,onUpdate:applyLayout});layout.flip=0;
-    let delta=next-activeIndex;
+    const next=wrap(index),current=wrap(Math.round(orbitTarget));let delta=next-current;
     if(delta>projects.length/2)delta-=projects.length;if(delta<-projects.length/2)delta+=projects.length;
-    const target=orbitTarget+delta;orbitTarget=target;activeIndex=next;
-    orbitTween?.kill();orbitTween=gsap.to(layout,{orbit:target,duration:reduced.matches?0:.85,ease:'power3.out',onUpdate:applyLayout,onComplete:()=>{layout.orbit=orbitTarget=next;applyLayout();}});
-    updateData();
-  }
-  function flip(back:boolean){
-    if(mode!=='collection'||disposed)return;
-    backRequested=back;const sleeve=sleeves[activeIndex];gsap.killTweensOf(sleeve);flipTween=gsap.to(sleeve,{turn:back?1:0,duration:reduced.matches?0:.8,ease:'power2.inOut',onUpdate:applyLayout});
+    orbitTarget=Math.round(orbitTarget)+delta;activeIndex=next;
+    if(reduced.matches){layout.orbit=orbitTarget;applyLayout();}else render();
   }
   function setLabel(p:RecordProject){
     labelMat.map?.dispose();
@@ -366,10 +398,8 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   }
   async function play(p:RecordProject){
     if(disposed||contextLost)return;
-    stopTweens();layout.hoverDeck=layout.hoverStack=0;layout.flip=0;
+    stopTweens();layout.hoverDeck=layout.hoverStack=0;
     activeIndex=Math.max(0,projects.findIndex(project=>project.slug===p.slug));
-    // Finish an interrupted orbit at the selected jacket before extracting it.
-    if(layout.collection>.5){layout.orbit=activeIndex;layout.collection=1;}
     mode='playing';playing=false;layout.flight=0;layout.needle=0;resize();
     const sleeve=sleeves[activeIndex];
     flightCurve.v0.copy(sleeve.object.position);flightStartQuaternion.copy(sleeve.object.quaternion);
@@ -386,21 +416,21 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   }
   function reset(){
     if(disposed)return;
-    stopTweens();playing=false;mode='home';activeIndex=orbitTarget=0;hovered=null;backRequested=false;previous=0;
-    Object.assign(layout,{collection:0,orbit:0,flip:0,focus:0,flight:0,needle:0,hoverStack:0,hoverDeck:0});
-    movingRecord.visible=false;for(const sleeve of sleeves)sleeve.turn=0;resize();
+    stopTweens();playing=false;mode='home';activeIndex=orbitTarget=0;hovered=null;previous=0;
+    Object.assign(layout,{collection:0,orbit:0,focus:0,flight:0,needle:0,hoverStack:0,hoverDeck:0});
+    movingRecord.visible=false;for(const sleeve of sleeves)sleeve.orientation.identity();resize();
   }
   function visibility(){
     visible=!document.hidden;previous=0;
-    if(!visible){if(renderFrame)cancelAnimationFrame(renderFrame);renderFrame=0;ownedTransition?.pause();orbitTween?.pause();flipTween?.pause();hoverTween?.pause();for(const sleeve of sleeves)gsap.getTweensOf(sleeve).forEach(tween=>tween.pause());}
-    else{ownedTransition?.resume();orbitTween?.resume();flipTween?.resume();hoverTween?.resume();for(const sleeve of sleeves)gsap.getTweensOf(sleeve).forEach(tween=>tween.resume());render();}
+    if(!visible){if(renderFrame)cancelAnimationFrame(renderFrame);renderFrame=0;ownedTransition?.pause();hoverTween?.pause();}
+    else{ownedTransition?.resume();hoverTween?.resume();render();}
   }
   function onMotionChange(){
-    if(reduced.matches){ownedTransition?.progress(1);orbitTween?.progress(1);flipTween?.progress(1);for(const sleeve of sleeves)gsap.getTweensOf(sleeve).forEach(tween=>tween.progress(1));hoverTween?.kill();layout.hoverDeck=layout.hoverStack=0;}
+    if(reduced.matches){layout.orbit=orbitTarget;ownedTransition?.progress(1);hoverTween?.kill();layout.hoverDeck=layout.hoverStack=0;}
     applyLayout();
   }
   function restoreContext(){
-    if(disposed)return;contextLost=false;host.dataset.renderState='ready';host.closest('.listening-table')?.classList.add('scene-ready');resize();
+    if(disposed)return;contextLost=false;host.dataset.renderState='ready';host.closest('.listening-table')?.classList.add('scene-ready');resize();renderer.shadowMap.needsUpdate=true;render();
   }
   function dispose(){
     if(disposed)return;
@@ -417,7 +447,6 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(mode==='opening'){layout.collection=1;mode='collection';}
     if(mode==='closing'){layout.collection=layout.focus=layout.needle=0;mode='home';}
     layout.orbit=orbitTarget=activeIndex;
-    for(const sleeve of sleeves)sleeve.turn=sleeve.index===activeIndex&&backRequested?1:0;
     applyLayout();
   };
   const observer=new ResizeObserver(resize);observer.observe(host);
@@ -427,5 +456,5 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   if(contextLost||renderer.getContext().isContextLost()){dispose();throw new Error('WEBGL_CONTEXT_LOST');}
   renderer.render(scene,camera);host.closest('.listening-table')?.classList.add('scene-ready');host.dataset.renderState='ready';
   document.addEventListener('visibilitychange',visibility);reduced.addEventListener('change',onMotionChange);renderer.domElement.addEventListener('webglcontextrestored',restoreContext);
-  return {openCollection,closeCollection,select,flip,pick,play,hoverAt,clearHover,hoverCollection,reset,dispose};
+  return {openCollection,closeCollection,scrollBy,rotate,centeredIndex,select,pick,play,hoverAt,clearHover,hoverCollection,reset,dispose};
 }

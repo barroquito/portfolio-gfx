@@ -1,104 +1,99 @@
-/* One room, one canvas. Only the surrounding typography is defocused. */
+/* One room, one canvas. The selection stays in the same scene. */
 body.listening-room .room-heading,
 body.listening-room .room-bottom,
-body.listening-room .site-header{transition:filter .6s,opacity .6s}
+body.listening-room .site-header {
+  transition: opacity .5s;
+}
+
 body.collection-open .room-heading,
 body.collection-open .room-bottom,
-body.collection-open .site-header{filter:blur(5px);opacity:.16;pointer-events:none}
-body.collection-open .listening-table{isolation:auto}
-body.collection-open #record-scene{position:fixed;inset:0;z-index:30;transition:none}
+body.collection-open .site-header {
+  filter: blur(4px);
+  opacity: .12;
+  pointer-events: none;
+}
+
+body.collection-open .listening-table { isolation: auto; }
+body.collection-open #record-scene { position: fixed; inset: 0; z-index: 30; transition: none; }
 body.collection-open .collection-hotspot,
 body.collection-open .scene-fallback,
-body.collection-open .scene-recovery{visibility:hidden}
-.orbit-dialog{position:fixed;inset:0;width:100%;height:100dvh;max-width:none;max-height:none;margin:0;padding:30px var(--gutter) 22px;border:0;background:transparent;color:var(--ink);overflow:hidden;grid-template-rows:auto minmax(0,1fr) auto;outline:none}
-.orbit-dialog[open]{display:grid}
-.orbit-dialog[open] .orbit-heading,.orbit-dialog[open] .orbit-footer{animation:orbit-controls-in .65s .3s both}
-.orbit-dialog[data-phase=closing] .orbit-heading,.orbit-dialog[data-phase=closing] .orbit-footer{animation:none;opacity:0;transition:opacity .2s}
-@keyframes orbit-controls-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.orbit-dialog::backdrop{background:transparent}
-.orbit-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;pointer-events:none}
-.orbit-heading>*,.orbit-footer{pointer-events:auto}
-.orbit-eyebrow,.orbit-position{font-size:11px;font-weight:600;letter-spacing:-.03em}
-.orbit-heading h2{font-size:clamp(30px,3vw,46px);font-weight:650;line-height:.92;letter-spacing:-.055em;text-transform:uppercase;margin-top:9px}
-.orbit-heading h2 strong{color:var(--red);font-weight:inherit}
-.orbit-heading .room-dialog-close{color:var(--red);min-height:44px;padding:0}
-.orbit-stage{min-height:0;position:relative;touch-action:pinch-zoom;user-select:none;outline-offset:-8px;cursor:grab}
-.orbit-stage:active{cursor:grabbing}
-.orbit-footer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px 50px;align-items:end;padding-top:12px;background:linear-gradient(transparent,var(--paper) 45%)}
-.orbit-current{max-width:620px}
-.orbit-current h3{font-size:clamp(32px,4vw,60px);font-weight:700;line-height:.9;letter-spacing:-.065em;text-transform:uppercase;margin:12px 0 10px}
-.orbit-copy>p{font-size:16px;line-height:1.4;letter-spacing:0}
-.orbit-current .orbit-description{font-size:14px;line-height:1.5;margin-top:10px;max-width:580px}
-@media(min-width:761px) and (min-height:571px){
- .orbit-current .orbit-description{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+body.collection-open .scene-recovery { visibility: hidden; }
+
+.orbit-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  overflow: hidden;
 }
-.orbit-actions{display:flex;align-items:center;gap:28px;align-self:center}
-.orbit-actions>*{display:inline-flex;align-items:center;justify-content:center;min-height:48px;font-size:15px;font-weight:550;letter-spacing:-.04em;background:none;padding:10px 0}
-.orbit-actions .orbit-play{color:var(--red);font-weight:700;font-size:22px;white-space:nowrap}
-.orbit-actions>*:hover{color:var(--red)}
-.orbit-navigation{display:flex;align-items:center;gap:24px;grid-column:1;grid-row:2}
-.orbit-navigation button{min-width:44px;min-height:44px;padding:8px 2px;background:none;font-size:13px;font-weight:500;letter-spacing:-.04em}
-.orbit-navigation button:hover,.orbit-navigation [aria-current=true]{color:var(--red)}
-.orbit-navigation [aria-current=true]{font-weight:800}
-.orbit-index{display:flex;gap:2px}
-.orbit-help{font-size:11px;line-height:1.45;max-width:280px;grid-column:2;grid-row:2;align-self:center;color:var(--muted);letter-spacing:0}
-.orbit-fallback{display:none;height:100%;place-items:center;padding:10px}
-.orbit-dialog[data-render=fallback] .orbit-fallback{display:grid}
-.orbit-fallback-record{position:relative;width:min(300px,60vw,32dvh);aspect-ratio:1;perspective:1000px}
-.orbit-fallback-record[hidden]{display:none}
-.orbit-fallback-front,.orbit-fallback-back{position:absolute;inset:0;backface-visibility:hidden;transition:transform .65s cubic-bezier(.25,.6,.2,1)}
-.orbit-fallback-front{transform:rotateY(0)}
-.orbit-fallback-back{transform:rotateY(180deg);background:var(--sleeve-color);color:var(--sleeve-ink);padding:9%;display:flex;flex-direction:column;gap:16px;box-shadow:0 15px 35px #181a1720}
-.orbit-fallback-back>span{font-size:10px}.orbit-fallback-back>strong{font-size:28px;line-height:.9;letter-spacing:-.05em;text-transform:uppercase}.orbit-fallback-back>p{font-size:13px;line-height:1.5;letter-spacing:0}
-.orbit-dialog[data-face=back] .orbit-fallback-front{transform:rotateY(-180deg)}
-.orbit-dialog[data-face=back] .orbit-fallback-back{transform:rotateY(0)}
-body.collection-playing .orbit-dialog{pointer-events:none}
-body.collection-playing .orbit-heading,body.collection-playing .orbit-footer{animation:none!important;opacity:0;transition:opacity .25s}
-@media(max-width:760px){
- .orbit-dialog{padding:20px 20px 12px}
- .orbit-heading{align-items:flex-start}
- .orbit-heading h2{font-size:28px;max-width:200px}
- .orbit-eyebrow{font-size:9px}
- .orbit-heading .room-dialog-close{gap:9px;font-size:11px}
- .orbit-heading .user-icon{width:44px;height:44px}
- .orbit-footer{grid-template-columns:1fr;gap:6px;padding-top:8px}
- .orbit-current{max-width:none}
- .orbit-current h3{font-size:35px;margin:8px 0}
- .orbit-copy>p{font-size:13px}
- .orbit-copy{position:relative;height:4.2em;font-size:13px}
- .orbit-copy>p{margin:0}
- .orbit-current .orbit-description{position:absolute;inset:0;font-size:13px;line-height:1.4;margin:0}
- .orbit-dialog[data-face=back] [data-orbit-subtitle]{visibility:hidden}
- .orbit-position{font-size:10px}
- .orbit-actions{justify-content:space-between;gap:16px;grid-row:2}
- .orbit-actions>*{font-size:13px;min-height:44px}
- .orbit-actions .orbit-play{font-size:20px}
- .orbit-navigation{grid-column:1;grid-row:3;justify-content:space-between;gap:4px}
- .orbit-navigation button{font-size:12px;min-width:36px}
- .orbit-index{gap:0}
- .orbit-help{grid-column:1;grid-row:4;max-width:none;font-size:10px;text-align:center;margin-top:0}
+.orbit-dialog::backdrop {
+  background: radial-gradient(ellipse at 50% 44%, transparent 35%, #4c48411e 100%);
 }
-@media(max-height:570px) and (orientation:landscape){
- .orbit-dialog{padding:14px 24px 8px}
- .orbit-heading h2{font-size:24px;margin-top:5px}
- .orbit-eyebrow{font-size:8px}
- .orbit-heading .room-dialog-close{font-size:10px;gap:10px}
- .orbit-heading .user-icon{width:36px;height:36px}
- .orbit-footer{grid-template-columns:1fr auto;gap:0 25px;padding-top:0}
- .orbit-current h3{font-size:28px;margin:4px 0}
- .orbit-copy>p{font-size:11px}
- .orbit-copy{position:relative;height:3.9em;font-size:11px}
- .orbit-current .orbit-description{position:absolute;inset:0;max-width:360px;font-size:11px;line-height:1.3;margin:0}
- .orbit-dialog[data-face=back] [data-orbit-subtitle]{visibility:hidden}
- .orbit-position{font-size:9px}
- .orbit-actions{grid-column:2;grid-row:1;gap:20px}
- .orbit-actions>*{font-size:12px}.orbit-actions .orbit-play{font-size:18px}
- .orbit-navigation{grid-column:1;grid-row:2;justify-content:flex-start;gap:14px}
- .orbit-navigation button{min-height:36px;min-width:32px;font-size:11px}
- .orbit-help{grid-column:2;grid-row:2;font-size:9px;max-width:230px;text-align:left}
- .orbit-fallback-back{gap:8px}.orbit-fallback-back>strong{font-size:18px}.orbit-fallback-back>p{display:none}
+.orbit-stage {
+  position: absolute;
+  inset: 0;
+  touch-action: pinch-zoom;
+  user-select: none;
+  outline: none;
+  cursor: grab;
 }
-@media(prefers-reduced-motion:reduce){
- .orbit-dialog[open] .orbit-heading,.orbit-dialog[open] .orbit-footer{animation:none}
- body.listening-room .room-heading,body.listening-room .room-bottom,body.listening-room .site-header,.orbit-fallback-front,.orbit-fallback-back{transition:none}
+.orbit-stage:active { cursor: grabbing; }
+.orbit-close {
+  position: absolute;
+  z-index: 2;
+  top: max(18px, env(safe-area-inset-top));
+  right: max(var(--gutter), env(safe-area-inset-right));
+  display: grid;
+  place-items: center;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  background: none;
+  color: var(--red);
+}
+.orbit-close .user-icon { width: clamp(44px, 4vw, 60px); height: clamp(44px, 4vw, 60px); }
+body.collection-playing .orbit-dialog { pointer-events: none; }
+body.collection-playing .orbit-close,
+.orbit-dialog[data-phase=closing] .orbit-close { visibility: hidden; }
+
+.orbit-fallback { display: none; position: absolute; inset: 0; perspective: 1100px; }
+.orbit-dialog[data-render=fallback] .orbit-fallback { display: block; }
+.orbit-fallback-record {
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(51dvh, 64vw);
+  aspect-ratio: 1;
+  transform-style: preserve-3d;
+  transform: translate3d(calc(-50% + var(--coil-x, 0px)), calc(-50% + var(--coil-y, 0px)), var(--coil-z, 0px)) rotateY(var(--coil-yaw, 0rad)) rotateX(var(--coil-pitch, 0rad));
+  -webkit-user-drag: none;
+  cursor: grab;
+}
+.orbit-fallback-front,
+.orbit-fallback-back { position: absolute; inset: 0; backface-visibility: hidden; }
+.orbit-fallback-front img { pointer-events: none; }
+.orbit-fallback-back {
+  transform: rotateY(180deg);
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  padding: 10%;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px #24201b29;
+}
+.orbit-fallback-back strong { color: var(--red); font-size: clamp(19px, 4vw, 36px); line-height: 1; }
+.orbit-fallback-back p { font-size: clamp(10px, 2.8vw, 16px); line-height: 1.4; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.listening-room .room-heading,
+  body.listening-room .room-bottom,
+  body.listening-room .site-header { transition: none; }
 }

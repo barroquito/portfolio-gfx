@@ -10,13 +10,11 @@ const table = host.closest<HTMLElement>('.listening-table')!;
 const initialHomeFrame = { host: host.getBoundingClientRect(), table: table.getBoundingClientRect() };
 const status = document.getElementById('room-status')!;
 const stage = collection.querySelector<HTMLElement>('.orbit-stage')!;
-const flipButton = collection.querySelector<HTMLButtonElement>('[data-orbit-flip]')!;
-const playLink = collection.querySelector<HTMLAnchorElement>('[data-orbit-play]')!;
 type PlaybackProject = Parameters<RecordScene['play']>[0] & { description: string };
 const projects = JSON.parse(document.getElementById('record-project-data')!.textContent || '[]') as PlaybackProject[];
 let scene: RecordScene | null = null;
 let mode: 'home' | 'opening' | 'collection' | 'closing' | 'playing' = 'home';
-let activeIndex = 0, back = false, collectionGeneration = 0;
+let activeIndex = 0, collectionGeneration = 0;
 let originFocus: HTMLElement | null = null;
 let pageActive = true, navigating = false;
 let playbackGeneration = 0;
@@ -65,37 +63,51 @@ reduced.addEventListener('change', clearObjectHover);
 
 function syncRenderMode() {
   collection.dataset.render = scene && host.dataset.renderState === 'ready' ? 'webgl' : 'fallback';
+  layoutFallback();
 }
 new MutationObserver(syncRenderMode).observe(host, { attributes: true, attributeFilter: ['data-render-state'] });
-function updateSelection() {
-  const project = projects[activeIndex];
-  collection.querySelector('.orbit-position')!.textContent = `${project.number} / ${String(projects.length).padStart(2, '0')}`;
-  collection.querySelector('[data-orbit-title]')!.textContent = project.title;
-  collection.querySelector('[data-orbit-subtitle]')!.textContent = project.subtitle;
-  const description = collection.querySelector<HTMLElement>('[data-orbit-description]')!;
-  description.textContent = project.description;
-  description.hidden = !back;
-  flipButton.textContent = back ? 'Ver portada' : 'Ver contraportada';
-  flipButton.setAttribute('aria-pressed', String(back));
-  playLink.href = `/proyectos/${project.slug}/`;
-  playLink.setAttribute('aria-label', `Poner ${project.title} y abrir el proyecto`);
-  collection.dataset.face = back ? 'back' : 'front';
-  collection.dataset.activeRecord = project.slug;
-  collection.querySelectorAll<HTMLButtonElement>('[data-orbit-index]').forEach((button, index) => {
-    if (index === activeIndex) button.setAttribute('aria-current', 'true');
-    else button.removeAttribute('aria-current');
-  });
-  collection.querySelectorAll<HTMLElement>('[data-fallback-record]').forEach((card, index) => card.hidden = index !== activeIndex);
+const fallbackCards = Array.from(stage.querySelectorAll<HTMLAnchorElement>('[data-fallback-record]'));
+const fallbackTurns = fallbackCards.map(() => ({ x: 0, y: 0 }));
+let fallbackPhase = 0;
+const wrapIndex = (index: number) => ((index % projects.length) + projects.length) % projects.length;
+const hasScene = () => scene !== null && collection.dataset.render === 'webgl';
+
+function layoutFallback() {
+  if (!collection.open || hasScene()) return;
+  const count = fallbackCards.length;
+  for (const [index, card] of fallbackCards.entries()) {
+    const slot = ((index - fallbackPhase + count / 2) % count + count) % count - count / 2;
+    const angle = slot * Math.PI * 2 / count;
+    const depth = Math.cos(angle);
+    const turn = fallbackTurns[index];
+    card.style.setProperty('--coil-x', `${Math.sin(angle) * 35}vw`);
+    card.style.setProperty('--coil-y', `${-slot * 12}dvh`);
+    card.style.setProperty('--coil-z', `${(depth - 1) * 360}px`);
+    card.style.setProperty('--coil-yaw', `${angle + turn.y}rad`);
+    card.style.setProperty('--coil-pitch', `${turn.x}rad`);
+    card.style.zIndex = String(Math.round(10 + depth * 8));
+    card.style.visibility = Math.abs(slot) < 1.65 ? 'visible' : 'hidden';
+  }
 }
+
+function announceSelection(index: number) {
+  collection.querySelector('[data-orbit-status]')!.textContent = projects[index].title;
+}
+
+function centeredIndex() {
+  if (!hasScene()) return wrapIndex(Math.round(fallbackPhase));
+  return scene!.centeredIndex();
+}
+
 function selectRecord(index: number) {
   if (mode !== 'collection' && mode !== 'opening') return;
-  activeIndex = ((index % projects.length) + projects.length) % projects.length;
-  back = false; updateSelection(); scene?.select(activeIndex);
+  activeIndex = wrapIndex(index);
+  fallbackPhase = activeIndex;
+  layoutFallback();
+  announceSelection(activeIndex);
+  scene?.select(activeIndex);
 }
-function flipRecord() {
-  if (mode !== 'collection') return;
-  back = !back; updateSelection(); scene?.flip(back);
-}
+
 async function openCollection(index = activeIndex) {
   if (entryPromise) await entryPromise;
   if (navigating || !pageActive) return;
@@ -104,13 +116,17 @@ async function openCollection(index = activeIndex) {
   clearObjectHover();
   if (contact.open) contact.close();
   originFocus = focusOrigin();
-  activeIndex = index; back = false; updateSelection(); syncRenderMode();
+  activeIndex = index; fallbackPhase = index;
+  fallbackTurns.forEach(turn => { turn.x = 0; turn.y = 0; });
+  syncRenderMode();
   mode = 'opening';
   collection.dataset.phase = 'opening';
   document.body.classList.add('collection-open');
   if (!collection.open) collection.showModal();
+  layoutFallback();
+  announceSelection(activeIndex);
   // Expand and update the projection in one task; no intermediate resized frame.
-  try { await scene?.openCollection(activeIndex); } catch { collection.dataset.render = 'fallback'; }
+  try { await scene?.openCollection(activeIndex); } catch { collection.dataset.render = 'fallback'; layoutFallback(); }
   if (generation !== collectionGeneration || !pageActive || navigating) return;
   mode = 'collection';
   scene?.select(activeIndex);
@@ -133,51 +149,73 @@ async function closeCollection(restoreFocus = true) {
 document.querySelectorAll<HTMLButtonElement>('[data-open-collection]').forEach(button => button.addEventListener('click', () => { cancelAutomaticPlayback(); void openCollection(); }));
 collection.querySelector('[data-close-collection]')!.addEventListener('click', () => { void closeCollection(); });
 collection.addEventListener('cancel', event => { event.preventDefault(); void closeCollection(); });
-collection.querySelector('[data-orbit-prev]')!.addEventListener('click', () => selectRecord(activeIndex - 1));
-collection.querySelector('[data-orbit-next]')!.addEventListener('click', () => selectRecord(activeIndex + 1));
-collection.querySelectorAll<HTMLButtonElement>('[data-orbit-index]').forEach(button => button.addEventListener('click', () => selectRecord(Number(button.dataset.orbitIndex))));
-flipButton.addEventListener('click', flipRecord);
-playLink.addEventListener('click', event => {
-  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-  event.preventDefault(); void playProject(projects[activeIndex], playLink.href);
-});
+stage.addEventListener('dragstart', event => event.preventDefault());
+
+function openRecord(index: number) {
+  const project = projects[index];
+  if (project && mode === 'collection') void playProject(project, `/proyectos/${project.slug}/`);
+}
+
 collection.addEventListener('keydown', event => {
-  if (event.altKey || event.ctrlKey || event.metaKey) return;
-  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') { event.preventDefault(); selectRecord(activeIndex + 1); }
-  if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') { event.preventDefault(); selectRecord(activeIndex - 1); }
-  if (event.key === 'Home') { event.preventDefault(); selectRecord(0); }
-  if (event.key === 'End') { event.preventDefault(); selectRecord(projects.length - 1); }
-  if ((event.key === 'Enter' || event.key === ' ') && event.target === stage) { event.preventDefault(); flipRecord(); }
+  if (event.altKey || event.ctrlKey || event.metaKey || event.target !== stage) return;
+  const direction = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : ['ArrowLeft', 'ArrowUp'].includes(event.key) ? -1 : 0;
+  if (direction) {
+    event.preventDefault();
+    selectRecord(centeredIndex() + direction);
+  } else if (event.key === 'Home' || event.key === 'End') {
+    event.preventDefault();
+    selectRecord(event.key === 'Home' ? 0 : projects.length - 1);
+  } else if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    openRecord(centeredIndex());
+  }
 });
-// One deliberate wheel gesture advances one sleeve; momentum cannot skip the collection.
-let wheelSum = 0, lastWheel = 0, wheelLockedUntil = 0;
+
+function advance(delta: number) {
+  if (hasScene()) scene?.scrollBy(delta);
+  else {
+    fallbackPhase = (fallbackPhase + delta / 280) % projects.length;
+    layoutFallback();
+  }
+}
 stage.addEventListener('wheel', event => {
   if (event.ctrlKey || mode !== 'collection') return;
   event.preventDefault();
-  const now = performance.now();
-  if (now - lastWheel > 150) wheelSum = 0;
-  lastWheel = now;
-  if (now < wheelLockedUntil) return;
   const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-  wheelSum += delta * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.clientHeight : 1);
-  if (Math.abs(wheelSum) >= 45) { selectRecord(activeIndex + Math.sign(wheelSum)); wheelSum = 0; wheelLockedUntil = now + 550; }
+  advance(delta * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.clientHeight : 1));
 }, { passive: false });
-let gesture: { id: number; x: number; y: number } | null = null;
+
+let gesture: { id: number; x: number; y: number; startX: number; startY: number; index: number | null; dragged: boolean } | null = null;
 stage.addEventListener('pointerdown', event => {
-  if (mode !== 'collection' || !event.isPrimary || event.button !== 0) return;
-  gesture = { id: event.pointerId, x: event.clientX, y: event.clientY };
+  if (mode !== 'collection' || !event.isPrimary || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  const fallback = (event.target as Element).closest<HTMLElement>('[data-fallback-record]');
+  const index = hasScene() ? scene!.pick(event.clientX, event.clientY) : fallback ? Number(fallback.dataset.fallbackRecord) : null;
+  gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, startX: event.clientX, startY: event.clientY, index, dragged: false };
   stage.setPointerCapture(event.pointerId);
+});
+stage.addEventListener('pointermove', event => {
+  if (!gesture || gesture.id !== event.pointerId || mode !== 'collection') return;
+  if (!gesture.dragged && Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) < 6) return;
+  gesture.dragged = true;
+  const dx = event.clientX - gesture.x;
+  const dy = event.clientY - gesture.y;
+  gesture.x = event.clientX;
+  gesture.y = event.clientY;
+  if (gesture.index === null) advance(Math.abs(dy) > Math.abs(dx) ? -dy : -dx);
+  else if (hasScene()) scene?.rotate(gesture.index, dx, dy);
+  else {
+    const turn = fallbackTurns[gesture.index];
+    turn.y = (turn.y + dx * .012) % (Math.PI * 2);
+    turn.x = (turn.x - dy * .012) % (Math.PI * 2);
+    layoutFallback();
+  }
 });
 stage.addEventListener('pointerup', event => {
   if (!gesture || gesture.id !== event.pointerId) return;
-  const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
+  const { index, dragged } = gesture;
   gesture = null;
   if (stage.hasPointerCapture(event.pointerId)) stage.releasePointerCapture(event.pointerId);
-  if (Math.max(Math.abs(dx), Math.abs(dy)) > 35) {
-    selectRecord(activeIndex - Math.sign(Math.abs(dx) > Math.abs(dy) ? dx : dy)); return;
-  }
-  const index = scene && collection.dataset.render === 'webgl' ? scene.pick(event.clientX, event.clientY) : activeIndex;
-  if (index === activeIndex) flipRecord(); else if (index !== null) selectRecord(index);
+  if (!dragged && index !== null) openRecord(index);
 });
 stage.addEventListener('pointercancel', () => { gesture = null; });
 stage.addEventListener('lostpointercapture', () => { gesture = null; });
@@ -252,7 +290,7 @@ async function initializeScene() {
     if (collection.open && (mode === 'opening' || mode === 'collection')) {
       const generation = collectionGeneration;
       await scene.openCollection(activeIndex);
-      if (generation === collectionGeneration && collection.open && !navigating) scene.flip(back);
+      if (generation === collectionGeneration && collection.open && !navigating) scene.select(activeIndex);
     }
   } catch (error) {
     if (!pageActive || navigating) return;
