@@ -7,7 +7,7 @@ import { gsap } from 'gsap';
 export type RecordProject = {slug:string;title:string;number:string;subtitle:string;description?:string;intro?:string;theme:string;record:{color:string;ink:string;label:string}};
 export type RecordScene = {
   openCollection:(index?:number)=>Promise<void>; closeCollection:()=>Promise<void>;
-  scrollBy:(delta:number)=>void; rotate:(index:number,dx:number,dy:number)=>void; centeredIndex:()=>number;
+  scrollBy:(delta:number)=>void; rotate:(index:number,dx:number)=>void; centeredIndex:()=>number;
   select:(index:number)=>void; pick:(x:number,y:number)=>number|null;
   play:(project:RecordProject)=>Promise<void>; hoverAt:(x:number,y:number)=>void;
   clearHover:()=>void; hoverCollection:()=>void; reset:()=>void; dispose:()=>void;
@@ -146,7 +146,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     ctx.font='600 23px '+printFont;ctx.fillText(p.record.label,70,940,800);
   }));
   const stack=new THREE.Group();stack.position.set(3.05,.10,0);scene.add(stack);
-  type Sleeve={object:THREE.Group;index:number;home:THREE.Vector3;homeQuaternion:THREE.Quaternion;rank:number;orientation:THREE.Quaternion};
+  type Sleeve={object:THREE.Group;index:number;home:THREE.Vector3;homeQuaternion:THREE.Quaternion;rank:number;dragYaw:number};
   const sleeves:Sleeve[]=[];
   const hitMeshes:THREE.Mesh[]=[];
   // The paper and edge share a gentle bow, including their raycast geometry.
@@ -171,7 +171,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     const backMat=new THREE.MeshBasicMaterial({map:backTextures[i],toneMapped:false});materials.push(backMat);
     const back=mesh(sleeve,bow(new THREE.PlaneGeometry(3.10,3.10,24,1),-1),backMat,0,-.049,0);back.rotation.set(Math.PI/2,0,Math.PI);
     front.userData.recordIndex=i;back.userData.recordIndex=i;hitMeshes.push(front,back);
-    sleeves.push({object:sleeve,index:i,home:sleeve.position.clone().add(stack.position),homeQuaternion:sleeve.quaternion.clone(),rank:projects.length-i-1,orientation:new THREE.Quaternion()});
+    sleeves.push({object:sleeve,index:i,home:sleeve.position.clone().add(stack.position),homeQuaternion:sleeve.quaternion.clone(),rank:projects.length-i-1,dragYaw:0});
   }
   // Once home coordinates are captured, world-space siblings make orbit paths
   // and the extraction path independent of the old stack transform.
@@ -197,8 +197,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   const smooth=(value:number)=>{const t=THREE.MathUtils.clamp(value,0,1);return t*t*(3-2*t);};
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),hitPoint=new THREE.Vector3();
   const cameraTarget=new THREE.Vector3(),orbitPosition=new THREE.Vector3();
-  const facing=new THREE.Quaternion(),yaw=new THREE.Quaternion(),dragRotation=new THREE.Quaternion();
-  const horizontal=new THREE.Vector3(1,0,0);
+  const facing=new THREE.Quaternion(),yaw=new THREE.Quaternion();
   const upright=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),Math.PI/2);
   const vertical=new THREE.Vector3(0,1,0),flightStartQuaternion=new THREE.Quaternion(),flightEndQuaternion=new THREE.Quaternion();
   const flightCurve=new THREE.CubicBezierCurve3(new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3());
@@ -207,6 +206,8 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   let ownedTransition:gsap.core.Timeline|null=null,settleTransition:(()=>void)|null=null;
   let hoverTween:gsap.core.Tween|null=null;
   let layoutDirty=false;
+  let cameraCollection=-1,cameraFocus=-1;
+  const orbitEpsilon=.002;
   let homeRect=initialHomeFrame?.host||host.getBoundingClientRect();
   const table=host.closest<HTMLElement>('.listening-table')!;
   let homeTableRect=initialHomeFrame?.table||table.getBoundingClientRect();
@@ -221,17 +222,23 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(disposed||!visible||contextLost||renderFrame)return;
     renderFrame=requestAnimationFrame(time=>{
       renderFrame=0;if(disposed||!visible||contextLost)return;
-      const dt=previous?Math.min((time-previous)/1000,.05):1/60;
-      if(mode==='collection'&&Math.abs(orbitTarget-layout.orbit)>.0001){
-        layout.orbit=reduced.matches?orbitTarget:THREE.MathUtils.lerp(layout.orbit,orbitTarget,1-Math.exp(-dt*8));
+      const dt=previous?Math.min((time-previous)/1000,.1):1/60;
+      if(mode==='collection'&&layout.orbit!==orbitTarget){
+        const next=THREE.MathUtils.damp(layout.orbit,orbitTarget,12,dt);
+        layout.orbit=Math.abs(orbitTarget-next)<orbitEpsilon?orbitTarget:next;
         activeIndex=wrap(Math.round(layout.orbit));layoutDirty=true;
       }
-      if(layoutDirty){layoutDirty=false;applyLayout(false);}
+      if(layoutDirty){layoutDirty=false;applyLayout();}
       if(playing&&!reduced.matches){const delta=previous?Math.min((time-previous)/1000,.05):0;movingRecord.rotation.y+=delta*1.9;}
       previous=time;renderer.render(scene,camera);renderedFrames++;
       if(time-lastStats>500){host.dataset.orbitProgress=layout.orbit.toFixed(4);host.dataset.renderedFrames=String(renderedFrames);host.dataset.drawCalls=String(renderer.info.render.calls);host.dataset.triangles=String(renderer.info.render.triangles);lastStats=time;}
-      if((playing&&!reduced.matches)||(mode==='collection'&&Math.abs(orbitTarget-layout.orbit)>.0001))render();
+      if((playing&&!reduced.matches)||(mode==='collection'&&layout.orbit!==orbitTarget))render();
+      else previous=0;
     });
+  }
+  function invalidateLayout(){
+    layoutDirty=true;
+    render();
   }
   function liveHomeFrame(){
     const rect=table.getBoundingClientRect();
@@ -239,6 +246,9 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     return {left:rect.left+(homeRect.left-homeTableRect.left)*sx,top:rect.top+(homeRect.top-homeTableRect.top)*sy,width:homeRect.width*sx,height:homeRect.height*sy};
   }
   function applyCamera(){
+    if(cameraCollection===layout.collection&&cameraFocus===layout.focus)return;
+    cameraCollection=layout.collection;
+    cameraFocus=layout.focus;
     const bounds=frameBounds,home=frameHome;
     const homeWidth=Math.max(window.innerWidth<761?13.1:15.4,(home.width/Math.max(1,home.height))*4.65);
     const units=homeWidth/Math.max(1,home.width);
@@ -265,7 +275,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     camera.position.set(0,THREE.MathUtils.lerp(10.7,9.5,blend),THREE.MathUtils.lerp(10.7,12.8,blend));
     camera.lookAt(cameraTarget);camera.updateProjectionMatrix();camera.updateMatrixWorld(true);
   }
-  function applyLayout(requestRender=true){
+  function applyLayout(){
     if(disposed)return;
     applyCamera();
     const portrait=width/height<.85;
@@ -280,7 +290,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       for(const face of sleeve.object.children)if(face instanceof THREE.Mesh)face.castShadow=progress<.01;
       const angle=((sleeve.index-layout.orbit)%projects.length)*step;
       const front=Math.pow(Math.max(0,Math.cos(angle)),3);
-      const radiusX=portrait?4.1:6.0,radiusZ=3.4;
+      const radiusX=portrait?3.15:4.85,radiusZ=3.4;
       orbitPosition.set(Math.sin(angle)*radiusX,Math.sin(angle)*1.05,Math.cos(angle)*radiusZ);
       orbitPosition.applyQuaternion(camera.quaternion).add(cameraTarget);
       sleeve.object.position.lerpVectors(sleeve.home,orbitPosition,progress);
@@ -288,8 +298,8 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       // During playback the jackets retreat while the actual record stays in view.
       sleeve.object.position.x+=Math.sin(angle)*layout.focus*1.8;
       sleeve.object.position.y-=layout.focus*.7;
-      yaw.setFromAxisAngle(vertical,angle);
-      facing.copy(camera.quaternion).multiply(yaw).multiply(sleeve.orientation).multiply(upright);
+      yaw.setFromAxisAngle(vertical,angle+sleeve.dragYaw);
+      facing.copy(camera.quaternion).multiply(yaw).multiply(upright);
       sleeve.object.quaternion.slerpQuaternions(sleeve.homeQuaternion,facing,progress);
       const exit = 1 - smooth((Math.acos(Math.cos(angle)) - 1.38) / .7);
       const orbitScale=THREE.MathUtils.lerp(.95,1.5,front)*exit;
@@ -304,7 +314,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     }
     // Keep the heavy static deck shadow pass out of reel motion.
     renderer.shadowMap.needsUpdate=renderer.shadowMap.needsUpdate||mode==='home'||mode==='opening'||mode==='closing'||(mode==='playing'&&!playing);
-    updateData();if(requestRender)render();
+    updateData();
   }
   function stopTransition(){
     ownedTransition?.kill();ownedTransition=null;
@@ -317,7 +327,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     stopTransition();
     return new Promise(resolve=>{
       settleTransition=resolve;
-      ownedTransition=gsap.timeline({onUpdate:applyLayout,onComplete:()=>{ownedTransition=null;settleTransition=null;complete();applyLayout();resolve();}});
+      ownedTransition=gsap.timeline({onUpdate:invalidateLayout,onComplete:()=>{ownedTransition=null;settleTransition=null;complete();invalidateLayout();resolve();}});
       build(ownedTransition);
       if(reduced.matches)ownedTransition?.progress(1);
     });
@@ -330,13 +340,18 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(mode==='home'&&!document.body.classList.contains('collection-open')){homeRect=bounds;homeTableRect=table.getBoundingClientRect();}
     width=bounds.width;height=bounds.height;frameBounds=bounds;frameHome=liveHomeFrame();
     frameSafe=host.ownerDocument.querySelector<HTMLElement>('.orbit-stage')?.getBoundingClientRect();
-    const ratio=Math.min(window.devicePixelRatio,1.5,Math.sqrt(1800000/Math.max(1,width*height)));
-    renderer.setDrawingBufferSize(width,height,ratio);applyLayout();
+    const budget=document.body.classList.contains('collection-open')?1250000:1800000;
+    const ratio=Math.min(window.devicePixelRatio,1.5,Math.sqrt(budget/(width*height)));
+    const canvas=renderer.domElement;
+    if(canvas.width!==Math.floor(width*ratio)||canvas.height!==Math.floor(height*ratio))renderer.setDrawingBufferSize(width,height,ratio);
+    cameraCollection=cameraFocus=-1;
+    applyLayout();
+    render();
   }
   function clearHover(){setHover(null);}
   function setHover(next:'deck'|'stack'|null){
     if(disposed||mode!=='home'||reduced.matches)next=null;if(next===hovered)return;hovered=next;
-    hoverTween?.kill();hoverTween=gsap.to(layout,{hoverStack:next==='stack'?1:0,hoverDeck:next==='deck'?1:0,duration:.6,ease:'power2.out',onUpdate:applyLayout});
+    hoverTween?.kill();hoverTween=gsap.to(layout,{hoverStack:next==='stack'?1:0,hoverDeck:next==='deck'?1:0,duration:.6,ease:'power2.out',onUpdate:invalidateLayout});
   }
   deck.updateMatrixWorld(true);loose.updateMatrixWorld(true);
   const deckBounds=new THREE.Box3().setFromObject(deck),stackBounds=new THREE.Box3();
@@ -359,7 +374,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   }
   async function openCollection(index=0){
     if(disposed||contextLost)return;
-    stopTweens();for(const sleeve of sleeves)sleeve.orientation.identity();activeIndex=wrap(index);layout.orbit=orbitTarget=activeIndex;layout.focus=0;layout.hoverDeck=layout.hoverStack=0;playing=false;movingRecord.visible=false;
+    stopTweens();for(const sleeve of sleeves)sleeve.dragYaw=0;activeIndex=wrap(index);layout.orbit=orbitTarget=activeIndex;layout.focus=0;layout.hoverDeck=layout.hoverStack=0;playing=false;movingRecord.visible=false;
     mode='opening';resize();
     return animate(timeline=>{timeline.to(layout,{collection:1,duration:1.55,ease:'power2.inOut'});},()=>{mode='collection';renderer.shadowMap.needsUpdate=true;});
   }
@@ -372,20 +387,20 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   function scrollBy(delta:number){
     if(mode!=='collection'||disposed||contextLost||!Number.isFinite(delta))return;
     orbitTarget+=delta/560;
-    if(reduced.matches){layout.orbit=orbitTarget;activeIndex=centeredIndex();applyLayout();}else render();
+    if(reduced.matches){layout.orbit=orbitTarget;activeIndex=centeredIndex();invalidateLayout();}else render();
   }
-  function rotate(index:number,dx:number,dy:number){
-    if(mode!=='collection'||disposed||contextLost||!Number.isFinite(dx)||!Number.isFinite(dy))return;
-    const sleeve=sleeves[wrap(index)];if(!sleeve)return;
-    dragRotation.setFromAxisAngle(vertical,dx*.007);sleeve.orientation.premultiply(dragRotation);
-    dragRotation.setFromAxisAngle(horizontal,dy*.007);sleeve.orientation.premultiply(dragRotation).normalize();layoutDirty=true;render();
+  function rotate(index:number,dx:number){
+    if(mode!=='collection'||disposed||contextLost||!dx||!Number.isFinite(dx))return;
+    const sleeve=sleeves[wrap(index)];
+    sleeve.dragYaw=(sleeve.dragYaw+dx*.007)%tau;
+    invalidateLayout();
   }
   function select(index:number){
     if(mode!=='collection'||disposed)return;
     const next=wrap(index),current=wrap(Math.round(orbitTarget));let delta=next-current;
     if(delta>projects.length/2)delta-=projects.length;if(delta<-projects.length/2)delta+=projects.length;
     orbitTarget=Math.round(orbitTarget)+delta;activeIndex=next;
-    if(reduced.matches){layout.orbit=orbitTarget;applyLayout();}else render();
+    if(reduced.matches){layout.orbit=orbitTarget;invalidateLayout();}else render();
   }
   function setLabel(p:RecordProject){
     labelMat.map?.dispose();
@@ -418,7 +433,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(disposed)return;
     stopTweens();playing=false;mode='home';activeIndex=orbitTarget=0;hovered=null;previous=0;
     Object.assign(layout,{collection:0,orbit:0,focus:0,flight:0,needle:0,hoverStack:0,hoverDeck:0});
-    movingRecord.visible=false;for(const sleeve of sleeves)sleeve.orientation.identity();resize();
+    movingRecord.visible=false;for(const sleeve of sleeves)sleeve.dragYaw=0;resize();
   }
   function visibility(){
     visible=!document.hidden;previous=0;
@@ -427,7 +442,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   }
   function onMotionChange(){
     if(reduced.matches){layout.orbit=orbitTarget;ownedTransition?.progress(1);hoverTween?.kill();layout.hoverDeck=layout.hoverStack=0;}
-    applyLayout();
+    invalidateLayout();
   }
   function restoreContext(){
     if(disposed)return;contextLost=false;host.dataset.renderState='ready';host.closest('.listening-table')?.classList.add('scene-ready');resize();renderer.shadowMap.needsUpdate=true;render();

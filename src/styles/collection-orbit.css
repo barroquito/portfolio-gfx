@@ -73,7 +73,7 @@ body.collection-playing .orbit-close,
   width: min(51dvh, 64vw);
   aspect-ratio: 1;
   transform-style: preserve-3d;
-  transform: translate3d(calc(-50% + var(--coil-x, 0px)), calc(-50% + var(--coil-y, 0px)), var(--coil-z, 0px)) rotateY(var(--coil-yaw, 0rad)) rotateX(var(--coil-pitch, 0rad));
+  transform: translate3d(calc(-50% + var(--coil-x, 0px)), calc(-50% + var(--coil-y, 0px)), var(--coil-z, 0px)) rotateY(var(--coil-yaw, 0rad));
   -webkit-user-drag: none;
   cursor: grab;
 }

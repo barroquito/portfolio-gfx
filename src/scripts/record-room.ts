@@ -67,7 +67,7 @@ function syncRenderMode() {
 }
 new MutationObserver(syncRenderMode).observe(host, { attributes: true, attributeFilter: ['data-render-state'] });
 const fallbackCards = Array.from(stage.querySelectorAll<HTMLAnchorElement>('[data-fallback-record]'));
-const fallbackTurns = fallbackCards.map(() => ({ x: 0, y: 0 }));
+const fallbackTurns = fallbackCards.map(() => 0);
 let fallbackPhase = 0;
 const wrapIndex = (index: number) => ((index % projects.length) + projects.length) % projects.length;
 const hasScene = () => scene !== null && collection.dataset.render === 'webgl';
@@ -80,11 +80,10 @@ function layoutFallback() {
     const angle = slot * Math.PI * 2 / count;
     const depth = Math.cos(angle);
     const turn = fallbackTurns[index];
-    card.style.setProperty('--coil-x', `${Math.sin(angle) * 35}vw`);
+    card.style.setProperty('--coil-x', `${Math.sin(angle) * 28}vw`);
     card.style.setProperty('--coil-y', `${-slot * 12}dvh`);
     card.style.setProperty('--coil-z', `${(depth - 1) * 360}px`);
-    card.style.setProperty('--coil-yaw', `${angle + turn.y}rad`);
-    card.style.setProperty('--coil-pitch', `${turn.x}rad`);
+    card.style.setProperty('--coil-yaw', `${angle + turn}rad`);
     card.style.zIndex = String(Math.round(10 + depth * 8));
     card.style.visibility = Math.abs(slot) < 1.65 ? 'visible' : 'hidden';
   }
@@ -117,7 +116,7 @@ async function openCollection(index = activeIndex) {
   if (contact.open) contact.close();
   originFocus = focusOrigin();
   activeIndex = index; fallbackPhase = index;
-  fallbackTurns.forEach(turn => { turn.x = 0; turn.y = 0; });
+  fallbackTurns.fill(0);
   syncRenderMode();
   mode = 'opening';
   collection.dataset.phase = 'opening';
@@ -202,11 +201,9 @@ stage.addEventListener('pointermove', event => {
   gesture.x = event.clientX;
   gesture.y = event.clientY;
   if (gesture.index === null) advance(Math.abs(dy) > Math.abs(dx) ? -dy : -dx);
-  else if (hasScene()) scene?.rotate(gesture.index, dx, dy);
-  else {
-    const turn = fallbackTurns[gesture.index];
-    turn.y = (turn.y + dx * .012) % (Math.PI * 2);
-    turn.x = (turn.x - dy * .012) % (Math.PI * 2);
+  else if (dx && hasScene()) scene?.rotate(gesture.index, dx);
+  else if (dx) {
+    fallbackTurns[gesture.index] = (fallbackTurns[gesture.index] + dx * .007) % (Math.PI * 2);
     layoutFallback();
   }
 });
