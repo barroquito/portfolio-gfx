@@ -191,13 +191,18 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   type SceneMode='home'|'opening'|'collection'|'closing'|'playing';
   let mode:SceneMode='home',activeIndex=0,orbitTarget=0,disposed=false,visible=!document.hidden,playing=false;
   let hovered:'deck'|'stack'|null=null;
-  const layout={collection:0,orbit:0,focus:0,flight:0,needle:0,hoverStack:0,hoverDeck:0};
+  const layout={collection:0,orbit:0,focus:0,exit:0,flight:0,needle:0,hoverStack:0,hoverDeck:0};
   const tau=Math.PI*2,step=tau/projects.length;
   const wrap=(index:number)=>((index%projects.length)+projects.length)%projects.length;
   const smooth=(value:number)=>{const t=THREE.MathUtils.clamp(value,0,1);return t*t*(3-2*t);};
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),hitPoint=new THREE.Vector3();
   const cameraTarget=new THREE.Vector3(),orbitPosition=new THREE.Vector3();
   const facing=new THREE.Quaternion(),yaw=new THREE.Quaternion();
+  const cameraDepth=new THREE.Vector3();
+  const orbitDepth=3.4, exitAngle=2.08, maxSleeveScale=1.5;
+  // Maximum depth swept by a bowed sleeve through a full yaw rotation.
+  const sleeveSweep=Math.hypot(1.56,.17)*maxSleeveScale;
+  let orbitDepthOffset=0;
   const upright=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),Math.PI/2);
   const vertical=new THREE.Vector3(0,1,0),flightStartQuaternion=new THREE.Quaternion(),flightEndQuaternion=new THREE.Quaternion();
   const flightCurve=new THREE.CubicBezierCurve3(new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3());
@@ -274,6 +279,10 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     cameraTarget.set(0,targetY,0);
     camera.position.set(0,THREE.MathUtils.lerp(10.7,9.5,blend),THREE.MathUtils.lerp(10.7,12.8,blend));
     camera.lookAt(cameraTarget);camera.updateProjectionMatrix();camera.updateMatrixWorld(true);
+    cameraDepth.set(0,0,1).applyQuaternion(camera.quaternion);
+    // This camera has no horizontal pan, so the deck’s X translation does not affect depth.
+    const deckFront=(deckBounds.max.y-cameraTarget.y)*cameraDepth.y+(deckBounds.max.z-cameraTarget.z)*cameraDepth.z;
+    orbitDepthOffset=deckFront-orbitDepth*Math.cos(exitAngle)+sleeveSweep+.12;
   }
   function applyLayout(){
     if(disposed)return;
@@ -281,6 +290,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     const portrait=width/height<.85;
     const deckBlend=Math.max(layout.collection,layout.focus);
     deck.position.x=THREE.MathUtils.lerp(-2.85,0,deckBlend);
+    const exitScale=1-smooth(layout.exit);
     for(const sleeve of sleeves){
       // A short stagger lets each jacket leave the pile separately, without
       // chaining pauses between lift, turn and arrival.
@@ -290,8 +300,8 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       for(const face of sleeve.object.children)if(face instanceof THREE.Mesh)face.castShadow=progress<.01;
       const angle=((sleeve.index-layout.orbit)%projects.length)*step;
       const front=Math.pow(Math.max(0,Math.cos(angle)),3);
-      const radiusX=portrait?3.15:4.85,radiusZ=3.4;
-      orbitPosition.set(Math.sin(angle)*radiusX,Math.sin(angle)*1.05,Math.cos(angle)*radiusZ);
+      const radiusX=portrait?3.15:4.85;
+      orbitPosition.set(Math.sin(angle)*radiusX,Math.sin(angle)*1.05,orbitDepthOffset+Math.cos(angle)*orbitDepth);
       orbitPosition.applyQuaternion(camera.quaternion).add(cameraTarget);
       sleeve.object.position.lerpVectors(sleeve.home,orbitPosition,progress);
       sleeve.object.position.y+=Math.sin(progress*Math.PI)*1.1+(1-progress)*layout.hoverStack*sleeve.rank*.18;
@@ -301,10 +311,11 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       yaw.setFromAxisAngle(vertical,angle+sleeve.dragYaw);
       facing.copy(camera.quaternion).multiply(yaw).multiply(upright);
       sleeve.object.quaternion.slerpQuaternions(sleeve.homeQuaternion,facing,progress);
-      const exit = 1 - smooth((Math.acos(Math.cos(angle)) - 1.38) / .7);
-      const orbitScale=THREE.MathUtils.lerp(.95,1.5,front)*exit;
-      const scale=THREE.MathUtils.lerp(1,orbitScale,progress)*(1-layout.focus*.82);
-      sleeve.object.scale.setScalar(scale);sleeve.object.visible=scale>.03;
+      const edgeFalloff=1-smooth((Math.acos(Math.cos(angle))-1.38)/(exitAngle-1.38));
+      const orbitScale=THREE.MathUtils.lerp(.95,maxSleeveScale,front)*edgeFalloff;
+      const scale=THREE.MathUtils.lerp(1,orbitScale,progress)*exitScale;
+      sleeve.object.scale.setScalar(scale);
+      sleeve.object.visible=scale>.03;
     }
     loose.scale.setScalar(1-layout.collection*.95-layout.focus*.05);loose.visible=layout.collection<.77&&layout.focus<.8;
     tonearm.rotation.y=THREE.MathUtils.lerp(.04,-.61,layout.needle)-layout.hoverDeck*.26;
@@ -374,7 +385,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   }
   async function openCollection(index=0){
     if(disposed||contextLost)return;
-    stopTweens();for(const sleeve of sleeves)sleeve.dragYaw=0;activeIndex=wrap(index);layout.orbit=orbitTarget=activeIndex;layout.focus=0;layout.hoverDeck=layout.hoverStack=0;playing=false;movingRecord.visible=false;
+    stopTweens();for(const sleeve of sleeves)sleeve.dragYaw=0;activeIndex=wrap(index);layout.orbit=orbitTarget=activeIndex;layout.focus=layout.exit=0;layout.hoverDeck=layout.hoverStack=0;playing=false;movingRecord.visible=false;
     mode='opening';resize();
     return animate(timeline=>{timeline.to(layout,{collection:1,duration:1.55,ease:'power2.inOut'});},()=>{mode='collection';renderer.shadowMap.needsUpdate=true;});
   }
@@ -415,7 +426,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(disposed||contextLost)return;
     stopTweens();layout.hoverDeck=layout.hoverStack=0;
     activeIndex=Math.max(0,projects.findIndex(project=>project.slug===p.slug));
-    mode='playing';playing=false;layout.flight=0;layout.needle=0;resize();
+    mode='playing';playing=false;layout.exit=0;layout.flight=0;layout.needle=0;resize();
     const sleeve=sleeves[activeIndex];
     flightCurve.v0.copy(sleeve.object.position);flightStartQuaternion.copy(sleeve.object.quaternion);
     const end=new THREE.Vector3(-.5,.90,0).applyQuaternion(deck.quaternion);
@@ -425,6 +436,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     movingRecord.position.copy(flightCurve.v0);movingRecord.quaternion.copy(flightStartQuaternion);movingRecord.visible=true;setLabel(p);
     return animate(timeline=>{
       timeline.to(layout,{focus:1,duration:1.9,ease:'power2.inOut'},0)
+        .to(layout,{exit:1,duration:.85,ease:'power2.out'},0)
         .to(layout,{flight:1,duration:2.15,ease:'power1.inOut'},0)
         .to(layout,{needle:1,duration:.65,ease:'power2.inOut'},1.8);
     },()=>{playing=true;previous=0;movingRecord.position.copy(flightCurve.v3);movingRecord.quaternion.identity();render();});
@@ -432,7 +444,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   function reset(){
     if(disposed)return;
     stopTweens();playing=false;mode='home';activeIndex=orbitTarget=0;hovered=null;previous=0;
-    Object.assign(layout,{collection:0,orbit:0,focus:0,flight:0,needle:0,hoverStack:0,hoverDeck:0});
+    Object.assign(layout,{collection:0,orbit:0,focus:0,exit:0,flight:0,needle:0,hoverStack:0,hoverDeck:0});
     movingRecord.visible=false;for(const sleeve of sleeves)sleeve.dragYaw=0;resize();
   }
   function visibility(){
