@@ -57,13 +57,15 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   floor.rotation.x=-Math.PI/2;floor.position.y=-.08;floor.receiveShadow=true;scene.add(floor);
   const materials:THREE.Material[]=[];
   function mat(color:string,metalness=0,roughness=.5){const m=new THREE.MeshStandardMaterial({color,metalness,roughness});materials.push(m);return m;}
+  // A small screen has fewer pixels available for a sleeve even at capped DPR.
+  const compactTextures=Math.min(window.innerWidth,window.innerHeight)*Math.min(window.devicePixelRatio,1.5)<=700;
+  const sleeveTextureSize=compactTextures?512:1024;
   // Fine deterministic surface maps keep metal, paper and vinyl physically distinct.
   function surfaceMap(kind:'brushed'|'paper'|'grooves'){
-    const size=512,data=new Uint8Array(size*size*4);let seed=47;
+    const size=compactTextures?256:512,data=new Uint8Array(size*size*4);let seed=47;
     function random(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;}
     for(let y=0;y<size;y++){const line=random()*19;for(let x=0;x<size;x++){
-      const radius=Math.hypot(x-size/2,y-size/2);
-      const value=kind==='brushed'?170+line+random()*12:kind==='paper'?225+random()*30:128+Math.sin(radius*1.8)*22;
+      const value=kind==='brushed'?170+line+random()*12:kind==='paper'?225+random()*30:128+Math.sin(Math.hypot(x-size/2,y-size/2)*1.8)*22;
       const i=(y*size+x)*4;data[i]=data[i+1]=data[i+2]=value;data[i+3]=255;
     }}
     const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());t.needsUpdate=true;return t;
@@ -80,7 +82,14 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   function textCanvas(width:number,height:number,draw:(ctx:CanvasRenderingContext2D)=>void){const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d');if(!ctx)throw new Error('Canvas unavailable');draw(ctx);return texture(c);}
   const printFont='"Inter Variable", sans-serif';
   const deck=new THREE.Group();deck.position.set(-2.85,0,0);deck.rotation.y=.085;scene.add(deck);
-  const grooveTexture=textCanvas(1024,1024,ctx=>{
+  function sleeveTexture(draw:(ctx:CanvasRenderingContext2D)=>void){
+    return textCanvas(sleeveTextureSize,sleeveTextureSize,ctx=>{
+      const scale=sleeveTextureSize/1024;
+      ctx.scale(scale,scale);
+      draw(ctx);
+    });
+  }
+  const grooveTexture=sleeveTexture(ctx=>{
     ctx.fillStyle='#080b0d';ctx.fillRect(0,0,1024,1024);
     for(let i=120;i<506;i+=3){ctx.beginPath();ctx.arc(512,512,i,0,Math.PI*2);ctx.strokeStyle=i%2?'#232b20':'#1c231a';ctx.lineWidth=1;ctx.stroke();}
     ctx.fillStyle='#f1f1e5';ctx.beginPath();ctx.arc(512,512,102,0,Math.PI*2);ctx.fill();
@@ -110,7 +119,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     deck.add(model.scene);tonearm=modelArm;tonearm.rotation.y=.04;
   }catch(error){renderer.dispose();environment.dispose();host.replaceChildren();throw error;}
   // Each cover is generated from the same project metadata as the accessible carousel.
-  const coverTextures=projects.map(p=>textCanvas(1024,1024,ctx=>{
+  const coverTextures=projects.map(p=>sleeveTexture(ctx=>{
     if(p.theme==='personal'&&personalCover){ctx.drawImage(personalCover,0,0,1024,1024);return;}
     ctx.fillStyle=p.record.color;ctx.fillRect(0,0,1024,1024);
     if(p.theme==='bulk'&&bulkImage){const scale=Math.max(1024/bulkImage.width,1024/bulkImage.height);const w=bulkImage.width*scale,h=bulkImage.height*scale;ctx.drawImage(bulkImage,(1024-w)/2,(1024-h)/2,w,h);}
@@ -127,13 +136,15 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     else {ctx.save();ctx.globalAlpha=.2;ctx.translate(512,512);ctx.rotate(-.4);for(let i=-700;i<700;i+=30){ctx.fillRect(-900,i,1800,3);}ctx.restore();ctx.save();ctx.transform(1,0,-.2,1,90,0);ctx.font=`600 460px ${printFont}`;ctx.fillText('F1',80,650);ctx.font=`600 130px ${printFont}`;ctx.fillText('WEEK',80,788);ctx.restore();}
     ctx.fillStyle=p.record.ink;ctx.font=`600 18px ${printFont}`;ctx.fillText(p.record.label,70,956);ctx.textAlign='right';ctx.fillText('33⅓ RPM / SIDE A',954,956);
     // Print grain lives in the albedo as well as the paper bump/roughness maps.
-    const print=ctx.getImageData(0,0,1024,1024);let seed=781;
+    const print=ctx.getImageData(0,0,sleeveTextureSize,sleeveTextureSize);let seed=781;
     for(let i=0;i<print.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;const grain=((seed>>>24)-128)/32;print.data[i]+=grain;print.data[i+1]+=grain;print.data[i+2]+=grain;}
     ctx.putImageData(print,0,0);
   }));
   // The reverse is a separate printed face. It shares the same source copy as
   // the HTML controls, so a canvas never becomes the only way to read a project.
-  const backTextures=projects.map(p=>textCanvas(1024,1024,ctx=>{
+  // A shared paper swatch keeps the back-face shader ready until the first turn.
+  const blankBack=textCanvas(1,1,ctx=>{ctx.fillStyle='#f5f4ef';ctx.fillRect(0,0,1,1);});
+  const createBackTexture=(p:RecordProject)=>sleeveTexture(ctx=>{
     ctx.fillStyle='#f5f4ef';ctx.fillRect(0,0,1024,1024);
     ctx.fillStyle='#181a17';ctx.font='600 25px '+printFont;
     ctx.fillText('JORGE PINDADO',70,88);ctx.textAlign='right';ctx.fillText('JP—'+p.number+' / LADO B',954,88);ctx.textAlign='left';
@@ -144,9 +155,9 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     for(const word of words){const next=line?line+' '+word:word;if(ctx.measureText(next).width>865&&line){ctx.fillText(line,70,y);y+=63;line=word;}else line=next;}
     if(line)ctx.fillText(line,70,y);
     ctx.font='600 23px '+printFont;ctx.fillText(p.record.label,70,940,800);
-  }));
+  });
   const stack=new THREE.Group();stack.position.set(3.05,.10,0);scene.add(stack);
-  type Sleeve={object:THREE.Group;index:number;home:THREE.Vector3;homeQuaternion:THREE.Quaternion;rank:number;dragYaw:number};
+  type Sleeve={object:THREE.Group;index:number;home:THREE.Vector3;homeQuaternion:THREE.Quaternion;rank:number;dragYaw:number;backMaterial:THREE.MeshBasicMaterial};
   const sleeves:Sleeve[]=[];
   const hitMeshes:THREE.Mesh[]=[];
   // The paper and edge share a gentle bow, including their raycast geometry.
@@ -159,19 +170,22 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     }
     positions.needsUpdate=true;geometry.computeVertexNormals();return geometry;
   }
+  const sleeveEdge=bow(new THREE.BoxGeometry(3.12,.095,3.12,24,1,1));
+  const sleeveFront=bow(new THREE.PlaneGeometry(3.10,3.10,24,1),1);
+  const sleeveBack=bow(new THREE.PlaneGeometry(3.10,3.10,24,1),-1);
   for(let i=0;i<projects.length;i++){
     const p=projects[i],sleeve=new THREE.Group();
     sleeve.position.set((i-1)*.07,.10+(projects.length-i)*.105,(i-1)*.035);
     sleeve.rotation.y=[-.12,.10,-.18,.22][i%4];stack.add(sleeve);
     const edge=mat(p.record.color,0,.86);
-    mesh(sleeve,bow(new THREE.BoxGeometry(3.12,.095,3.12,24,1,1)),edge);
+    mesh(sleeve,sleeveEdge,edge);
     const frontMat=new THREE.MeshStandardMaterial({map:coverTextures[i],color:'#d4d4d4',metalness:0,roughness:.9,roughnessMap:paperMap,bumpMap:paperMap,bumpScale:.004,envMapIntensity:.3});materials.push(frontMat);
-    const front=mesh(sleeve,bow(new THREE.PlaneGeometry(3.10,3.10,24,1),1),frontMat,0,.049,0);front.rotation.x=-Math.PI/2;
+    const front=mesh(sleeve,sleeveFront,frontMat,0,.049,0);front.rotation.x=-Math.PI/2;
     // Avoid tone mapping the printed reverse so its small text stays legible.
-    const backMat=new THREE.MeshBasicMaterial({map:backTextures[i],toneMapped:false});materials.push(backMat);
-    const back=mesh(sleeve,bow(new THREE.PlaneGeometry(3.10,3.10,24,1),-1),backMat,0,-.049,0);back.rotation.set(Math.PI/2,0,Math.PI);
+    const backMat=new THREE.MeshBasicMaterial({map:blankBack,toneMapped:false});materials.push(backMat);
+    const back=mesh(sleeve,sleeveBack,backMat,0,-.049,0);back.rotation.set(Math.PI/2,0,Math.PI);
     front.userData.recordIndex=i;back.userData.recordIndex=i;hitMeshes.push(front,back);
-    sleeves.push({object:sleeve,index:i,home:sleeve.position.clone().add(stack.position),homeQuaternion:sleeve.quaternion.clone(),rank:projects.length-i-1,dragYaw:0});
+    sleeves.push({object:sleeve,index:i,home:sleeve.position.clone().add(stack.position),homeQuaternion:sleeve.quaternion.clone(),rank:projects.length-i-1,dragYaw:0,backMaterial:backMat});
   }
   // Once home coordinates are captured, world-space siblings make orbit paths
   // and the extraction path independent of the old stack transform.
@@ -308,7 +322,8 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       // During playback the jackets retreat while the actual record stays in view.
       sleeve.object.position.x+=Math.sin(angle)*layout.focus*1.8;
       sleeve.object.position.y-=layout.focus*.7;
-      yaw.setFromAxisAngle(vertical,angle+sleeve.dragYaw);
+      const sleeveYaw=angle+sleeve.dragYaw;
+      yaw.setFromAxisAngle(vertical,sleeveYaw);
       facing.copy(camera.quaternion).multiply(yaw).multiply(upright);
       sleeve.object.quaternion.slerpQuaternions(sleeve.homeQuaternion,facing,progress);
       const edgeFalloff=1-smooth((Math.acos(Math.cos(angle))-1.38)/(exitAngle-1.38));
@@ -316,6 +331,9 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       const scale=THREE.MathUtils.lerp(1,orbitScale,progress)*exitScale;
       sleeve.object.scale.setScalar(scale);
       sleeve.object.visible=scale>.03;
+      if(sleeve.object.visible&&progress>.65&&sleeve.backMaterial.map===blankBack&&Math.cos(sleeveYaw)<.15){
+        sleeve.backMaterial.map=createBackTexture(projects[sleeve.index]);
+      }
     }
     loose.scale.setScalar(1-layout.collection*.95-layout.focus*.05);loose.visible=layout.collection<.77&&layout.focus<.8;
     tonearm.rotation.y=THREE.MathUtils.lerp(.04,-.61,layout.needle)-layout.hoverDeck*.26;
@@ -464,10 +482,10 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     stopTweens();disposed=true;playing=false;observer.disconnect();if(renderFrame)cancelAnimationFrame(renderFrame);renderFrame=0;
     document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',onMotionChange);
     renderer.domElement.removeEventListener('webglcontextlost',loseContext);renderer.domElement.removeEventListener('webglcontextrestored',restoreContext);
-    const geometries=new Set<THREE.BufferGeometry>(),allMaterials=new Set<THREE.Material>(materials),textures=new Set<THREE.Texture>([...coverTextures,...backTextures,grooveTexture,brushedMap,paperMap,groovesMap]);
+    const geometries=new Set<THREE.BufferGeometry>(),allMaterials=new Set<THREE.Material>(materials),textures=new Set<THREE.Texture>([blankBack,grooveTexture,brushedMap,paperMap,groovesMap]);
     scene.traverse(object=>{if(object instanceof THREE.Mesh){geometries.add(object.geometry);for(const material of Array.isArray(object.material)?object.material:[object.material])allMaterials.add(material);}});
     for(const material of allMaterials){const m=material as THREE.MeshStandardMaterial;for(const t of [m.map,m.normalMap,m.roughnessMap,m.metalnessMap,m.bumpMap,m.aoMap])if(t)textures.add(t);material.dispose();}
-    geometries.forEach(geometry=>geometry.dispose());textures.forEach(t=>t.dispose());environment.dispose();renderer.dispose();
+    geometries.forEach(geometry=>geometry.dispose());textures.forEach(t=>t.dispose());key.shadow.dispose();environment.dispose();renderer.dispose();
   }
   onContextLoss=()=>{
     stopTweens();playing=false;if(renderFrame)cancelAnimationFrame(renderFrame);renderFrame=0;
@@ -479,9 +497,18 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   const observer=new ResizeObserver(resize);observer.observe(host);
   const safeStage=host.ownerDocument.querySelector('.orbit-stage');if(safeStage)observer.observe(safeStage);resize();
   let compileTimer:ReturnType<typeof setTimeout>|undefined;
-  await Promise.race([renderer.compileAsync(scene,camera),new Promise<void>(resolve=>{compileTimer=setTimeout(resolve,4000);})]).finally(()=>clearTimeout(compileTimer));
-  if(contextLost||renderer.getContext().isContextLost()){dispose();throw new Error('WEBGL_CONTEXT_LOST');}
-  renderer.render(scene,camera);host.closest('.listening-table')?.classList.add('scene-ready');host.dataset.renderState='ready';
+  try {
+    await Promise.race([renderer.compileAsync(scene,camera),new Promise<void>(resolve=>{compileTimer=setTimeout(resolve,4000);})]);
+    if(contextLost||renderer.getContext().isContextLost())throw new Error('WEBGL_CONTEXT_LOST');
+    renderer.render(scene,camera);
+  } catch (error) {
+    dispose();
+    host.replaceChildren();
+    throw error;
+  } finally {
+    clearTimeout(compileTimer);
+  }
+  host.closest('.listening-table')?.classList.add('scene-ready');host.dataset.renderState='ready';
   document.addEventListener('visibilitychange',visibility);reduced.addEventListener('change',onMotionChange);renderer.domElement.addEventListener('webglcontextrestored',restoreContext);
   return {openCollection,closeCollection,scrollBy,rotate,centeredIndex,select,pick,play,hoverAt,clearHover,hoverCollection,reset,dispose};
 }
