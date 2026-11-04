@@ -4,7 +4,7 @@ body #main-nav{font-size:14px}
 body.listening-room .record-room{grid-template-rows:clamp(240px,28dvh,290px) minmax(0,1fr) 96px}
 body.listening-room .room-heading{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:60px}
 body.listening-room .room-heading-copy{grid-column:1;grid-row:1}
-body.listening-room .room-heading h1{font-size:clamp(54px,5.2vw,92px);font-weight:800;letter-spacing:-.075em;line-height:.86}
+body.listening-room .room-heading h1{font-size:clamp(54px,5.2vw,92px);font-weight:800;letter-spacing:-.075em;line-height:.94}
 body.listening-room .room-heading h1 strong{font-weight:inherit;letter-spacing:inherit}
 body.listening-room .room-heading-copy>p{font-size:16px;line-height:1.4;margin-top:24px}
 body.listening-room .room-identity{grid-column:2;grid-row:1;max-width:400px;gap:0;justify-self:center}

@@ -10,11 +10,15 @@ const table = host.closest<HTMLElement>('.listening-table')!;
 const initialHomeFrame = { host: host.getBoundingClientRect(), table: table.getBoundingClientRect() };
 const status = document.getElementById('room-status')!;
 const stage = collection.querySelector<HTMLElement>('.orbit-stage')!;
+const orbitStatus = collection.querySelector<HTMLElement>('[data-orbit-status]')!;
+orbitStatus.setAttribute('aria-atomic', 'true');
 type PlaybackProject = Parameters<RecordScene['play']>[0] & { description: string };
 const projects = JSON.parse(document.getElementById('record-project-data')!.textContent || '[]') as PlaybackProject[];
 let scene: RecordScene | null = null;
 let mode: 'home' | 'opening' | 'collection' | 'closing' | 'playing' = 'home';
 let activeIndex = 0, collectionGeneration = 0;
+let keyboardIndex: number | null = null;
+let sceneCollectionOpen = false;
 let originFocus: HTMLElement | null = null;
 let pageActive = true, navigating = false;
 let playbackGeneration = 0;
@@ -46,7 +50,7 @@ const fineHover = window.matchMedia('(hover: hover) and (pointer: fine)');
 let hoverFrame = 0, hoverX = 0, hoverY = 0;
 function clearObjectHover() {
   if (hoverFrame) cancelAnimationFrame(hoverFrame);
-  hoverFrame = 0; scene?.clearHover(); table.classList.remove('hover-deck', 'hover-stack');
+  hoverFrame = 0; scene?.clearHover();
 }
 table.addEventListener('pointermove', event => {
   if (mode !== 'home' || !fineHover.matches || reduced.matches || event.pointerType === 'touch' || contact.open) { clearObjectHover(); return; }
@@ -61,11 +65,6 @@ stackHotspot.addEventListener('focus', () => { if (mode === 'home' && !reduced.m
 stackHotspot.addEventListener('blur', clearObjectHover);
 reduced.addEventListener('change', clearObjectHover);
 
-function syncRenderMode() {
-  collection.dataset.render = scene && host.dataset.renderState === 'ready' ? 'webgl' : 'fallback';
-  layoutFallback();
-}
-new MutationObserver(syncRenderMode).observe(host, { attributes: true, attributeFilter: ['data-render-state'] });
 const fallbackCards = Array.from(stage.querySelectorAll<HTMLAnchorElement>('[data-fallback-record]'));
 const fallbackTurns = fallbackCards.map(() => 0);
 let fallbackPhase = 0;
@@ -90,7 +89,9 @@ function layoutFallback() {
 }
 
 function announceSelection(index: number) {
-  collection.querySelector('[data-orbit-status]')!.textContent = projects[index].title;
+  const { title, description } = projects[index];
+  const text = `${title}. ${description}`;
+  if (orbitStatus.textContent !== text) orbitStatus.textContent = text;
 }
 
 function centeredIndex() {
@@ -98,9 +99,48 @@ function centeredIndex() {
   return scene!.centeredIndex();
 }
 
+function syncVisibleSelection() {
+  if (mode !== 'collection' || keyboardIndex !== null) return;
+  activeIndex = centeredIndex();
+  announceSelection(activeIndex);
+}
+
+async function openSceneCollection(index: number, immediate = false) {
+  if (!hasScene()) return;
+  sceneCollectionOpen = true;
+  try { await scene!.openCollection(index, immediate); }
+  catch {
+    sceneCollectionOpen = false;
+    collection.dataset.render = 'fallback';
+    layoutFallback();
+  }
+}
+
+function syncRenderMode() {
+  const render = scene && host.dataset.renderState === 'ready' ? 'webgl' : 'fallback';
+  if (render === collection.dataset.render) return;
+  const browsing = collection.open && (mode === 'opening' || mode === 'collection');
+  if (browsing && render === 'fallback' && hasScene()) {
+    activeIndex = keyboardIndex ?? scene!.centeredIndex();
+    fallbackPhase = activeIndex;
+    announceSelection(activeIndex);
+  }
+  collection.dataset.render = render;
+  if (browsing && render === 'webgl') {
+    if (sceneCollectionOpen) scene!.select(activeIndex, true);
+    else void openSceneCollection(activeIndex, true);
+  }
+  layoutFallback();
+}
+
+new MutationObserver(changes => {
+  if (changes.some(change => change.attributeName === 'data-render-state')) syncRenderMode();
+  if (changes.some(change => change.attributeName === 'data-active-record')) syncVisibleSelection();
+}).observe(host, { attributes: true, attributeFilter: ['data-render-state', 'data-active-record'] });
+
 function selectRecord(index: number) {
   if (mode !== 'collection' && mode !== 'opening') return;
-  activeIndex = wrapIndex(index);
+  keyboardIndex = activeIndex = wrapIndex(index);
   fallbackPhase = activeIndex;
   layoutFallback();
   announceSelection(activeIndex);
@@ -116,6 +156,7 @@ async function openCollection(index = activeIndex) {
   if (contact.open) contact.close();
   originFocus = focusOrigin();
   activeIndex = index; fallbackPhase = index;
+  keyboardIndex = null;
   fallbackTurns.fill(0);
   syncRenderMode();
   mode = 'opening';
@@ -125,10 +166,10 @@ async function openCollection(index = activeIndex) {
   layoutFallback();
   announceSelection(activeIndex);
   // Expand and update the projection in one task; no intermediate resized frame.
-  try { await scene?.openCollection(activeIndex); } catch { collection.dataset.render = 'fallback'; layoutFallback(); }
+  await openSceneCollection(activeIndex);
   if (generation !== collectionGeneration || !pageActive || navigating) return;
   mode = 'collection';
-  scene?.select(activeIndex);
+  if (hasScene()) scene!.select(activeIndex);
   collection.dataset.phase = 'collection';
   stage.focus({ preventScroll: true });
 }
@@ -137,10 +178,15 @@ async function closeCollection(restoreFocus = true) {
   const generation = ++collectionGeneration;
   mode = 'closing';
   collection.dataset.phase = 'closing';
-  try { await scene?.closeCollection(); } catch { scene?.reset(); }
+  try {
+    if (hasScene()) await scene!.closeCollection();
+    else scene?.reset();
+  } catch { scene?.reset(); }
   if (generation !== collectionGeneration || !pageActive) return;
   mode = 'home';
+  keyboardIndex = null; sceneCollectionOpen = false;
   if (collection.open) collection.close();
+  orbitStatus.textContent = '';
   document.body.classList.remove('collection-open', 'collection-playing');
   if (restoreFocus) originFocus?.focus({ preventScroll: true });
   if (['#proyectos', '#sobre-mi'].includes(location.hash)) history.replaceState(history.state, '', location.pathname + location.search);
@@ -160,22 +206,27 @@ collection.addEventListener('keydown', event => {
   const direction = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : ['ArrowLeft', 'ArrowUp'].includes(event.key) ? -1 : 0;
   if (direction) {
     event.preventDefault();
-    selectRecord(centeredIndex() + direction);
+    selectRecord((keyboardIndex ?? centeredIndex()) + direction);
   } else if (event.key === 'Home' || event.key === 'End') {
     event.preventDefault();
     selectRecord(event.key === 'Home' ? 0 : projects.length - 1);
   } else if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
-    openRecord(centeredIndex());
+    const index = keyboardIndex ?? centeredIndex();
+    if (mode === 'collection' && hasScene() && index !== centeredIndex()) scene!.select(index, true);
+    openRecord(index);
   }
 });
 
 function advance(delta: number) {
+  if (!delta) return;
+  keyboardIndex = null;
   if (hasScene()) scene?.scrollBy(delta);
   else {
     fallbackPhase = (fallbackPhase + delta / 280) % projects.length;
     layoutFallback();
   }
+  syncVisibleSelection();
 }
 stage.addEventListener('wheel', event => {
   if (event.ctrlKey || mode !== 'collection') return;
@@ -184,35 +235,49 @@ stage.addEventListener('wheel', event => {
   advance(delta * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.clientHeight : 1));
 }, { passive: false });
 
-let gesture: { id: number; x: number; y: number; startX: number; startY: number; index: number | null; dragged: boolean } | null = null;
+let gesture: {
+  id: number; x: number; y: number; index: number | null; touch: boolean;
+  intent: 'orbit-x' | 'orbit-y' | 'turn' | null;
+} | null = null;
 stage.addEventListener('pointerdown', event => {
   if (mode !== 'collection' || !event.isPrimary || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   const fallback = (event.target as Element).closest<HTMLElement>('[data-fallback-record]');
   const index = hasScene() ? scene!.pick(event.clientX, event.clientY) : fallback ? Number(fallback.dataset.fallbackRecord) : null;
-  gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, startX: event.clientX, startY: event.clientY, index, dragged: false };
+  gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, index, touch: event.pointerType === 'touch', intent: null };
+  keyboardIndex = null;
+  syncVisibleSelection();
   stage.setPointerCapture(event.pointerId);
 });
 stage.addEventListener('pointermove', event => {
   if (!gesture || gesture.id !== event.pointerId || mode !== 'collection') return;
-  if (!gesture.dragged && Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) < 6) return;
-  gesture.dragged = true;
   const dx = event.clientX - gesture.x;
   const dy = event.clientY - gesture.y;
+  if (!gesture.intent) {
+    if (Math.hypot(dx, dy) < 6) return;
+    const vertical = Math.abs(dy) > Math.abs(dx);
+    gesture.intent = gesture.index === null || (gesture.touch && vertical)
+      ? (vertical ? 'orbit-y' : 'orbit-x')
+      : 'turn';
+  }
   gesture.x = event.clientX;
   gesture.y = event.clientY;
-  if (gesture.index === null) advance(Math.abs(dy) > Math.abs(dx) ? -dy : -dx);
-  else if (dx && hasScene()) scene?.rotate(gesture.index, dx);
-  else if (dx) {
-    fallbackTurns[gesture.index] = (fallbackTurns[gesture.index] + dx * .007) % (Math.PI * 2);
-    layoutFallback();
+  if (gesture.intent === 'turn') {
+    if (!dx || gesture.index === null) return;
+    if (hasScene()) scene!.rotate(gesture.index, dx);
+    else {
+      fallbackTurns[gesture.index] = (fallbackTurns[gesture.index] + dx * .007) % (Math.PI * 2);
+      layoutFallback();
+    }
+  } else {
+    advance(gesture.intent === 'orbit-y' ? -dy : -dx);
   }
 });
 stage.addEventListener('pointerup', event => {
   if (!gesture || gesture.id !== event.pointerId) return;
-  const { index, dragged } = gesture;
+  const { index, intent } = gesture;
   gesture = null;
   if (stage.hasPointerCapture(event.pointerId)) stage.releasePointerCapture(event.pointerId);
-  if (!dragged && index !== null) openRecord(index);
+  if (!intent && index !== null) openRecord(index);
 });
 stage.addEventListener('pointercancel', () => { gesture = null; });
 stage.addEventListener('lostpointercapture', () => { gesture = null; });
@@ -284,11 +349,6 @@ async function initializeScene() {
     if (!pageActive || navigating) { loadedScene.dispose(); host.replaceChildren(); table.classList.remove('scene-ready'); host.dataset.renderState = 'fallback'; return; }
     scene = loadedScene; syncRenderMode();
     if (loaderProgress) loaderProgress.style.transform = 'scaleX(1)';
-    if (collection.open && (mode === 'opening' || mode === 'collection')) {
-      const generation = collectionGeneration;
-      await scene.openCollection(activeIndex);
-      if (generation === collectionGeneration && collection.open && !navigating) scene.select(activeIndex);
-    }
   } catch (error) {
     if (!pageActive || navigating) return;
     host.style.display = 'none'; host.dataset.renderState = 'failed'; syncRenderMode();
@@ -341,7 +401,9 @@ window.addEventListener('pageshow', event => {
   pageActive = true;
   if (!event.persisted) return;
   cancelAutomaticPlayback(); cancelPlayback(); navigating = false; mode = 'home';
+  keyboardIndex = null; sceneCollectionOpen = false;
   if (collection.open) collection.close(); if (contact.open) contact.close();
+  orbitStatus.textContent = '';
   document.body.classList.remove('collection-open', 'collection-playing');
   scene?.reset(); host.style.visibility = '';
   document.querySelectorAll<HTMLButtonElement>('[data-open-collection]').forEach(button => button.disabled = false);

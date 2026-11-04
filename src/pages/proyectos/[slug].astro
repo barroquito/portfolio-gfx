@@ -26,7 +26,7 @@ const story = project.story ?? [
       <div class="case-story-intro" data-reveal><h2 id="case-story-title">{project.intro}</h2></div>
       {personal ? <div class="case-reflection" data-reveal>
         {story.map(({text}: {text:string}) => <p>{text}</p>)}
-        <p><a class="text-link" href="/CV-Jorge-Pindado-ES.pdf" download>Descargar CV (PDF)</a></p>
+        <a class="text-link case-cv-link" href="/CV-Jorge-Pindado-ES.pdf" download>Descargar CV (PDF)</a>
       </div> : <div class="case-story-grid">
         {story.map(({ title, text }: { title: string; text: string }) => <div data-reveal><h2>{title}</h2><p>{text}</p></div>)}
       </div>}
@@ -36,4 +36,5 @@ const story = project.story ?? [
     <section class="case-browse section-shell" aria-label="Explorar otros trabajos"><ProjectNavigator currentSlug={project.slug} /><a class="text-link" href="mailto:jorgepindado.gfx@gmail.com">Hablemos de un proyecto</a></section>
   </main>
   {!personal && <dialog class="lightbox" aria-label="Imagen ampliada"><button class="lightbox-close" aria-label="Cerrar imagen ampliada">Cerrar <Icon name="close" size={60} /></button><img src="" alt="" /><p></p></dialog>}
+  <script src="../../scripts/case-motion.ts"></script>
 </Layout>

@@ -6,6 +6,18 @@ Portfolio estático con Astro 5, Three.js, TypeScript y GSAP/ScrollTrigger. Dise
 
 Usar Node.js 22.19 o posterior compatible con Astro 5 y las dependencias fijadas. `npm ci` y `npm run dev`. `npm run build` genera `dist/`.
 
+## Expositor actual
+
+La portada reúne cinco discos. En la colección, la rueda recorre la órbita, el arrastre horizontal gira la funda sobre su eje vertical y el gesto vertical táctil recorre los discos. Con foco en la colección se puede navegar con las flechas, Inicio y Fin. El lector de pantalla recibe el título y la descripción del disco. Enter abre el caso y Escape cierra la colección. Si falla WebGL, las mismas fichas quedan disponibles en la versión HTML.
+
+El modelo editable sigue en `assets/tocadiscos-jorge.blend`. Para actualizar el GLB, exportar desde Blender al archivo temporal `tocadiscos-exportado.glb` y comprimirlo desde la raíz del proyecto:
+
+```sh
+npm exec --yes --package=gltfpack@0.22.0 -- gltfpack -i tocadiscos-exportado.glb -o public/models/tocadiscos.glb -c -noq -kn -km -kv
+```
+
+Las opciones conservan la precisión de los atributos, los materiales y los nodos con nombre, incluido `TONEARM_PIVOT`. El decodificador viene con Three.js. Verificar el brazo durante la reproducción y actualizar el parámetro de versión de la URL del GLB en `src/scripts/record-scene.ts` al sustituir el archivo.
+
 ## Traslado a GitHub — 30 de octubre de 2026
 
 La base visual procede de la versión 3 del portfolio privado de Sites, desde el commit `778b086f92d17a612698dcda5738685a5313db1f`. La versión anterior de la web permanece en el historial de Git.
@@ -28,7 +40,7 @@ El script `tools/build-turntable.py` documenta y permite regenerar el modelo ori
 
 ## Añadir un caso
 
-Añadir un objeto en `src/data/projects.ts`, incluyendo `record.color`, `record.ink` y `record.label`. La portada del carrusel y la página `/proyectos/[slug]/` se generan desde esos datos. Guardar las imágenes optimizadas en `public/images/`. `ProjectArtwork.astro` contiene las cubiertas de los casos y `RecordSleeve.astro` las carátulas del expositor; extender ambos temas al añadir una identidad. `record-scene.ts` carga el tocadiscos y genera los vinilos y fundas. `record-room.ts` contiene los diálogos, carrusel y reproducción/transición. La dirección editorial de los casos sigue definida en `global.css`; el expositor en `record-room.css`.
+Añadir un objeto en `src/data/projects.ts`, incluyendo `record.color`, `record.ink` y `record.label`. La portada del carrusel y la página `/proyectos/[slug]/` se generan desde esos datos. Guardar las imágenes optimizadas en `public/images/`. `RecordSleeve.astro` define las carátulas HTML y `record-scene.ts` carga el tocadiscos y genera las texturas de las fundas 3D. `record-room.ts` controla la colección, los diálogos y la transición a cada proyecto. `BentoGallery.astro` muestra la galería de cada caso. Las galerías provisionales reutilizan la portada y muestran encuadres estáticos.
 
 ## Contenido y procedencia
 

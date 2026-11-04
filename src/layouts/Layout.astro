@@ -20,7 +20,7 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/brand/jorge-mark-red.svg" />
-    {home && <link rel="preload" href="/models/tocadiscos.glb?v=metal-02" as="fetch" type="model/gltf-binary" crossorigin="anonymous" />}
+    {home && <link rel="preload" href="/models/tocadiscos.glb?v=meshopt-palette-01" as="fetch" type="model/gltf-binary" crossorigin="anonymous" />}
     {home && <script is:inline>
       document.documentElement.classList.add('room-loading');
       window.setTimeout(()=>{
@@ -47,9 +47,9 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
 
       <button class="menu-toggle" aria-label="Abrir menú" aria-controls="main-nav" aria-expanded="false"><span>Menú</span><i aria-hidden="true"></i></button>
       <nav id="main-nav" aria-label="Navegación principal">
-        <a href={home ? '#proyectos' : '/#proyectos'} data-nav="proyectos">Colección <sup>{String(projects.length).padStart(2,'0')}</sup></a>
-        <a href={home ? '#sobre-mi' : '/#sobre-mi'} data-nav="sobre-mi">Sobre mí</a>
-        <a class="nav-contact" href={home ? '#contacto' : '/#contacto'} data-nav="contacto">Hablemos </a>
+        <a href={home ? '#proyectos' : '/#proyectos'}>Colección <sup>{String(projects.length).padStart(2,'0')}</sup></a>
+        <a href={home ? '#sobre-mi' : '/#sobre-mi'}>Sobre mí</a>
+        <a class="nav-contact" href={home ? '#contacto' : '/#contacto'}>Hablemos </a>
       </nav>
     </header>
     <slot />

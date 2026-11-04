@@ -1,14 +1,15 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import { gsap } from 'gsap';
 
 export type RecordProject = {slug:string;title:string;number:string;subtitle:string;description?:string;intro?:string;theme:string;record:{color:string;ink:string;label:string}};
 export type RecordScene = {
-  openCollection:(index?:number)=>Promise<void>; closeCollection:()=>Promise<void>;
+  openCollection:(index?:number,immediate?:boolean)=>Promise<void>; closeCollection:()=>Promise<void>;
   scrollBy:(delta:number)=>void; rotate:(index:number,dx:number)=>void; centeredIndex:()=>number;
-  select:(index:number)=>void; pick:(x:number,y:number)=>number|null;
+  select:(index:number,immediate?:boolean)=>void; pick:(x:number,y:number)=>number|null;
   play:(project:RecordProject)=>Promise<void>; hoverAt:(x:number,y:number)=>void;
   clearHover:()=>void; hoverCollection:()=>void; reset:()=>void; dispose:()=>void;
 };
@@ -20,11 +21,11 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   let renderer:THREE.WebGLRenderer;
   try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});}
   catch{renderer=new THREE.WebGLRenderer({antialias:false,alpha:true});}
+  const anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   let contextLost=false;
   let onContextLoss=()=>{};
   function loseContext(event:Event){event.preventDefault();contextLost=true;host.closest('.listening-table')?.classList.remove('scene-ready');host.dataset.renderState='context-lost';onContextLoss();}
   renderer.domElement.addEventListener('webglcontextlost',loseContext);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth<761?1.25:1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;
@@ -68,17 +69,17 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       const value=kind==='brushed'?170+line+random()*12:kind==='paper'?225+random()*30:128+Math.sin(Math.hypot(x-size/2,y-size/2)*1.8)*22;
       const i=(y*size+x)*4;data[i]=data[i+1]=data[i+2]=value;data[i+3]=255;
     }}
-    const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());t.needsUpdate=true;return t;
+    const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.anisotropy=anisotropy;t.needsUpdate=true;return t;
   }
   const brushedMap=surfaceMap('brushed'),paperMap=surfaceMap('paper'),groovesMap=surfaceMap('grooves');
   paperMap.repeat.set(3,3);
   const dark=new THREE.MeshPhysicalMaterial({color:'#0b0f12',metalness:0,roughness:.24,clearcoat:1,clearcoatRoughness:.12});
   const ivory=mat('#f1f1e5',0,.9);materials.push(dark);
   async function loadImage(src:string):Promise<HTMLImageElement|null>{try{return await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src;});}catch{return null;}}
-  const [logoImage,redLogoImage,bulkImage,personalCover]=await Promise.all([loadImage('/brand/jorge-mark.svg'),loadImage('/brand/jorge-mark-red.svg'),loadImage('/images/bulk-drink.webp'),loadImage('/images/sobre-mi-cover.svg')]);
+  const coverImages=Promise.all([loadImage('/brand/jorge-mark.svg'),loadImage('/brand/jorge-mark-red.svg'),loadImage('/images/bulk-drink.webp'),loadImage('/images/sobre-mi-cover.svg')]);
   function mesh(parent:THREE.Object3D, geometry:THREE.BufferGeometry, material:THREE.Material|THREE.Material[],x=0,y=0,z=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
   function cyl(parent:THREE.Object3D,r:number,h:number,material:THREE.Material,x=0,y=0,z=0){return mesh(parent,new THREE.CylinderGeometry(r,r,h,80),material,x,y,z);}
-  function texture(canvas:HTMLCanvasElement){const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());return t;}
+  function texture(canvas:HTMLCanvasElement){const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=anisotropy;return t;}
   function textCanvas(width:number,height:number,draw:(ctx:CanvasRenderingContext2D)=>void){const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d');if(!ctx)throw new Error('Canvas unavailable');draw(ctx);return texture(c);}
   const printFont='"Inter Variable", sans-serif';
   const deck=new THREE.Group();deck.position.set(-2.85,0,0);deck.rotation.y=.085;scene.add(deck);
@@ -89,27 +90,23 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       draw(ctx);
     });
   }
-  const grooveTexture=sleeveTexture(ctx=>{
-    ctx.fillStyle='#080b0d';ctx.fillRect(0,0,1024,1024);
-    for(let i=120;i<506;i+=3){ctx.beginPath();ctx.arc(512,512,i,0,Math.PI*2);ctx.strokeStyle=i%2?'#232b20':'#1c231a';ctx.lineWidth=1;ctx.stroke();}
-    ctx.fillStyle='#f1f1e5';ctx.beginPath();ctx.arc(512,512,102,0,Math.PI*2);ctx.fill();
-    if(logoImage)ctx.drawImage(logoImage,437,461,150,93);else{ctx.fillStyle='#232b20';ctx.textAlign='center';ctx.font=`600 48px ${printFont}`;ctx.fillText('JP',512,520);}
-  });
-  const matPrint=new THREE.MeshPhysicalMaterial({map:grooveTexture,metalness:0,roughness:.2,bumpMap:groovesMap,bumpScale:.0016,clearcoat:1,clearcoatRoughness:.12,anisotropy:.45,envMapIntensity:1.6});materials.push(matPrint);
   let tonearm:THREE.Object3D;
   const modelMaterials=new Map<THREE.Material,THREE.Material>();
   try{
-    const model=await new GLTFLoader().loadAsync('/models/tocadiscos.glb?v=metal-02',event=>onProgress?.(event.lengthComputable?event.loaded/event.total:null));
+    const model=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('/models/tocadiscos.glb?v=meshopt-palette-01',event=>onProgress?.(event.lengthComputable?event.loaded/event.total:null));
     const modelArm=model.scene.getObjectByName('TONEARM_PIVOT');
     if(!modelArm)throw new Error('Turntable arm pivot is missing');
     model.scene.traverse(object=>{if(object instanceof THREE.Mesh){
-      object.castShadow=true;object.receiveShadow=true;
       const source=Array.isArray(object.material)?object.material:[object.material];
+      // Small printed markings do not need to submit geometry to the shadow pass.
+      object.castShadow=source.some(material=>material.name!=='09 · Marcas marfil');
+      object.receiveShadow=true;
       object.material=source.map(material=>{
         if(modelMaterials.has(material))return modelMaterials.get(material)!;
         const m=material as THREE.MeshStandardMaterial;
+        if(m.map)m.map.anisotropy=anisotropy;
         if(m.metalness>.7){
-          const physical=new THREE.MeshPhysicalMaterial({color:m.color,map:m.map,metalness:.97,roughness:m.roughness,roughnessMap:brushedMap,bumpMap:brushedMap,bumpScale:.0015,anisotropy:.55,envMapIntensity:1.15});
+          const physical=new THREE.MeshPhysicalMaterial({color:m.color,map:m.map,metalness:m.metalness,roughness:m.roughness,roughnessMap:brushedMap,bumpMap:brushedMap,bumpScale:.0015,anisotropy:.55,envMapIntensity:1.15});
           modelMaterials.set(material,physical);material.dispose();materials.push(physical);return physical;
         }
         if(!materials.includes(material))materials.push(material);return material;
@@ -117,12 +114,30 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       if(source.length===1)object.material=object.material[0];
     }});
     deck.add(model.scene);tonearm=modelArm;tonearm.rotation.y=.04;
-  }catch(error){renderer.dispose();environment.dispose();host.replaceChildren();throw error;}
+  }catch(error){
+    renderer.domElement.removeEventListener('webglcontextlost',loseContext);
+    for(const texture of [brushedMap,paperMap,groovesMap])texture.dispose();
+    for(const material of materials)material.dispose();
+    floor.geometry.dispose();floor.material.dispose();renderer.dispose();environment.dispose();host.replaceChildren();throw error;
+  }
+  const [logoImage,redLogoImage,bulkImage,personalCover]=await coverImages;
+  const grooveTexture=sleeveTexture(ctx=>{
+    ctx.fillStyle='#080b0d';ctx.fillRect(0,0,1024,1024);
+    for(let i=120;i<506;i+=3){ctx.beginPath();ctx.arc(512,512,i,0,Math.PI*2);ctx.strokeStyle=i%2?'#232b20':'#1c231a';ctx.lineWidth=1;ctx.stroke();}
+    ctx.fillStyle='#f1f1e5';ctx.beginPath();ctx.arc(512,512,102,0,Math.PI*2);ctx.fill();
+    if(logoImage)ctx.drawImage(logoImage,437,461,150,93);else{ctx.fillStyle='#232b20';ctx.textAlign='center';ctx.font=`600 48px ${printFont}`;ctx.fillText('JP',512,520);}
+  });
+  const matPrint=new THREE.MeshPhysicalMaterial({map:grooveTexture,metalness:0,roughness:.2,bumpMap:groovesMap,bumpScale:.0016,clearcoat:1,clearcoatRoughness:.12,anisotropy:.45,envMapIntensity:1.6});materials.push(matPrint);
   // Each cover is generated from the same project metadata as the accessible carousel.
   const coverTextures=projects.map(p=>sleeveTexture(ctx=>{
     if(p.theme==='personal'&&personalCover){ctx.drawImage(personalCover,0,0,1024,1024);return;}
     ctx.fillStyle=p.record.color;ctx.fillRect(0,0,1024,1024);
-    if(p.theme==='bulk'&&bulkImage){const scale=Math.max(1024/bulkImage.width,1024/bulkImage.height);const w=bulkImage.width*scale,h=bulkImage.height*scale;ctx.drawImage(bulkImage,(1024-w)/2,(1024-h)/2,w,h);}
+    if(p.theme==='bulk'&&bulkImage){
+      const crop=Math.min(bulkImage.width,bulkImage.height);
+      ctx.imageSmoothingQuality='high';
+      ctx.drawImage(bulkImage,(bulkImage.width-crop)/2,(bulkImage.height-crop)/2,crop,crop,0,0,1024,1024);
+      return;
+    }
     ctx.fillStyle=p.record.ink;ctx.strokeStyle=p.record.ink;ctx.lineWidth=2;
     ctx.font=`600 22px ${printFont}`;ctx.fillText('JORGE PINDADO',70,85);ctx.textAlign='right';ctx.fillText(`JP—${p.number}`,954,85);ctx.textAlign='left';ctx.beginPath();ctx.moveTo(70,120);ctx.lineTo(954,120);ctx.stroke();
     if(p.theme==='bulk'){ctx.fillStyle='#20352e';ctx.font=`600 90px ${printFont}`;ctx.fillText('BULK®',70,230);ctx.font=`600 30px ${printFont}`;ctx.fillText('COMER BIEN. SUBIR EL VOLUMEN.',70,843);}
@@ -135,10 +150,6 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     }
     else {ctx.save();ctx.globalAlpha=.2;ctx.translate(512,512);ctx.rotate(-.4);for(let i=-700;i<700;i+=30){ctx.fillRect(-900,i,1800,3);}ctx.restore();ctx.save();ctx.transform(1,0,-.2,1,90,0);ctx.font=`600 460px ${printFont}`;ctx.fillText('F1',80,650);ctx.font=`600 130px ${printFont}`;ctx.fillText('WEEK',80,788);ctx.restore();}
     ctx.fillStyle=p.record.ink;ctx.font=`600 18px ${printFont}`;ctx.fillText(p.record.label,70,956);ctx.textAlign='right';ctx.fillText('33⅓ RPM / SIDE A',954,956);
-    // Print grain lives in the albedo as well as the paper bump/roughness maps.
-    const print=ctx.getImageData(0,0,sleeveTextureSize,sleeveTextureSize);let seed=781;
-    for(let i=0;i<print.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;const grain=((seed>>>24)-128)/32;print.data[i]+=grain;print.data[i+1]+=grain;print.data[i+2]+=grain;}
-    ctx.putImageData(print,0,0);
   }));
   // The reverse is a separate printed face. It shares the same source copy as
   // the HTML controls, so a canvas never becomes the only way to read a project.
@@ -157,7 +168,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     ctx.font='600 23px '+printFont;ctx.fillText(p.record.label,70,940,800);
   });
   const stack=new THREE.Group();stack.position.set(3.05,.10,0);scene.add(stack);
-  type Sleeve={object:THREE.Group;index:number;home:THREE.Vector3;homeQuaternion:THREE.Quaternion;rank:number;dragYaw:number;backMaterial:THREE.MeshBasicMaterial};
+  type Sleeve={object:THREE.Group;index:number;home:THREE.Vector3;homeQuaternion:THREE.Quaternion;rank:number;dragYaw:number;shadowFaces:THREE.Mesh[];backMaterial:THREE.MeshBasicMaterial};
   const sleeves:Sleeve[]=[];
   const hitMeshes:THREE.Mesh[]=[];
   // The paper and edge share a gentle bow, including their raycast geometry.
@@ -178,14 +189,15 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     sleeve.position.set((i-1)*.07,.10+(projects.length-i)*.105,(i-1)*.035);
     sleeve.rotation.y=[-.12,.10,-.18,.22][i%4];stack.add(sleeve);
     const edge=mat(p.record.color,0,.86);
-    mesh(sleeve,sleeveEdge,edge);
-    const frontMat=new THREE.MeshStandardMaterial({map:coverTextures[i],color:'#d4d4d4',metalness:0,roughness:.9,roughnessMap:paperMap,bumpMap:paperMap,bumpScale:.004,envMapIntensity:.3});materials.push(frontMat);
+    const edgeMesh=mesh(sleeve,sleeveEdge,edge);
+    const frontMat=new THREE.MeshStandardMaterial({map:coverTextures[i],color:'#e8e8e8',metalness:0,roughness:.9,roughnessMap:paperMap,bumpMap:paperMap,bumpScale:.003,envMapIntensity:.3});materials.push(frontMat);
     const front=mesh(sleeve,sleeveFront,frontMat,0,.049,0);front.rotation.x=-Math.PI/2;
     // Avoid tone mapping the printed reverse so its small text stays legible.
     const backMat=new THREE.MeshBasicMaterial({map:blankBack,toneMapped:false});materials.push(backMat);
     const back=mesh(sleeve,sleeveBack,backMat,0,-.049,0);back.rotation.set(Math.PI/2,0,Math.PI);
+    back.castShadow=false;
     front.userData.recordIndex=i;back.userData.recordIndex=i;hitMeshes.push(front,back);
-    sleeves.push({object:sleeve,index:i,home:sleeve.position.clone().add(stack.position),homeQuaternion:sleeve.quaternion.clone(),rank:projects.length-i-1,dragYaw:0,backMaterial:backMat});
+    sleeves.push({object:sleeve,index:i,home:sleeve.position.clone().add(stack.position),homeQuaternion:sleeve.quaternion.clone(),rank:projects.length-i-1,dragYaw:0,shadowFaces:[edgeMesh,front],backMaterial:backMat});
   }
   // Once home coordinates are captured, world-space siblings make orbit paths
   // and the extraction path independent of the old stack transform.
@@ -234,11 +246,18 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
 
   let frameBounds=host.getBoundingClientRect(),frameHome=liveHomeFrame();
   let frameSafe=host.ownerDocument.querySelector<HTMLElement>('.orbit-stage')?.getBoundingClientRect();
+  let readyForRender=false;
   function updateData(){
-    host.dataset.sceneMode=mode;host.dataset.activeRecord=projects[activeIndex]?.slug||'';
+    if(host.dataset.sceneMode!==mode)host.dataset.sceneMode=mode;
+    const slug=projects[activeIndex]?.slug||'';
+    if(host.dataset.activeRecord!==slug)host.dataset.activeRecord=slug;
+  }
+  function draw(time:number){
+    renderer.render(scene,camera);renderedFrames++;
+    if(!lastStats||time-lastStats>500){host.dataset.orbitProgress=layout.orbit.toFixed(4);host.dataset.renderedFrames=String(renderedFrames);host.dataset.drawCalls=String(renderer.info.render.calls);host.dataset.triangles=String(renderer.info.render.triangles);lastStats=time;}
   }
   function render(){
-    if(disposed||!visible||contextLost||renderFrame)return;
+    if(!readyForRender||disposed||!visible||contextLost||renderFrame)return;
     renderFrame=requestAnimationFrame(time=>{
       renderFrame=0;if(disposed||!visible||contextLost)return;
       const dt=previous?Math.min((time-previous)/1000,.1):1/60;
@@ -249,8 +268,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       }
       if(layoutDirty){layoutDirty=false;applyLayout();}
       if(playing&&!reduced.matches){const delta=previous?Math.min((time-previous)/1000,.05):0;movingRecord.rotation.y+=delta*1.9;}
-      previous=time;renderer.render(scene,camera);renderedFrames++;
-      if(time-lastStats>500){host.dataset.orbitProgress=layout.orbit.toFixed(4);host.dataset.renderedFrames=String(renderedFrames);host.dataset.drawCalls=String(renderer.info.render.calls);host.dataset.triangles=String(renderer.info.render.triangles);lastStats=time;}
+      previous=time;draw(time);
       if((playing&&!reduced.matches)||(mode==='collection'&&layout.orbit!==orbitTarget))render();
       else previous=0;
     });
@@ -311,7 +329,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       const delay=sleeve.index*.045;
       const progress=smooth((layout.collection-delay)/(1-delay));
       // Floating jackets use direct studio light, leaving the static floor shadow clean.
-      for(const face of sleeve.object.children)if(face instanceof THREE.Mesh)face.castShadow=progress<.01;
+      for(const face of sleeve.shadowFaces)face.castShadow=progress<.01;
       const angle=((sleeve.index-layout.orbit)%projects.length)*step;
       const front=Math.pow(Math.max(0,Math.cos(angle)),3);
       const radiusX=portrait?3.15:4.85;
@@ -369,7 +387,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(mode==='home'&&!document.body.classList.contains('collection-open')){homeRect=bounds;homeTableRect=table.getBoundingClientRect();}
     width=bounds.width;height=bounds.height;frameBounds=bounds;frameHome=liveHomeFrame();
     frameSafe=host.ownerDocument.querySelector<HTMLElement>('.orbit-stage')?.getBoundingClientRect();
-    const budget=document.body.classList.contains('collection-open')?1250000:1800000;
+    const budget=document.body.classList.contains('collection-open')?(compactTextures?1250000:1650000):1800000;
     const ratio=Math.min(window.devicePixelRatio,1.5,Math.sqrt(budget/(width*height)));
     const canvas=renderer.domElement;
     if(canvas.width!==Math.floor(width*ratio)||canvas.height!==Math.floor(height*ratio))renderer.setDrawingBufferSize(width,height,ratio);
@@ -401,9 +419,13 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     scene.updateMatrixWorld(true);
     const hit=raycaster.intersectObjects(hitMeshes.filter(mesh=>mesh.parent?.visible),false)[0];return hit?Number(hit.object.userData.recordIndex):null;
   }
-  async function openCollection(index=0){
+  async function openCollection(index=0,immediate=false){
     if(disposed||contextLost)return;
     stopTweens();for(const sleeve of sleeves)sleeve.dragYaw=0;activeIndex=wrap(index);layout.orbit=orbitTarget=activeIndex;layout.focus=layout.exit=0;layout.hoverDeck=layout.hoverStack=0;playing=false;movingRecord.visible=false;
+    if(immediate){
+      mode='collection';layout.collection=1;renderer.shadowMap.needsUpdate=true;resize();
+      return;
+    }
     mode='opening';resize();
     return animate(timeline=>{timeline.to(layout,{collection:1,duration:1.55,ease:'power2.inOut'});},()=>{mode='collection';renderer.shadowMap.needsUpdate=true;});
   }
@@ -424,12 +446,13 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     sleeve.dragYaw=(sleeve.dragYaw+dx*.007)%tau;
     invalidateLayout();
   }
-  function select(index:number){
+  function select(index:number,immediate=false){
     if(mode!=='collection'||disposed)return;
     const next=wrap(index),current=wrap(Math.round(orbitTarget));let delta=next-current;
     if(delta>projects.length/2)delta-=projects.length;if(delta<-projects.length/2)delta+=projects.length;
     orbitTarget=Math.round(orbitTarget)+delta;activeIndex=next;
-    if(reduced.matches){layout.orbit=orbitTarget;invalidateLayout();}else render();
+    if(immediate){layout.orbit=orbitTarget;applyLayout();render();}
+    else if(reduced.matches){layout.orbit=orbitTarget;invalidateLayout();}else render();
   }
   function setLabel(p:RecordProject){
     labelMat.map?.dispose();
@@ -500,7 +523,8 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   try {
     await Promise.race([renderer.compileAsync(scene,camera),new Promise<void>(resolve=>{compileTimer=setTimeout(resolve,4000);})]);
     if(contextLost||renderer.getContext().isContextLost())throw new Error('WEBGL_CONTEXT_LOST');
-    renderer.render(scene,camera);
+    draw(performance.now());
+    readyForRender=true;
   } catch (error) {
     dispose();
     host.replaceChildren();

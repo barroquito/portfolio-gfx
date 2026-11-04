@@ -1,7 +1,3 @@
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-gsap.registerPlugin(ScrollTrigger);
 const menuToggle = document.querySelector<HTMLButtonElement>('.menu-toggle');
 const nav = document.querySelector<HTMLElement>('#main-nav');
 
@@ -32,59 +28,24 @@ document.addEventListener('keydown', event => {
 });
 window.matchMedia('(min-width: 761px)').addEventListener('change', event => { if (event.matches) closeMenu(); });
 
-// Scroll drives the editorial sequence. Cube rotations still belong to the gallery.
-const casePage = document.querySelector<HTMLElement>('.case-page');
-if (casePage) {
-  const motion = gsap.matchMedia();
-  motion.add('(prefers-reduced-motion: no-preference)', () => {
-    const heading = casePage.querySelectorAll('.back-link, .case-topline, .case-heading h1, .case-intro');
-    const entrance = gsap.fromTo(heading, { y: 14, opacity: .45 }, {
-      y: 0, opacity: 1, duration: .65, stagger: .065, ease: 'power3.out',
-      clearProps: 'transform,opacity',
-    });
-
-    const story = casePage.querySelector('.case-story');
-    const storyBlocks = story?.querySelectorAll('.case-story-grid > div, .case-reflection > p');
-    if (story && storyBlocks?.length) {
-      gsap.fromTo(storyBlocks, { y: 24, opacity: .72 }, {
-        y: 0, opacity: 1, ease: 'none', stagger: .12,
-        scrollTrigger: { trigger: story, start: 'clamp(top 92%)', end: 'clamp(top 40%)', scrub: .4 },
-      });
-    }
-
-    for (const tile of casePage.querySelectorAll('.bento-tile')) {
-      gsap.fromTo(tile, { y: 28, scale: .98, opacity: .78 }, {
-        y: 0, scale: 1, opacity: 1, ease: 'none',
-        scrollTrigger: { trigger: tile, start: 'clamp(top 96%)', end: 'clamp(top 67%)', scrub: .35 },
-      });
-    }
-    const restore = (event: PageTransitionEvent) => {
-      if (!event.persisted) return;
-      entrance.progress(1);
-      ScrollTrigger.refresh();
-    };
-    window.addEventListener('pageshow', restore);
-    return () => window.removeEventListener('pageshow', restore);
-  });
-  window.addEventListener('pagehide', event => {
-    if (!event.persisted) motion.revert();
-  });
-}
-
 let toastTimer: ReturnType<typeof setTimeout>;
 function toast(message: string) {
   const element = document.querySelector<HTMLElement>('.toast'); if (!element) return;
   clearTimeout(toastTimer); element.textContent = message; element.classList.add('show');
   toastTimer = setTimeout(() => element.classList.remove('show'), 3500);
 }
-document.querySelector('.copy-email')?.addEventListener('click', async () => {
+const copyEmail = document.querySelector<HTMLButtonElement>('.copy-email');
+copyEmail?.addEventListener('click', async () => {
   try { await navigator.clipboard.writeText('jorgepindado.gfx@gmail.com'); toast('Correo copiado. Hablemos.'); }
   catch {
     const previousFocus = document.activeElement as HTMLElement | null;
     const field = document.createElement('textarea');
     field.value = 'jorgepindado.gfx@gmail.com'; field.setAttribute('readonly', '');
     field.style.cssText = 'position:fixed;left:-9999px;top:0;';
-    document.body.append(field); field.select();
+    // The document outside a modal is inert, so the field must live inside it.
+    (copyEmail.closest('dialog[open]') ?? document.body).append(field);
+    field.focus({ preventScroll: true });
+    field.select();
     let copied = false;
     try { copied = document.execCommand('copy'); } catch { /* Show the address when copying is unavailable. */ }
     field.remove(); previousFocus?.focus();
@@ -106,18 +67,15 @@ lightbox?.querySelector('.lightbox-close')?.addEventListener('click', () => ligh
 lightbox?.addEventListener('click', event => { if (event.target === lightbox) { const box=lightbox.getBoundingClientRect(); if (event.clientX<box.left || event.clientX>box.right || event.clientY<box.top || event.clientY>box.bottom) lightbox.close(); } });
 lightbox?.addEventListener('close', () => { document.body.style.overflow = ''; lastFocus?.focus(); });
 
-let ticking = false;
-function updateScroll() {
-  const max = document.documentElement.scrollHeight - window.innerHeight;
-  const progress = max > 0 ? window.scrollY / max : 0;
-  const bar = document.querySelector<HTMLElement>('.scroll-progress'); if (bar) bar.style.transform = `scaleX(${progress})`;
-  const sections = ['proyectos','sobre-mi','contacto'];
-  let active = '';
-  for (const id of sections) { const section = document.getElementById(id); if (section && section.getBoundingClientRect().top < window.innerHeight * .45) active = id; }
-  document.querySelectorAll<HTMLElement>('[data-nav]').forEach(link => { if (link.dataset.nav === active) link.setAttribute('aria-current','location'); else link.removeAttribute('aria-current'); });
-  ticking = false;
+const progressBar = document.querySelector<HTMLElement>('.scroll-progress');
+if (progressBar && !document.body.classList.contains('listening-room')) {
+  let frame = 0;
+  const update = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+    progressBar.style.transform = `scaleX(${progress})`;
+    frame = 0;
+  };
+  window.addEventListener('scroll', () => { if (!frame) frame = requestAnimationFrame(update); }, { passive: true });
+  update();
 }
-window.addEventListener('scroll', () => { if (!ticking) { requestAnimationFrame(updateScroll); ticking = true; } }, { passive: true });
-updateScroll();
-document.fonts.ready.then(() => ScrollTrigger.refresh());
-window.addEventListener('load', () => ScrollTrigger.refresh());
