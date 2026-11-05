@@ -7,7 +7,7 @@ import '../styles/selection.css';
 import '../styles/film.css';
 import BrandMark from '../components/BrandMark.astro';
 import { projects } from '../data/projects';
-const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráfico y dirección de arte. Del concepto publicitario a la expresión visual. Portfolio de Jorge Pindado, Madrid.', home = false } = Astro.props;
+const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráfico y dirección de arte. Del concepto publicitario a la expresión visual. Portfolio de Jorge Pindado, Madrid.', home = false, projectPage = false } = Astro.props;
 ---
 <!doctype html>
 <html lang="es">
@@ -33,7 +33,7 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
     </script>}
     <title>{title}</title>
   </head>
-  <body class:list={{'listening-room':home}}>
+  <body class:list={{'listening-room':home, 'project-layout':projectPage}}>
     {home && <div id="room-loader" class="room-loader" role="status" aria-live="polite">
       <BrandMark tone="red" class="loader-signature" />
       <div class="loader-copy"><strong>Ideas en rotación.</strong><span id="loader-message">Preparando la colección</span></div>
@@ -43,7 +43,9 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
     <a href="#main" class="skip-link">Saltar al contenido</a>
     <div class="scroll-progress" aria-hidden="true"></div>
     <header class="site-header">
-      <a class="wordmark" href="/" aria-label="Jorge Pindado, inicio"><span class="wordmark-name">Jorge Pindado{!home && <span>Diseñador gráfico</span>}</span></a>
+      <a class="wordmark" href="/" aria-label="Jorge Pindado, inicio">
+        {projectPage ? <BrandMark /> : <span class="wordmark-name">Jorge Pindado{!home && <span>Diseñador gráfico</span>}</span>}
+      </a>
 
       <button class="menu-toggle" aria-label="Abrir menú" aria-controls="main-nav" aria-expanded="false"><span>Menú</span><i aria-hidden="true"></i></button>
       <nav id="main-nav" aria-label="Navegación principal">
@@ -53,7 +55,7 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
       </nav>
     </header>
     <slot />
-    <footer class="site-footer"><a href="/" class="footer-name" aria-label="Jorge Pindado, inicio"><BrandMark /><span>Jorge Pindado</span></a><span>MADRID, ES · {new Date().getFullYear()}</span><a href="#main">Volver arriba </a></footer>
+    <footer class="site-footer"><a href="/" class="footer-name" aria-label="Jorge Pindado, inicio"><BrandMark />{!projectPage && <span>Jorge Pindado</span>}</a><span>MADRID, ES · {new Date().getFullYear()}</span><a href="#main">Volver arriba </a></footer>
     <div class="toast" role="status" aria-live="polite"></div>
     <script src="../scripts/site.ts"></script>
   </body>

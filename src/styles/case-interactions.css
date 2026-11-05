@@ -1,15 +1,23 @@
+.project-layout .wordmark{min-height:44px}
+.project-layout .wordmark>.brand-mark{width:clamp(62px,8vw,76px)}
+.project-layout .site-footer{font-size:.8125rem}
+.case-heading .back-link,.case-topline>.section-index,.case-topline>.tiny-label{font-size:.875rem}
+.case-heading .back-link{letter-spacing:-.01em}
+.case-intro>p{font-size:clamp(1.125rem,1.5vw,1.375rem)}
+.case-intro>div{gap:6px 18px}
+.case-intro .tag{font-size:.875rem;margin-left:0}
 .case-page .case-story--details{padding-top:0;padding-bottom:90px}
 .case-story--details .case-story-grid{margin-top:48px;padding-top:0;border-top:0;gap:clamp(28px,4vw,60px)}
-.case-story--details .case-story-grid h2{font-size:16px;font-weight:700;line-height:.95;letter-spacing:-.05em;text-transform:uppercase}
-.case-story--details .case-story-grid p{max-width:38ch;margin-top:18px;font-size:16px;line-height:1.65;color:var(--ink)}
+.case-story--details .case-story-grid h2{font-size:1.125rem;font-weight:700;line-height:1.1;letter-spacing:-.05em;text-transform:uppercase}
+.case-story--details .case-story-grid p{max-width:38ch;margin-top:18px;font-size:clamp(1.0625rem,1.3vw,1.125rem);line-height:1.65;color:var(--ink)}
 .case-story--details .case-note{max-width:780px;margin-top:42px;padding:0;border:0;background:none}
-.case-story--details .case-note strong{font-size:13px;font-weight:650;line-height:1.4}
-.case-story--details .case-note p{margin-top:9px;font-size:13px;line-height:1.65}
+.case-story--details .case-note strong{font-size:1rem;font-weight:650;line-height:1.4}
+.case-story--details .case-note p{margin-top:9px;font-size:1rem;line-height:1.65}
 .case-page .bento-section{display:block;padding-bottom:110px}
 .bento-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:30px}
 .bento-heading h2{display:flex;align-items:start;gap:12px;margin:0;font-size:clamp(30px,4vw,58px);font-weight:700;line-height:.9;letter-spacing:-.05em;text-transform:uppercase}
-.bento-heading h2>span{font-size:12px;line-height:1.1;font-weight:500;letter-spacing:-.05em;margin-top:3px}
-.gallery-motion{flex-shrink:0;min-height:44px;padding:8px 0 8px 16px;font-size:12px;font-weight:500;line-height:1.2;letter-spacing:-.05em;text-transform:uppercase;background:none;border:0;color:var(--ink);cursor:pointer}
+.bento-heading h2>span{font-size:.875rem;line-height:1.1;font-weight:500;letter-spacing:-.05em;margin-top:3px}
+.gallery-motion{flex-shrink:0;min-height:44px;padding:8px 0 8px 16px;font-size:.875rem;font-weight:500;line-height:1.2;letter-spacing:-.02em;text-transform:uppercase;background:none;border:0;color:var(--ink);cursor:pointer}
 .gallery-motion:hover{color:var(--red)}
 .gallery-motion:focus-visible{outline:1px dotted currentColor;outline-offset:5px}
 .gallery-motion:disabled{opacity:.6;cursor:default}
@@ -41,24 +49,27 @@
 .project-navigator__list{list-style:none;margin:0;padding:8px 0 26px}
 .project-navigator__list>li+li{border-top:1px solid var(--line)}
 .project-navigator__link,.project-navigator__current{display:grid;grid-template-columns:60px 1fr;align-items:baseline;gap:20px;padding:22px 0;color:var(--ink);text-decoration:none}
-.project-navigator__number{font-size:12px;font-weight:500;letter-spacing:-.05em}
+.project-navigator__number{font-size:.875rem;font-weight:500;letter-spacing:-.05em}
 .project-navigator__title{font-size:clamp(30px,4vw,58px);font-weight:550;line-height:.95;letter-spacing:-.05em;text-transform:uppercase}
 .project-navigator__current{color:var(--red)}
 .project-navigator__link{transition:color .2s}
 .project-navigator__link:hover{color:var(--red)}
 .project-navigator__link:focus-visible{outline:1px dotted var(--red);outline-offset:5px}
-.case-browse>.text-link{display:inline-block;margin-top:32px}
+.case-browse>.text-link{display:inline-block;margin-top:32px;font-size:1rem}
+.project-layout .lightbox[open]{display:grid;grid-template-rows:minmax(0,1fr) auto;padding-top:82px}
+.project-layout .lightbox>img{height:100%;min-height:0}
+.project-layout .lightbox>p{font-size:.9375rem;line-height:1.4}
+.project-layout .lightbox-close{font-size:.9375rem}
 @media(max-width:760px){
   .case-page .case-story--details{padding-bottom:58px}
   .case-story--details .case-story-grid{grid-template-columns:1fr;gap:30px;margin-top:34px}
-  .case-story--details .case-story-grid h2{font-size:15px}
   .case-story--details .case-story-grid p{margin-top:13px;max-width:42ch}
   .case-story--details .case-note{margin-top:34px}
   .case-page .bento-section{padding-bottom:64px}
   .bento-heading{align-items:start;gap:14px;margin-bottom:22px}
   .bento-heading h2{font-size:30px;max-width:180px;flex-wrap:wrap;gap:7px}
-  .bento-heading h2>span{font-size:10px;margin-top:0}
-  .gallery-motion{font-size:10px;max-width:96px;padding:0;min-height:44px;text-align:right}
+  .bento-heading h2>span{margin-top:0}
+  .gallery-motion{max-width:112px;padding:0;text-align:right}
   .bento-gallery{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:130px 130px 120px 160px 200px 140px 170px;grid-template-areas:'a a' 'a a' 'b c' 'd c' 'e e' 'f g' 'f h';gap:12px}
   .case-gallery .bento-tile{border-radius:16px}
   .bento-tile:nth-child(1){grid-area:a}.bento-tile:nth-child(2){grid-area:b}.bento-tile:nth-child(3){grid-area:c}.bento-tile:nth-child(4){grid-area:d}.bento-tile:nth-child(5){grid-area:e}.bento-tile:nth-child(6){grid-area:f}.bento-tile:nth-child(7){grid-area:g}.bento-tile:nth-child(8){grid-area:h}
@@ -66,15 +77,14 @@
   .project-navigator>summary{font-size:clamp(30px,8.5vw,50px);gap:18px;min-height:100px;padding-block:22px}
   .project-navigator>summary>.user-icon{width:48px;height:48px}
   .project-navigator__link,.project-navigator__current{grid-template-columns:28px 1fr;gap:14px;padding:20px 0}
-  .project-navigator__number{font-size:10px}
   .project-navigator__title{font-size:30px}
-  .case-browse>.text-link{margin-top:26px;font-size:12px}
+  .case-browse>.text-link{margin-top:26px}
 }
 
 .case-reflection {
   max-width: 64ch;
   margin-top: clamp(28px, 4vw, 60px);
-  font-size: clamp(16px, 1.45vw, 21px);
+  font-size: clamp(1.0625rem, 1.45vw, 1.3125rem);
   line-height: 1.65;
 }
 .case-reflection p + p { margin-top: 1.5em; }
