@@ -17,9 +17,9 @@ const story = project.story ?? [
 <Layout title={`${project.title} — Jorge Pindado`} description={project.intro} projectPage>
   <main id="main" class="case-page">
     <section class="case-heading section-shell" aria-labelledby="case-title">
-      <a class="back-link" href="/#proyectos">Volver a la colección</a>
-      <div class="case-topline"><span class="section-index">LADO A / DISCO {project.number}</span><span class="tiny-label">{project.context}</span></div>
-      <h1 id="case-title" data-reveal>{project.title}<span>/{project.number}</span></h1>
+      <a class="back-link" href="/proyectos/">Volver al índice</a>
+      <div class="case-topline"><span class="section-index">{project.number ? `LADO A / DISCO ${project.number}` : personal ? 'PERFIL' : 'SELECCIÓN DE TRABAJOS'}</span><span class="tiny-label">{project.context}</span></div>
+      <h1 id="case-title" data-reveal>{project.title}{project.number && <span>/{project.number}</span>}</h1>
       {!personal && <div class="case-intro"><p>{project.subtitle}</p><div>{project.scope.map((tag: string) => <span class="tag">{tag}</span>)}</div></div>}
     </section>
     <section class="case-story case-story--details section-shell" aria-labelledby="case-story-title">
@@ -30,11 +30,30 @@ const story = project.story ?? [
       </div> : <div class="case-story-grid">
         {story.map(({ title, text }: { title: string; text: string }) => <div data-reveal><h2>{title}</h2><p>{text}</p></div>)}
       </div>}
-      {!project.original && <aside class="case-note"><div><strong>Sobre las imágenes</strong><p>De momento, la galería muestra portadas creadas para presentar este caso en el portfolio. Las piezas originales del proyecto están pendientes de incorporarse.</p></div></aside>}
     </section>
-    {!personal && <BentoGallery project={project} />}
+    {project.slug === 'bulk' ? <BentoGallery project={project} /> : project.gallery.length > 0 && <section class="case-gallery section-shell print-gallery" aria-labelledby="gallery-heading">
+      <h2 id="gallery-heading">En imágenes</h2>
+      <div class="print-gallery-grid">
+        {project.gallery.map(({src, alt, caption}) => <figure>
+          <button type="button" class="gallery-zoom" data-src={src} data-alt={alt} data-caption={caption} aria-label={`Ampliar imagen: ${alt}`}>
+            <img src={src} alt={alt} loading="lazy" decoding="async" />
+          </button>
+          <figcaption data-bento-caption>{caption}</figcaption>
+        </figure>)}
+      </div>
+    </section>}
     <section class="case-browse section-shell" aria-label="Explorar otros trabajos"><ProjectNavigator currentSlug={project.slug} /><a class="text-link" href="mailto:jorgepindado.gfx@gmail.com">Hablemos de un proyecto</a></section>
   </main>
   {!personal && <dialog class="lightbox" aria-label="Imagen ampliada"><button class="lightbox-close" aria-label="Cerrar imagen ampliada">Cerrar <Icon name="close" size={60} /></button><img src="" alt="" /><p></p></dialog>}
   <script src="../../scripts/case-motion.ts"></script>
 </Layout>
+
+<style>
+  .print-gallery { padding-block: clamp(2rem, 6vw, 5rem); }
+  .print-gallery h2 { margin-bottom: 1.5rem; }
+  .print-gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 25rem), 1fr)); gap: clamp(1rem, 3vw, 2.5rem); }
+  .print-gallery figure { margin: 0; min-width: 0; }
+  .print-gallery .gallery-zoom { position: static; display: block; width: 100%; height: auto; padding: 0; border: 0; background: transparent; }
+  .print-gallery img { display: block; width: 100%; height: auto; }
+  .print-gallery figcaption { margin-top: .65rem; font-size: .875rem; }
+</style>

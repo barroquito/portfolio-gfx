@@ -1,6 +1,6 @@
 ---
 import Icon from './Icon.astro';
-import { projects } from '../data/projects';
+import { projectIndex } from '../data/projects';
 
 interface Props {
   currentSlug: string;
@@ -14,14 +14,14 @@ const { currentSlug } = Astro.props;
   </summary>
   <nav aria-label="Navegar entre proyectos">
     <ol class="project-navigator__list">
-      {projects.map(project => <li>
+      {projectIndex.map(project => <li>
         {project.slug === currentSlug
           ? <span class="project-navigator__current" aria-current="page">
               <span class="project-navigator__number">{project.number}</span>
               <span class="project-navigator__title">{project.title}</span>
               <span class="sr-only">Proyecto actual</span>
             </span>
-          : <a class="project-navigator__link" href={`/proyectos/${project.slug}/`} data-replay-project={project.slug}>
+          : <a class="project-navigator__link" href={`/proyectos/${project.slug}/`} data-replay-project={project.cover ? project.slug : undefined}>
               <span class="project-navigator__number">{project.number}</span>
               <span class="project-navigator__title">{project.title}</span>
             </a>}

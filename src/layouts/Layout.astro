@@ -6,7 +6,7 @@ import '../styles/type-controls.css';
 import '../styles/selection.css';
 import '../styles/film.css';
 import BrandMark from '../components/BrandMark.astro';
-import { projects } from '../data/projects';
+import { recordProjects } from '../data/projects';
 const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráfico y dirección de arte. Del concepto publicitario a la expresión visual. Portfolio de Jorge Pindado, Madrid.', home = false, projectPage = false } = Astro.props;
 ---
 <!doctype html>
@@ -49,8 +49,9 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
 
       <button class="menu-toggle" aria-label="Abrir menú" aria-controls="main-nav" aria-expanded="false"><span>Menú</span><i aria-hidden="true"></i></button>
       <nav id="main-nav" aria-label="Navegación principal">
-        <a href={home ? '#proyectos' : '/#proyectos'}>Colección <sup>{String(projects.length).padStart(2,'0')}</sup></a>
-        <a href={home ? '#sobre-mi' : '/#sobre-mi'}>Sobre mí</a>
+        <a href={home ? '#proyectos' : '/#proyectos'}>Colección <sup>{String(recordProjects.length).padStart(2,'0')}</sup></a>
+        <a href="/proyectos/">Índice</a>
+        <a href="/proyectos/sobre-mi/">Sobre mí</a>
         <a class="nav-contact" href={home ? '#contacto' : '/#contacto'}>Hablemos </a>
       </nav>
     </header>

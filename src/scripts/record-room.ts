@@ -297,7 +297,7 @@ contact.addEventListener('click', event => {
 function navigateHash(hash: string) {
   if (automaticProject || root.classList.contains('room-loading')) return;
   if (hash === '#proyectos') void openCollection();
-  else if (hash === '#sobre-mi') void openCollection(Math.max(0, projects.findIndex(project => project.slug === 'sobre-mi')));
+  else if (hash === '#sobre-mi') location.replace('/proyectos/sobre-mi/');
   else if (hash === '#contacto') openContact();
 }
 document.querySelectorAll<HTMLAnchorElement>('#main-nav a').forEach(link => link.addEventListener('click', event => {

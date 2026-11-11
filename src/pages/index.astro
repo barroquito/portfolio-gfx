@@ -3,7 +3,7 @@ import Icon from '../components/Icon.astro';
 import Layout from '../layouts/Layout.astro';
 import BrandMark from '../components/BrandMark.astro';
 import RecordSleeve from '../components/RecordSleeve.astro';
-import { projects } from '../data/projects';
+import { recordProjects as projects, projectIndex } from '../data/projects';
 import '../styles/record-room.css';
 import '../styles/room-loading.css';
 import '../styles/collection-orbit.css';
@@ -24,8 +24,8 @@ import '../styles/collection-orbit.css';
 
     <div class="room-bottom"><span class="bottom-statement">CADA VINILO,<br/><strong>UN PROYECTO.</strong></span><button class="collection-main-button" data-open-collection>Explorar la colección <sup>{String(projects.length).padStart(2,'0')}</sup><i aria-hidden="true"><Icon name="arrow" size={60} /></i></button><span class="bottom-location">MADRID, ES<br/>2026</span></div>
     <p class="sr-only" id="room-status" role="status" aria-live="polite"></p>
-    <div class="static-collection-links">{projects.map(project=><a href={`/proyectos/${project.slug}/`}>{project.title} </a>)}</div>
-    <noscript><div class="no-js-projects"><p>Proyectos</p>{projects.map(project=><a href={`/proyectos/${project.slug}/`}>{project.title} </a>)}<a href="/CV-Jorge-Pindado-ES.pdf">Mi CV</a><a href="mailto:jorgepindado.gfx@gmail.com">Contacto</a></div></noscript>
+    <div class="static-collection-links">{projectIndex.map(project=><a href={`/proyectos/${project.slug}/`}>{project.title} </a>)}</div>
+    <noscript><div class="no-js-projects"><p>Proyectos</p>{projectIndex.map(project=><a href={`/proyectos/${project.slug}/`}>{project.title} </a>)}<a href="/CV-Jorge-Pindado-ES.pdf">Mi CV</a><a href="mailto:jorgepindado.gfx@gmail.com">Contacto</a></div></noscript>
   </main>
 
   <dialog id="collection-dialog" class="orbit-dialog" aria-label="Colección de vinilos">
@@ -43,6 +43,6 @@ import '../styles/collection-orbit.css';
 
   <dialog id="contact-dialog" class="info-dialog contact-dialog" aria-labelledby="contact-dialog-title"><button class="room-dialog-close room-dialog-close--text" data-close-dialog aria-label="Cerrar contacto">Cerrar </button><h2 id="contact-dialog-title">¿Tienes algo<br/><strong>en mente?</strong></h2><div class="room-contact-email"><a href="mailto:jorgepindado.gfx@gmail.com">jorgepindado.gfx@gmail.com </a><button class="copy-email" aria-label="Copiar correo electrónico" title="Copiar correo">Copiar</button></div><div class="room-contact-links"><a href="https://www.linkedin.com/in/jorge-pindado-badiola-4a3846191/" target="_blank" rel="noopener noreferrer">LinkedIn </a><a href="/CV-Jorge-Pindado-ES.pdf" download>Descargar CV </a></div></dialog>
   <div class="record-transition" aria-hidden="true"><span class="tiny-label">AHORA EN EL PLATO</span><strong></strong><span class="record-transition-subtitle"></span><span class="transition-line"></span></div>
-  <script id="record-project-data" type="application/json" set:html={JSON.stringify(projects.map(({slug,title,number,subtitle,description,record,theme})=>({slug,title,number,subtitle,description,record,theme})))}/>
+  <script id="record-project-data" type="application/json" set:html={JSON.stringify(projects.map(({slug,title,number,subtitle,description,record,theme,cover})=>({slug,title,number,subtitle,description,record,theme,cover})))}/>
   <script src="../scripts/record-room.ts"></script>
 </Layout>

@@ -1,0 +1,25 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { projectIndex } from '../../data/projects';
+---
+<Layout title="Proyectos — Jorge Pindado" description="Selección de proyectos de diseño gráfico y dirección de arte." projectPage>
+  <main id="main" class="section-shell project-index">
+    <a class="back-link" href="/#proyectos">Volver al expositor</a>
+    <h1>Proyectos</h1>
+    <ul>
+      {projectIndex.map(project => <li><a href={`/proyectos/${project.slug}/`}>
+        <span><strong>{project.title}</strong><small>{project.subtitle}</small></span>
+        <span aria-hidden="true">↗</span>
+      </a></li>)}
+    </ul>
+  </main>
+</Layout>
+<style>
+  .project-index { padding-block: clamp(5rem, 13vw, 10rem); }
+  h1 { margin-block: .5em; font-size: clamp(3rem, 11vw, 9rem); line-height: .9; }
+  ul { padding: 0; margin: 0; list-style: none; border-block-start: 1px solid currentColor; }
+  li { border-block-end: 1px solid currentColor; }
+  li a { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: 1rem; }
+  li strong { display: block; font-size: clamp(1.4rem, 4vw, 3rem); }
+  li small { font-size: 1rem; }
+</style>

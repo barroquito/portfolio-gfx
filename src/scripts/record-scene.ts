@@ -5,7 +5,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import { gsap } from 'gsap';
 
-export type RecordProject = {slug:string;title:string;number:string;subtitle:string;description?:string;intro?:string;theme:string;record:{color:string;ink:string;label:string}};
+export type RecordProject = {slug:string;title:string;number:string;subtitle:string;description?:string;intro?:string;theme:string;cover?:string;record:{color:string;ink:string;label:string}};
 export type RecordScene = {
   openCollection:(index?:number,immediate?:boolean)=>Promise<void>; closeCollection:()=>Promise<void>;
   scrollBy:(delta:number)=>void; rotate:(index:number,dx:number)=>void; centeredIndex:()=>number;
@@ -76,7 +76,8 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   const dark=new THREE.MeshPhysicalMaterial({color:'#0b0f12',metalness:0,roughness:.24,clearcoat:1,clearcoatRoughness:.12});
   const ivory=mat('#f1f1e5',0,.9);materials.push(dark);
   async function loadImage(src:string):Promise<HTMLImageElement|null>{try{return await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src;});}catch{return null;}}
-  const coverImages=Promise.all([loadImage('/brand/jorge-mark.svg'),loadImage('/brand/jorge-mark-red.svg'),loadImage('/images/bulk-drink.webp'),loadImage('/images/sobre-mi-cover.svg')]);
+  const logoRequest=loadImage('/brand/jorge-mark.svg');
+  const coverImages=Promise.all(projects.map(p=>p.cover?loadImage(p.cover):Promise.resolve(null)));
   function mesh(parent:THREE.Object3D, geometry:THREE.BufferGeometry, material:THREE.Material|THREE.Material[],x=0,y=0,z=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
   function cyl(parent:THREE.Object3D,r:number,h:number,material:THREE.Material,x=0,y=0,z=0){return mesh(parent,new THREE.CylinderGeometry(r,r,h,80),material,x,y,z);}
   function texture(canvas:HTMLCanvasElement){const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=anisotropy;return t;}
@@ -120,7 +121,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     for(const material of materials)material.dispose();
     floor.geometry.dispose();floor.material.dispose();renderer.dispose();environment.dispose();host.replaceChildren();throw error;
   }
-  const [logoImage,redLogoImage,bulkImage,personalCover]=await coverImages;
+  const [logoImage,projectCovers]=await Promise.all([logoRequest,coverImages]);
   const grooveTexture=sleeveTexture(ctx=>{
     ctx.fillStyle='#080b0d';ctx.fillRect(0,0,1024,1024);
     for(let i=120;i<506;i+=3){ctx.beginPath();ctx.arc(512,512,i,0,Math.PI*2);ctx.strokeStyle=i%2?'#232b20':'#1c231a';ctx.lineWidth=1;ctx.stroke();}
@@ -128,28 +129,20 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(logoImage)ctx.drawImage(logoImage,437,461,150,93);else{ctx.fillStyle='#232b20';ctx.textAlign='center';ctx.font=`600 48px ${printFont}`;ctx.fillText('JP',512,520);}
   });
   const matPrint=new THREE.MeshPhysicalMaterial({map:grooveTexture,metalness:0,roughness:.2,bumpMap:groovesMap,bumpScale:.0016,clearcoat:1,clearcoatRoughness:.12,anisotropy:.45,envMapIntensity:1.6});materials.push(matPrint);
-  // Each cover is generated from the same project metadata as the accessible carousel.
-  const coverTextures=projects.map(p=>sleeveTexture(ctx=>{
-    if(p.theme==='personal'&&personalCover){ctx.drawImage(personalCover,0,0,1024,1024);return;}
-    ctx.fillStyle=p.record.color;ctx.fillRect(0,0,1024,1024);
-    if(p.theme==='bulk'&&bulkImage){
-      const crop=Math.min(bulkImage.width,bulkImage.height);
+  const coverTextures=projects.map((p,index)=>sleeveTexture(ctx=>{
+    const cover=projectCovers[index];
+    if(cover){
       ctx.imageSmoothingQuality='high';
-      ctx.drawImage(bulkImage,(bulkImage.width-crop)/2,(bulkImage.height-crop)/2,crop,crop,0,0,1024,1024);
+      ctx.drawImage(cover,0,0,1024,1024);
       return;
     }
-    ctx.fillStyle=p.record.ink;ctx.strokeStyle=p.record.ink;ctx.lineWidth=2;
-    ctx.font=`600 22px ${printFont}`;ctx.fillText('JORGE PINDADO',70,85);ctx.textAlign='right';ctx.fillText(`JP—${p.number}`,954,85);ctx.textAlign='left';ctx.beginPath();ctx.moveTo(70,120);ctx.lineTo(954,120);ctx.stroke();
-    if(p.theme==='bulk'){ctx.fillStyle='#20352e';ctx.font=`600 90px ${printFont}`;ctx.fillText('BULK®',70,230);ctx.font=`600 30px ${printFont}`;ctx.fillText('COMER BIEN. SUBIR EL VOLUMEN.',70,843);}
-    else if(p.theme==='one-more'){ctx.strokeStyle='#b6a0d3';ctx.save();ctx.translate(512,510);ctx.rotate(-.6);for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(0,0,660-i*50,270-i*45,0,0,Math.PI*2);ctx.stroke();}ctx.restore();ctx.fillStyle=p.record.ink;ctx.save();ctx.translate(70,385);ctx.rotate(-.1);ctx.font=`600 270px ${printFont}`;ctx.fillText('ONE',0,0);ctx.fillText('MORE',0,240);ctx.restore();ctx.font=`600 24px ${printFont}`;ctx.fillText('THE 2000s ARE CALLING.',70,840);}
-    else if(p.theme==='li-onna'){ctx.globalAlpha=.45;ctx.beginPath();ctx.arc(840,465,310,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(840,465,240,0,Math.PI*2);ctx.stroke();ctx.font='300px serif';ctx.fillText('酒',690,575);ctx.globalAlpha=1;ctx.font=`500 180px ${printFont}`;ctx.fillText('Entre',65,490);ctx.font=`650 175px ${printFont}`;ctx.fillText('dos almas.',65,675);ctx.font=`600 24px ${printFont}`;ctx.fillText('LI-ONNA / CATA DE SAKES',70,840);}
-    else if(p.slug==='sobre-mi'||p.theme==='personal'){
-      ctx.fillStyle='#f5f4ef';ctx.fillRect(0,145,1024,730);
-      if(redLogoImage)ctx.drawImage(redLogoImage,130,295,764,474);
-      ctx.fillStyle='#ce3024';ctx.font=`600 26px ${printFont}`;ctx.fillText('SOBRE MÍ / EL PORTFOLIO',70,840);
-    }
-    else {ctx.save();ctx.globalAlpha=.2;ctx.translate(512,512);ctx.rotate(-.4);for(let i=-700;i<700;i+=30){ctx.fillRect(-900,i,1800,3);}ctx.restore();ctx.save();ctx.transform(1,0,-.2,1,90,0);ctx.font=`600 460px ${printFont}`;ctx.fillText('F1',80,650);ctx.font=`600 130px ${printFont}`;ctx.fillText('WEEK',80,788);ctx.restore();}
-    ctx.fillStyle=p.record.ink;ctx.font=`600 18px ${printFont}`;ctx.fillText(p.record.label,70,956);ctx.textAlign='right';ctx.fillText('33⅓ RPM / SIDE A',954,956);
+    ctx.fillStyle=p.record.color;
+    ctx.fillRect(0,0,1024,1024);
+    ctx.fillStyle=p.record.ink;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.font=`650 110px ${printFont}`;
+    ctx.fillText(p.title,512,512,880);
   }));
   // The reverse is a separate printed face. It shares the same source copy as
   // the HTML controls, so a canvas never becomes the only way to read a project.
