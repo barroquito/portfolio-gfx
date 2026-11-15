@@ -1,412 +1,386 @@
-import { gsap } from 'gsap';
-import type { RecordScene } from './record-scene';
+import type { RecordProject, RecordScene } from './record-scene';
 
-const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-const root = document.documentElement;
+type CollectionProject = RecordProject & { preview: { image?: string; alt: string; video?: string } };
+const projects = JSON.parse(document.getElementById('record-project-data')!.textContent!) as CollectionProject[];
 const collection = document.querySelector<HTMLDialogElement>('#collection-dialog')!;
 const contact = document.querySelector<HTMLDialogElement>('#contact-dialog')!;
-const host = document.getElementById('record-scene')!;
+const host = document.querySelector<HTMLElement>('#record-scene')!;
 const table = host.closest<HTMLElement>('.listening-table')!;
-const initialHomeFrame = { host: host.getBoundingClientRect(), table: table.getBoundingClientRect() };
-const status = document.getElementById('room-status')!;
 const stage = collection.querySelector<HTMLElement>('.orbit-stage')!;
-const orbitStatus = collection.querySelector<HTMLElement>('[data-orbit-status]')!;
-orbitStatus.setAttribute('aria-atomic', 'true');
-type PlaybackProject = Parameters<RecordScene['play']>[0] & { description: string };
-const projects = JSON.parse(document.getElementById('record-project-data')!.textContent || '[]') as PlaybackProject[];
-let scene: RecordScene | null = null;
-let mode: 'home' | 'opening' | 'collection' | 'closing' | 'playing' = 'home';
-let activeIndex = 0, collectionGeneration = 0;
-let keyboardIndex: number | null = null;
-let sceneCollectionOpen = false;
-let originFocus: HTMLElement | null = null;
-let pageActive = true, navigating = false;
-let playbackGeneration = 0;
-let playbackWatchdog: number | undefined, playbackLimit: number | undefined;
-let playbackTransition: gsap.core.Timeline | null = null;
-let automaticWatchdog: number | undefined;
-function focusOrigin() {
-  const element = document.activeElement as HTMLElement | null;
-  if (element?.closest('#main-nav') && window.matchMedia('(max-width:760px)').matches) return document.querySelector<HTMLElement>('.menu-toggle');
-  if (element?.closest('dialog')) return originFocus || document.querySelector<HTMLElement>('.collection-main-button');
-  return element;
-}
-const playbackURL = new URL(location.href);
-const requestedSlug = playbackURL.searchParams.get('play');
-let automaticProject = projects.find(project => project.slug === requestedSlug) || null;
-if (requestedSlug !== null) {
-  playbackURL.searchParams.delete('play');
-  if (automaticProject) playbackURL.hash = '';
-  history.replaceState(history.state, '', playbackURL.pathname + playbackURL.search + playbackURL.hash);
-}
-function cancelAutomaticPlayback() { automaticProject = null; clearTimeout(automaticWatchdog); }
-function cancelPlayback() {
-  playbackGeneration++;
-  clearTimeout(playbackWatchdog); clearTimeout(playbackLimit);
-  playbackWatchdog = undefined; playbackLimit = undefined;
-  playbackTransition?.kill(); playbackTransition = null;
-}
+const status = collection.querySelector<HTMLElement>('[data-orbit-status]')!;
+const previewLink = collection.querySelector<HTMLAnchorElement>('[data-preview-link]')!;
+const previewTitle = collection.querySelector<HTMLElement>('[data-preview-title]')!;
+const previewImage = collection.querySelector<HTMLImageElement>('[data-preview-image]')!;
+const previewVideo = collection.querySelector<HTMLVideoElement>('[data-preview-video]')!;
+const fallbackCards = [...stage.querySelectorAll<HTMLAnchorElement>('[data-fallback-record]')];
+const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const fineHover = window.matchMedia('(hover: hover) and (pointer: fine)');
-let hoverFrame = 0, hoverX = 0, hoverY = 0;
-function clearObjectHover() {
-  if (hoverFrame) cancelAnimationFrame(hoverFrame);
-  hoverFrame = 0; scene?.clearHover();
-}
-table.addEventListener('pointermove', event => {
-  if (mode !== 'home' || !fineHover.matches || reduced.matches || event.pointerType === 'touch' || contact.open) { clearObjectHover(); return; }
-  if (scene && table.classList.contains('scene-ready')) {
-    hoverX = event.clientX; hoverY = event.clientY;
-    if (!hoverFrame) hoverFrame = requestAnimationFrame(() => { hoverFrame = 0; scene?.hoverAt(hoverX, hoverY); });
-  }
-});
-table.addEventListener('pointerleave', clearObjectHover);
-const stackHotspot = table.querySelector<HTMLElement>('.collection-hotspot')!;
-stackHotspot.addEventListener('focus', () => { if (mode === 'home' && !reduced.matches) scene?.hoverCollection(); });
-stackHotspot.addEventListener('blur', clearObjectHover);
-reduced.addEventListener('change', clearObjectHover);
+const initialHomeFrame = { host: host.getBoundingClientRect(), table: table.getBoundingClientRect() };
+const wrap = (index: number) => ((index % projects.length) + projects.length) % projects.length;
+const projectPath = (project: RecordProject) => '/proyectos/' + project.slug + '/';
 
-const fallbackCards = Array.from(stage.querySelectorAll<HTMLAnchorElement>('[data-fallback-record]'));
-const fallbackTurns = fallbackCards.map(() => 0);
-let fallbackPhase = 0;
-const wrapIndex = (index: number) => ((index % projects.length) + projects.length) % projects.length;
-const hasScene = () => scene !== null && collection.dataset.render === 'webgl';
+let scene: RecordScene | null = null;
+let useWebGL = false;
+let closing = false;
+let leaving = false;
+let originFocus: HTMLElement | null = null;
+let selected = 0;
+let fallbackOrbit = 0;
+let requestedSelection: number | null = null;
+let hovered: number | null = null;
+let previewed: number | null = null;
+let videoTimer: number | undefined;
+let snapTimer: number | undefined;
+let suppressClick = false;
+
+function stopPreviewVideo() {
+  clearTimeout(videoTimer);
+  previewVideo.hidden = true;
+  if (!previewVideo.hasAttribute('src')) return;
+  previewVideo.pause();
+  previewVideo.removeAttribute('src');
+  previewVideo.load();
+}
+
+function showPreview(index: number, force = false) {
+  if (previewed === index && !force) return;
+  previewed = index;
+  const project = projects[index];
+  const { image, alt, video } = project.preview;
+
+  previewTitle.textContent = project.title;
+  previewLink.href = projectPath(project);
+  previewImage.alt = alt;
+  if (image) previewImage.src = image;
+  else previewImage.removeAttribute('src');
+  previewImage.hidden = !image;
+  stopPreviewVideo();
+  if (video && !motion.matches) {
+    videoTimer = window.setTimeout(() => {
+      previewVideo.src = video;
+      void previewVideo.play().catch(() => { previewVideo.hidden = true; });
+    }, 160);
+  }
+}
+
+previewVideo.addEventListener('playing', () => { previewVideo.hidden = false; });
+previewVideo.addEventListener('error', () => { previewVideo.hidden = true; });
+previewVideo.addEventListener('timeupdate', () => {
+  if (previewVideo.currentTime >= 4.75) previewVideo.pause();
+});
+motion.addEventListener('change', () => {
+  if (collection.open && !closing) showPreview(hovered ?? selected, true);
+});
 
 function layoutFallback() {
-  if (!collection.open || hasScene()) return;
   const count = fallbackCards.length;
+  const width = stage.clientWidth;
   for (const [index, card] of fallbackCards.entries()) {
-    const slot = ((index - fallbackPhase + count / 2) % count + count) % count - count / 2;
+    const slot = ((index - fallbackOrbit + count / 2) % count + count) % count - count / 2;
     const angle = slot * Math.PI * 2 / count;
     const depth = Math.cos(angle);
-    const turn = fallbackTurns[index];
-    card.style.setProperty('--coil-x', `${Math.sin(angle) * 28}vw`);
-    card.style.setProperty('--coil-y', `${-slot * 12}dvh`);
-    card.style.setProperty('--coil-z', `${(depth - 1) * 360}px`);
-    card.style.setProperty('--coil-yaw', `${angle + turn}rad`);
+    card.style.setProperty('--coil-x', Math.sin(angle) * width * .34 + 'px');
+    card.style.setProperty('--coil-y', Math.sin(angle) * stage.clientHeight * .13 + 'px');
+    card.style.setProperty('--coil-z', (depth - 1) * 400 + 'px');
+    card.style.setProperty('--coil-yaw', angle * .6 + 'rad');
     card.style.zIndex = String(Math.round(10 + depth * 8));
-    card.style.visibility = Math.abs(slot) < 1.65 ? 'visible' : 'hidden';
+    card.style.visibility = Math.abs(slot) < 1.75 ? 'visible' : 'hidden';
   }
 }
+new ResizeObserver(() => {
+  if (collection.open && !useWebGL) layoutFallback();
+}).observe(stage);
 
-function announceSelection(index: number) {
-  const { title, description } = projects[index];
-  const text = `${title}. ${description}`;
-  if (orbitStatus.textContent !== text) orbitStatus.textContent = text;
+function centerRecord(index: number) {
+  selected = wrap(index);
+  const announcement = projects[selected].title + ', ' + (selected + 1) + ' de ' + projects.length;
+  if (status.textContent !== announcement) status.textContent = announcement;
+  if (hovered === null) showPreview(selected);
 }
 
-function centeredIndex() {
-  if (!hasScene()) return wrapIndex(Math.round(fallbackPhase));
-  return scene!.centeredIndex();
+function clearRecordHover() {
+  hovered = null;
+  delete stage.dataset.hoverRecord;
+  if (collection.open && !closing) showPreview(selected);
 }
-
-function syncVisibleSelection() {
-  if (mode !== 'collection' || keyboardIndex !== null) return;
-  activeIndex = centeredIndex();
-  announceSelection(activeIndex);
-}
-
-async function openSceneCollection(index: number, immediate = false) {
-  if (!hasScene()) return;
-  sceneCollectionOpen = true;
-  try { await scene!.openCollection(index, immediate); }
-  catch {
-    sceneCollectionOpen = false;
-    collection.dataset.render = 'fallback';
-    layoutFallback();
-  }
-}
-
-function syncRenderMode() {
-  const render = scene && host.dataset.renderState === 'ready' ? 'webgl' : 'fallback';
-  if (render === collection.dataset.render) return;
-  const browsing = collection.open && (mode === 'opening' || mode === 'collection');
-  if (browsing && render === 'fallback' && hasScene()) {
-    activeIndex = keyboardIndex ?? scene!.centeredIndex();
-    fallbackPhase = activeIndex;
-    announceSelection(activeIndex);
-  }
-  collection.dataset.render = render;
-  if (browsing && render === 'webgl') {
-    if (sceneCollectionOpen) scene!.select(activeIndex, true);
-    else void openSceneCollection(activeIndex, true);
-  }
-  layoutFallback();
-}
-
-new MutationObserver(changes => {
-  if (changes.some(change => change.attributeName === 'data-render-state')) syncRenderMode();
-  if (changes.some(change => change.attributeName === 'data-active-record')) syncVisibleSelection();
-}).observe(host, { attributes: true, attributeFilter: ['data-render-state', 'data-active-record'] });
 
 function selectRecord(index: number) {
-  if (mode !== 'collection' && mode !== 'opening') return;
-  keyboardIndex = activeIndex = wrapIndex(index);
-  fallbackPhase = activeIndex;
-  layoutFallback();
-  announceSelection(activeIndex);
-  scene?.select(activeIndex);
-}
-
-async function openCollection(index = activeIndex) {
-  if (entryPromise) await entryPromise;
-  if (navigating || !pageActive) return;
-  if (mode === 'collection' || mode === 'opening') { selectRecord(index); return; }
-  const generation = ++collectionGeneration;
-  clearObjectHover();
-  if (contact.open) contact.close();
-  originFocus = focusOrigin();
-  activeIndex = index; fallbackPhase = index;
-  keyboardIndex = null;
-  fallbackTurns.fill(0);
-  syncRenderMode();
-  mode = 'opening';
-  collection.dataset.phase = 'opening';
-  document.body.classList.add('collection-open');
-  if (!collection.open) collection.showModal();
-  layoutFallback();
-  announceSelection(activeIndex);
-  // Expand and update the projection in one task; no intermediate resized frame.
-  await openSceneCollection(activeIndex);
-  if (generation !== collectionGeneration || !pageActive || navigating) return;
-  mode = 'collection';
-  if (hasScene()) scene!.select(activeIndex);
-  collection.dataset.phase = 'collection';
-  stage.focus({ preventScroll: true });
-}
-async function closeCollection(restoreFocus = true) {
-  if (navigating || mode === 'home' || mode === 'closing') return;
-  const generation = ++collectionGeneration;
-  mode = 'closing';
-  collection.dataset.phase = 'closing';
-  try {
-    if (hasScene()) await scene!.closeCollection();
-    else scene?.reset();
-  } catch { scene?.reset(); }
-  if (generation !== collectionGeneration || !pageActive) return;
-  mode = 'home';
-  keyboardIndex = null; sceneCollectionOpen = false;
-  if (collection.open) collection.close();
-  orbitStatus.textContent = '';
-  document.body.classList.remove('collection-open', 'collection-playing');
-  if (restoreFocus) originFocus?.focus({ preventScroll: true });
-  if (['#proyectos', '#sobre-mi'].includes(location.hash)) history.replaceState(history.state, '', location.pathname + location.search);
-}
-document.querySelectorAll<HTMLButtonElement>('[data-open-collection]').forEach(button => button.addEventListener('click', () => { cancelAutomaticPlayback(); void openCollection(); }));
-collection.querySelector('[data-close-collection]')!.addEventListener('click', () => { void closeCollection(); });
-collection.addEventListener('cancel', event => { event.preventDefault(); void closeCollection(); });
-stage.addEventListener('dragstart', event => event.preventDefault());
-
-function openRecord(index: number) {
-  const project = projects[index];
-  if (project && mode === 'collection') void playProject(project, `/proyectos/${project.slug}/`);
-}
-
-collection.addEventListener('keydown', event => {
-  if (event.altKey || event.ctrlKey || event.metaKey || event.target !== stage) return;
-  const direction = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : ['ArrowLeft', 'ArrowUp'].includes(event.key) ? -1 : 0;
-  if (direction) {
-    event.preventDefault();
-    selectRecord((keyboardIndex ?? centeredIndex()) + direction);
-  } else if (event.key === 'Home' || event.key === 'End') {
-    event.preventDefault();
-    selectRecord(event.key === 'Home' ? 0 : projects.length - 1);
-  } else if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    const index = keyboardIndex ?? centeredIndex();
-    if (mode === 'collection' && hasScene() && index !== centeredIndex()) scene!.select(index, true);
-    openRecord(index);
-  }
-});
-
-function advance(delta: number) {
-  if (!delta) return;
-  keyboardIndex = null;
-  if (hasScene()) scene?.scrollBy(delta);
-  else {
-    fallbackPhase = (fallbackPhase + delta / 280) % projects.length;
+  clearTimeout(snapTimer);
+  hovered = null;
+  delete stage.dataset.hoverRecord;
+  centerRecord(index);
+  if (useWebGL) {
+    requestedSelection = selected;
+    scene!.select(selected);
+  } else {
+    fallbackOrbit = selected;
     layoutFallback();
   }
-  syncVisibleSelection();
+}
+
+function syncScene() {
+  if (!collection.open || closing || !useWebGL || !scene) return;
+  if (host.dataset.renderState !== 'ready') {
+    useWebGL = false;
+    collection.dataset.render = 'fallback';
+    fallbackOrbit = selected;
+    requestedSelection = null;
+    clearRecordHover();
+    layoutFallback();
+    return;
+  }
+  const index = scene.centeredIndex();
+  if (requestedSelection !== null) {
+    if (index === requestedSelection) requestedSelection = null;
+    return;
+  }
+  centerRecord(index);
+}
+new MutationObserver(syncScene).observe(host, {
+  attributes: true,
+  attributeFilter: ['data-render-state', 'data-active-record'],
+});
+
+function focusOrigin() {
+  const element = document.activeElement as HTMLElement | null;
+  if (element?.closest('#main-nav') && window.matchMedia('(max-width: 760px)').matches) {
+    return document.querySelector<HTMLElement>('.menu-toggle');
+  }
+  if (element?.closest('dialog')) return originFocus;
+  return element;
+}
+
+function openCollection() {
+  if (collection.open || leaving) return;
+  if (contact.open) contact.close();
+  originFocus = focusOrigin();
+  scene?.clearHover();
+  useWebGL = !!scene && host.dataset.renderState === 'ready';
+  collection.dataset.render = useWebGL ? 'webgl' : 'fallback';
+  document.body.classList.add('collection-open');
+  collection.showModal();
+  hovered = null;
+  requestedSelection = null;
+  centerRecord(selected);
+  previewLink.focus({ preventScroll: true });
+  if (useWebGL) void scene!.openCollection(selected);
+  else {
+    fallbackOrbit = selected;
+    layoutFallback();
+  }
+}
+
+async function closeCollection(restoreFocus = true) {
+  if (!collection.open || closing) return;
+  closing = true;
+  clearTimeout(snapTimer);
+  stopPreviewVideo();
+  previewed = null;
+  hovered = null;
+  delete stage.dataset.hoverRecord;
+  collection.dataset.phase = 'closing';
+  if (useWebGL) await scene!.closeCollection();
+  closing = false;
+  delete collection.dataset.phase;
+  document.body.classList.remove('collection-open');
+  collection.close();
+  scene?.reset();
+  if (restoreFocus) originFocus?.focus({ preventScroll: true });
+  if (location.hash === '#proyectos') history.replaceState(history.state, '', location.pathname + location.search);
+}
+
+document.querySelectorAll('[data-open-collection]').forEach(button => button.addEventListener('click', openCollection));
+collection.querySelector('[data-close-collection]')!.addEventListener('click', () => { void closeCollection(); });
+collection.addEventListener('cancel', event => { event.preventDefault(); void closeCollection(); });
+collection.querySelectorAll<HTMLButtonElement>('[data-step]').forEach(button => {
+  button.addEventListener('click', () => selectRecord(selected + Number(button.dataset.step)));
+});
+collection.addEventListener('keydown', event => {
+  if (closing || event.altKey || event.ctrlKey || event.metaKey) return;
+  const offsets: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -1, ArrowDown: 1 };
+  const offset = offsets[event.key];
+  if (!offset && event.key !== 'Home' && event.key !== 'End') return;
+  event.preventDefault();
+  selectRecord(offset ? selected + offset : event.key === 'Home' ? 0 : projects.length - 1);
+});
+
+function advance(pixels: number) {
+  requestedSelection = null;
+  const distance = pixels / Math.min(245, Math.max(125, stage.clientWidth * .42));
+  if (useWebGL) scene!.scrollBy(distance * 560);
+  else {
+    fallbackOrbit = (fallbackOrbit + distance) % projects.length;
+    layoutFallback();
+    centerRecord(Math.round(fallbackOrbit));
+  }
+}
+
+function snapToRecord() {
+  if (useWebGL) {
+    requestedSelection = scene!.centeredIndex();
+    scene!.select(requestedSelection);
+    centerRecord(requestedSelection);
+  } else selectRecord(Math.round(fallbackOrbit));
 }
 stage.addEventListener('wheel', event => {
-  if (event.ctrlKey || mode !== 'collection') return;
+  if (closing || event.ctrlKey) return;
   event.preventDefault();
+  clearRecordHover();
   const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
   advance(delta * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.clientHeight : 1));
+  clearTimeout(snapTimer);
+  snapTimer = window.setTimeout(snapToRecord, 130);
 }, { passive: false });
 
-let gesture: {
-  id: number; x: number; y: number; index: number | null; touch: boolean;
-  intent: 'orbit-x' | 'orbit-y' | 'turn' | null;
-} | null = null;
+let gesture: { id: number; x: number; y: number; axis?: 'x' | 'y' } | null = null;
+function pickRecord(event: MouseEvent) {
+  if (useWebGL) return scene!.pick(event.clientX, event.clientY);
+  const card = (event.target as Element).closest<HTMLElement>('[data-fallback-record]');
+  return card ? Number(card.dataset.fallbackRecord) : null;
+}
 stage.addEventListener('pointerdown', event => {
-  if (mode !== 'collection' || !event.isPrimary || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-  const fallback = (event.target as Element).closest<HTMLElement>('[data-fallback-record]');
-  const index = hasScene() ? scene!.pick(event.clientX, event.clientY) : fallback ? Number(fallback.dataset.fallbackRecord) : null;
-  gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, index, touch: event.pointerType === 'touch', intent: null };
-  keyboardIndex = null;
-  syncVisibleSelection();
-  stage.setPointerCapture(event.pointerId);
+  if (closing || !event.isPrimary || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  suppressClick = false;
+  gesture = { id: event.pointerId, x: event.clientX, y: event.clientY };
 });
 stage.addEventListener('pointermove', event => {
-  if (!gesture || gesture.id !== event.pointerId || mode !== 'collection') return;
-  const dx = event.clientX - gesture.x;
-  const dy = event.clientY - gesture.y;
-  if (!gesture.intent) {
-    if (Math.hypot(dx, dy) < 6) return;
-    const vertical = Math.abs(dy) > Math.abs(dx);
-    gesture.intent = gesture.index === null || (gesture.touch && vertical)
-      ? (vertical ? 'orbit-y' : 'orbit-x')
-      : 'turn';
-  }
-  gesture.x = event.clientX;
-  gesture.y = event.clientY;
-  if (gesture.intent === 'turn') {
-    if (!dx || gesture.index === null) return;
-    if (hasScene()) scene!.rotate(gesture.index, dx);
-    else {
-      fallbackTurns[gesture.index] = (fallbackTurns[gesture.index] + dx * .007) % (Math.PI * 2);
-      layoutFallback();
+  if (closing) return;
+  if (gesture?.id === event.pointerId) {
+    const dx = event.clientX - gesture.x;
+    const dy = event.clientY - gesture.y;
+    if (!gesture.axis) {
+      if (Math.hypot(dx, dy) < 6) return;
+      gesture.axis = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y';
+      stage.setPointerCapture(event.pointerId);
+      stage.classList.add('is-dragging');
+      clearTimeout(snapTimer);
+      clearRecordHover();
     }
-  } else {
-    advance(gesture.intent === 'orbit-y' ? -dy : -dx);
+    advance(gesture.axis === 'x' ? -dx : -dy);
+    gesture.x = event.clientX;
+    gesture.y = event.clientY;
+    return;
+  }
+  if (!fineHover.matches || event.pointerType === 'touch') return;
+  const index = pickRecord(event);
+  if (index === hovered) return;
+  if (index === null) clearRecordHover();
+  else {
+    hovered = index;
+    stage.dataset.hoverRecord = projects[index].slug;
+    showPreview(index);
   }
 });
-stage.addEventListener('pointerup', event => {
-  if (!gesture || gesture.id !== event.pointerId) return;
-  const { index, intent } = gesture;
+function endGesture(event: PointerEvent) {
+  if (gesture?.id !== event.pointerId) return;
+  if (gesture.axis) {
+    suppressClick = true;
+    stage.classList.remove('is-dragging');
+    snapToRecord();
+  }
   gesture = null;
-  if (stage.hasPointerCapture(event.pointerId)) stage.releasePointerCapture(event.pointerId);
-  if (!intent && index !== null) openRecord(index);
+}
+stage.addEventListener('pointerup', endGesture);
+stage.addEventListener('pointercancel', endGesture);
+stage.addEventListener('lostpointercapture', endGesture);
+stage.addEventListener('pointerleave', () => {
+  if (!gesture?.axis) gesture = null;
+  clearRecordHover();
 });
-stage.addEventListener('pointercancel', () => { gesture = null; });
-stage.addEventListener('lostpointercapture', () => { gesture = null; });
+stage.addEventListener('dragstart', event => event.preventDefault());
+stage.addEventListener('click', event => {
+  if (suppressClick || closing) {
+    suppressClick = false;
+    event.preventDefault();
+  } else if (useWebGL) {
+    const index = pickRecord(event);
+    if (index !== null) location.assign(projectPath(projects[index]));
+  }
+});
 
 function openContact() {
-  if (navigating || contact.open) return;
+  if (contact.open) return;
   const show = () => { originFocus = focusOrigin(); contact.showModal(); };
-  if (collection.open) void closeCollection(false).then(show); else show();
+  if (collection.open) void closeCollection(false).then(show);
+  else show();
 }
 contact.querySelector('[data-close-dialog]')?.addEventListener('click', () => contact.close());
-contact.addEventListener('close', () => { if (!navigating) originFocus?.focus({ preventScroll: true }); });
+contact.addEventListener('close', () => originFocus?.focus({ preventScroll: true }));
 contact.addEventListener('click', event => {
   if (event.target !== contact) return;
   const box = contact.getBoundingClientRect();
   if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) contact.close();
 });
 function navigateHash(hash: string) {
-  if (automaticProject || root.classList.contains('room-loading')) return;
-  if (hash === '#proyectos') void openCollection();
+  if (hash === '#proyectos') openCollection();
   else if (hash === '#sobre-mi') location.replace('/proyectos/sobre-mi/');
   else if (hash === '#contacto') openContact();
 }
-document.querySelectorAll<HTMLAnchorElement>('#main-nav a').forEach(link => link.addEventListener('click', event => {
+document.querySelectorAll<HTMLAnchorElement>('#main-nav a[href^="#"]').forEach(link => link.addEventListener('click', event => {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-  event.preventDefault(); cancelAutomaticPlayback(); navigateHash(new URL(link.href).hash);
+  event.preventDefault();
+  navigateHash(link.hash);
 }));
 window.addEventListener('hashchange', () => navigateHash(location.hash));
 
-const loader = document.getElementById('room-loader');
-const loaderMessage = document.getElementById('loader-message');
-const loaderProgress = document.getElementById('loader-progress');
-const skip = document.getElementById('loader-skip') as HTMLButtonElement | null;
-let entryPromise: Promise<void> | null = null;
-const skipTimer = window.setTimeout(() => { if (skip) skip.hidden = false; }, 5000);
-function finishLoading(): Promise<void> {
-  if (entryPromise) return entryPromise;
-  clearTimeout(skipTimer);
-  const wasLoading = root.classList.contains('room-loading');
-  loader?.classList.add('is-leaving');
-  root.classList.remove('room-loading', 'room-static'); root.classList.add('room-loaded');
-  const afterEntry = () => { if (location.hash) navigateHash(location.hash); };
-  if (reduced.matches || !wasLoading) { loader?.remove(); entryPromise = Promise.resolve(); afterEntry(); return entryPromise; }
-  const elements = document.querySelectorAll('.site-header,.room-heading-copy,.room-identity,.listening-table,.room-bottom');
-  entryPromise = new Promise(resolve => {
-    gsap.timeline({ onComplete: () => { afterEntry(); resolve(); } })
-      .to(loader, { opacity: 0, duration: .35, onComplete: () => loader?.remove() }, 0)
-      .fromTo(elements, { y: 16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .7, stagger: .065, ease: 'power3.out', clearProps: 'transform,opacity,visibility' }, .08);
+let homeHoverFrame = 0;
+let homeHoverX = 0;
+let homeHoverY = 0;
+table.addEventListener('pointermove', event => {
+  if (!scene || collection.open || contact.open || !fineHover.matches || motion.matches || event.pointerType === 'touch') return;
+  homeHoverX = event.clientX;
+  homeHoverY = event.clientY;
+  if (!homeHoverFrame) homeHoverFrame = requestAnimationFrame(() => {
+    homeHoverFrame = 0;
+    scene?.hoverAt(homeHoverX, homeHoverY);
   });
-  return entryPromise;
+});
+function clearHomeHover() {
+  cancelAnimationFrame(homeHoverFrame);
+  homeHoverFrame = 0;
+  scene?.clearHover();
 }
-skip?.addEventListener('click', () => { cancelAutomaticPlayback(); void finishLoading().then(() => openCollection()); });
-function playAutomaticProject() {
-  const project = automaticProject;
-  if (!project) return;
-  cancelAutomaticPlayback();
-  void playProject(project, new URL(`/proyectos/${project.slug}/`, location.origin).href, true);
-}
-if (automaticProject) automaticWatchdog = window.setTimeout(() => { void finishLoading().then(playAutomaticProject); }, 18000);
+table.addEventListener('pointerleave', clearHomeHover);
+const stackHotspot = table.querySelector<HTMLElement>('.collection-hotspot')!;
+stackHotspot.addEventListener('focus', () => scene?.hoverCollection());
+stackHotspot.addEventListener('blur', clearHomeHover);
+motion.addEventListener('change', clearHomeHover);
+
 async function initializeScene() {
   try {
     await document.fonts.ready;
-    if (!pageActive || navigating) return;
     const { createRecordScene } = await import('./record-scene');
-    if (!pageActive || navigating) return;
-    if (loaderMessage) loaderMessage.textContent = 'Cargando el tocadiscos';
-    const loadedScene = await createRecordScene(host, projects, value => {
-      if (value !== null && loaderProgress) loaderProgress.style.transform = `scaleX(${Math.max(.05, value)})`;
-    }, initialHomeFrame);
-    if (!pageActive || navigating) { loadedScene.dispose(); host.replaceChildren(); table.classList.remove('scene-ready'); host.dataset.renderState = 'fallback'; return; }
-    scene = loadedScene; syncRenderMode();
-    if (loaderProgress) loaderProgress.style.transform = 'scaleX(1)';
+    if (leaving) return;
+    const loaded = await createRecordScene(host, projects, undefined, initialHomeFrame);
+    if (leaving) loaded.dispose();
+    else scene = loaded;
   } catch (error) {
-    if (!pageActive || navigating) return;
-    host.style.display = 'none'; host.dataset.renderState = 'failed'; syncRenderMode();
-    const message = document.createElement('p'); message.className = 'scene-recovery';
-    message.append('Vista estática. Puedes seguir recorriendo la colección. ');
-    const retry = document.createElement('button'); retry.textContent = 'Reintentar 3D'; retry.addEventListener('click', () => location.reload()); message.append(retry);
-    const detail = document.createElement('details'), summary = document.createElement('summary');
-    summary.textContent = 'Ver diagnóstico'; detail.append(summary, document.createTextNode(error instanceof Error ? error.message : String(error))); message.append(detail); table.append(message);
-    console.warn('3D unavailable; accessible collection remains active.', error);
+    host.dataset.renderState = 'fallback';
+    console.warn('Vista 3D no disponible.', error);
   }
-  await finishLoading(); playAutomaticProject();
 }
-void initializeScene();
 
-async function playProject(project: PlaybackProject, route: string, replace = false) {
-  if (navigating || !pageActive) return;
-  navigating = true; mode = 'playing'; collectionGeneration++;
-  const generation = ++playbackGeneration;
-  const isCurrent = () => pageActive && generation === playbackGeneration;
-  cancelAutomaticPlayback(); clearObjectHover();
-  const navigate = () => { if (!isCurrent()) return; cancelPlayback(); if (replace) location.replace(route); else location.assign(route); };
-  status.textContent = `Poniendo ${project.title}. Abriendo el proyecto.`;
-  document.querySelectorAll<HTMLButtonElement>('[data-open-collection]').forEach(button => button.disabled = true);
-  if (contact.open) contact.close();
-  document.body.classList.add('collection-open', 'collection-playing');
-  const transition = document.querySelector<HTMLElement>('.record-transition')!;
-  transition.querySelector('strong')!.textContent = project.title;
-  transition.querySelector('.record-transition-subtitle')!.textContent = project.subtitle;
-  playbackWatchdog = window.setTimeout(navigate, 8000);
-  try {
-    if (scene) await Promise.race([
-      scene.play(project),
-      new Promise<void>(resolve => { playbackLimit = window.setTimeout(resolve, 4200); })
-    ]);
-    if (!isCurrent()) return;
-    clearTimeout(playbackLimit); playbackLimit = undefined;
-    if (collection.open) collection.close();
-    if (reduced.matches) { navigate(); return; }
-    playbackTransition = gsap.timeline({ onComplete: navigate })
-      .to(transition, { autoAlpha: 1, duration: .35, ease: 'power2.inOut' })
-      .fromTo(transition.querySelector('strong'), { y: 16 }, { y: 0, duration: .4, ease: 'power3.out' }, 0)
-      .to('.transition-line', { scaleX: 1, duration: .35, ease: 'power2.inOut' }, .12);
-  } catch { if (isCurrent()) navigate(); }
+const url = new URL(location.href);
+const requestedSlug = url.searchParams.get('play');
+const requestedProject = projects.find(project => project.slug === requestedSlug);
+if (requestedProject) location.replace(projectPath(requestedProject));
+else {
+  if (requestedSlug !== null) {
+    url.searchParams.delete('play');
+    history.replaceState(history.state, '', url);
+  }
+  navigateHash(location.hash);
+  void initializeScene();
 }
+
 window.addEventListener('pagehide', event => {
-  pageActive = false; collectionGeneration++; cancelAutomaticPlayback(); cancelPlayback(); clearObjectHover();
-  if (event.persisted) scene?.reset(); else scene?.dispose();
+  leaving = true;
+  clearTimeout(snapTimer);
+  stopPreviewVideo();
+  clearHomeHover();
+  if (!event.persisted) scene?.dispose();
 });
 window.addEventListener('pageshow', event => {
-  pageActive = true;
-  if (!event.persisted) return;
-  cancelAutomaticPlayback(); cancelPlayback(); navigating = false; mode = 'home';
-  keyboardIndex = null; sceneCollectionOpen = false;
-  if (collection.open) collection.close(); if (contact.open) contact.close();
-  orbitStatus.textContent = '';
-  document.body.classList.remove('collection-open', 'collection-playing');
-  scene?.reset(); host.style.visibility = '';
-  document.querySelectorAll<HTMLButtonElement>('[data-open-collection]').forEach(button => button.disabled = false);
-  gsap.set('.record-transition', { autoAlpha: 0 }); gsap.set('.transition-line', { scaleX: 0 });
-  status.textContent = ''; void finishLoading();
+  leaving = false;
+  if (event.persisted && collection.open && !closing) showPreview(hovered ?? selected, true);
 });

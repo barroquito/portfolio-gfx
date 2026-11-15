@@ -3,49 +3,38 @@ import { projectMedia } from '../data/project-media';
 import type { Project } from '../data/projects';
 import '../styles/project-player.css';
 const { project } = Astro.props as { project: Project };
-const titles: Record<string, string> = { aniversario: 'Segundo aniversario', 'evento-sake': 'Cata de sake', 'f1-week': 'Race Weekend', 'piezas-digitales': 'Sesiones y campañas' };
-const chapters = (projectMedia[project.slug] ?? []).map(c => ({ ...c, title: titles[c.id] ?? c.title, pieces: [...c.pieces] }));
-if (project.slug === 'formula-1') {
-  for (const [slug, title] of [['houdinni', 'Houdinni'], ['li-onna', 'Li-Onna'], ['sala-de-despecho', 'Sala de Despecho']]) {
-    const campaign = projectMedia[slug]?.find(c => c.id === 'f1-week');
-    if (campaign) chapters.push({ ...campaign, id: slug, title, pieces: [...campaign.pieces] });
-  }
-}
-if (project.gallery.length) chapters.push({ id: 'aplicaciones', title: 'En el espacio', pieces: project.gallery.map(p => ({ kind: 'image', src: p.src, label: p.caption, alt: p.alt })) });
-const pieces = chapters.flatMap(c => c.pieces.map(p => ({ alt: p.label, ...p, chapter: c.id, chapterTitle: c.title })));
-const initial = Math.max(0, pieces.findIndex(p => p.kind === 'video'));
-const clean = (s: string) => s;
+const titles: Record<string, string> = { aniversario: 'Segundo aniversario', 'evento-sake': 'Cata de sake', 'f1-week': 'F1 Week', 'piezas-digitales': '' };
+const digital = (projectMedia[project.slug] ?? []).flatMap(chapter => chapter.pieces.map(piece => ({
+  ...piece, alt: piece.label, campaign: titles[chapter.id] ?? chapter.title,
+})));
+const printed = project.gallery.map(piece => ({ kind: 'image', src: piece.src, label: piece.caption.replace(/^\d+\s*[—–-]\s*/, ''), alt: piece.alt, campaign: '', poster: undefined }));
+const pieces = [...digital, ...printed];
+// Start with a representative film, followed by the complete collection in campaign order.
+const lead = pieces.findIndex(piece => piece.kind === 'video');
+if (lead > 0) pieces.unshift(...pieces.splice(lead, 1));
 ---
-{pieces.length > 0 && <section class="project-player section-shell" aria-label={`Explorar piezas de ${project.title}`} data-project-player data-initial={initial}>
-  <div class="player-layout">
-    <aside class="player-index">
-      <h2>Las piezas.</h2>
-      <nav aria-label="Campañas del proyecto" class="player-chapters">
-        <button type="button" data-chapter="all" aria-pressed="true">Toda la selección <span>{pieces.length}</span></button>
-        {chapters.map(c => <button type="button" data-chapter={c.id} aria-pressed="false">{c.title}<span>{c.pieces.length}</span></button>)}
-      </nav>
-      <a class="player-context-link" href="#case-story-title">Leer el proyecto</a>
-    </aside>
-    <div class="player-main">
-      <div class="player-stage" tabindex="0" aria-label="Visor de piezas. Usa las flechas izquierda y derecha para navegar.">
-        {pieces.map((p, i) => <figure class="player-piece" data-piece={i} data-campaign={p.chapter} id={`pieza-${i + 1}`}>
-          <div class="player-art">
-            {p.kind === 'video' ? <video controls playsinline preload="none" poster={p.poster} aria-label={clean(p.label)}><source src={p.src} type="video/mp4" /><a href={p.src}>Abrir vídeo</a></video>
-            : p.kind === 'document' ? <a class="player-document" href={p.src} target="_blank" rel="noopener"><span>PDF</span><strong>{clean(p.label)}</strong><span>Abrir documento</span></a>
-            : <button type="button" class="gallery-zoom player-image" data-src={p.src} data-alt={p.alt} data-caption={clean(p.label)} aria-label={`Ampliar ${clean(p.label)}`}><img src={p.src} alt={p.alt} loading="lazy" decoding="async" /><span class="player-zoom-label">Ampliar</span></button>}
-          </div>
-          <figcaption><span>{p.chapterTitle} / {p.kind === 'video' ? 'Película' : p.kind === 'document' ? 'Documento' : 'Imagen'}</span><h3>{clean(p.label)}</h3></figcaption>
-        </figure>)}
-      </div>
-      <div class="player-controls"><p data-player-status>{initial + 1} / {pieces.length}</p><div><button type="button" data-previous aria-label="Pieza anterior">Anterior</button><button type="button" data-next aria-label="Pieza siguiente">Siguiente</button></div></div>
-      <p class="sr-only" data-player-announcement aria-live="polite" aria-atomic="true"></p>
-      <div class="player-strip" aria-label="Seleccionar una pieza">
-        {pieces.map((p, i) => <button type="button" class="player-thumb" data-select={i} data-campaign={p.chapter} aria-label={`Ver ${clean(p.label)}`} aria-pressed={i === initial}>
-          {p.kind === 'document' ? <span>PDF</span> : <img src={p.poster ?? p.src} alt="" loading="lazy" decoding="async" />}
-          <span class="thumb-format">{p.kind === 'video' ? 'Play' : p.kind === 'document' ? 'PDF' : 'Ver'}</span>
-        </button>)}
-      </div>
+{pieces.length > 0 && <section class="project-reel" aria-label={`Piezas de ${project.title}`} data-project-reel>
+  <div class="reel-toolbar section-shell">
+    <span class="reel-hint">Desplázate para explorar</span>
+    <div class="reel-navigation">
+      <span data-reel-count aria-hidden="true">1 / {pieces.length}</span>
+      <button type="button" data-reel-prev aria-label="Pieza anterior">←</button>
+      <button type="button" data-reel-next aria-label="Pieza siguiente">→</button>
     </div>
   </div>
+  <div class="reel-track" tabindex="0" role="region" aria-roledescription="carrusel" aria-label="Piezas. Desliza o usa las flechas para recorrerlas.">
+    {pieces.map((piece, index) => <figure class="reel-piece" data-reel-piece id={`pieza-${index + 1}`} aria-label={`${index + 1} de ${pieces.length}`}>
+      <div class="reel-art">
+        {piece.kind === 'video' ? <video controls muted loop playsinline preload="none" poster={piece.poster} aria-label={piece.label}>
+          <source src={piece.src} type="video/mp4" /><a href={piece.src}>Abrir vídeo</a>
+        </video> : piece.kind === 'document' ? <a class="reel-document" href={piece.src} target="_blank" rel="noopener"><span>PDF</span><strong>{piece.label}</strong><span>Abrir documento</span></a>
+        : <button type="button" class="gallery-zoom reel-image" data-src={piece.src} data-alt={piece.alt} data-caption={piece.label} aria-label={`Ampliar ${piece.label}`}>
+          <img src={piece.src} alt={piece.alt} loading={index === 0 ? 'eager' : 'lazy'} decoding="async" />
+        </button>}
+      </div>
+      <figcaption>{piece.label}</figcaption>
+    </figure>)}
+  </div>
+  <p class="sr-only" data-reel-status aria-live="polite" aria-atomic="true"></p>
 </section>}
 <script src="../scripts/project-player.ts"></script>

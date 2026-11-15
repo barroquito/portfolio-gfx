@@ -34,6 +34,11 @@ export const projects: Project[] = [
   "approach": "Los impresos habituales y el aniversario comparten papel claro, azul e ilustración fina. Para la cata introduje un rojo más presente y un motivo propio, manteniendo el lenguaje editorial de Li-Onna.",
   "contribution": "Desarrollé la identidad de la cata y su logotipo, además de creatividades y aplicaciones impresas para distintos encargos de Li-Onna.",
   "gallery": [
+{
+    "src": "/images/portfolio-mockups/f1-li-onna-portacuentas.jpg",
+    "alt": "Portacuentas de Race Weekend para Li-Onna",
+    "caption": "Li-Onna · Portacuentas · Mockup"
+},
     {
       "src": "/images/portfolio-mockups/li-onna-impresos-de-mesa.jpg",
       "alt": "Marcapáginas, portacuentas y pegatinas de Li-Onna",
@@ -91,55 +96,7 @@ export const projects: Project[] = [
   "category": "Identidad"
 },
 {
-  "slug": "formula-1",
-  "number": "03",
-  "title": "F1 Week",
-  "subtitle": "Una campaña con distintas formas de vivir la carrera.",
-  "description": "Una campaña con distintas formas de vivir la carrera.",
-  "context": "Mandala Group · Campaña",
-  "scope": [
-    "Identidad de campaña",
-    "Impresos",
-    "Creatividades"
-  ],
-  "record": {
-    "color": "#212121",
-    "ink": "#f4efe5",
-    "label": "CAMPAÑA MULTIMARCA"
-  },
-  "cover": "/images/record-covers/03-f1-week.jpg",
-  "theme": "f1",
-  "original": false,
-  "intro": "La semana de Fórmula 1 fue la ocasión para convertir la retransmisión en un plan para varios locales de Mandala Group.",
-  "challenge": "El mismo evento debía funcionar en locales con públicos y lenguajes visuales distintos.",
-  "approach": "Houdinni llevó la campaña al rojo, el negro y el damero. Li-Onna la trasladó a marfil, azul y tipografía editorial. Sala de Despecho la vistió de verde oscuro y dorado, con una frase en su propio tono.",
-  "contribution": "Diseñé el logotipo y las creatividades de la campaña. Todas las piezas de F1 Week que se muestran son diseños míos, adaptados al estilo visual de su marca.",
-  "gallery": [
-    {
-      "src": "/images/portfolio-mockups/f1-houdinni-cartel-y-mapa.jpg",
-      "alt": "Cartel y mapa de F1 Week para Houdinni",
-      "caption": "Houdinni · Cartel y mapa · Mockup"
-    },
-    {
-      "src": "/images/portfolio-mockups/f1-li-onna-portacuentas.jpg",
-      "alt": "Portacuentas de Race Weekend para Li-Onna",
-      "caption": "Li-Onna · Portacuentas · Mockup"
-    },
-    {
-      "src": "/images/portfolio-mockups/f1-sdd-polo.jpg",
-      "alt": "Frente y espalda del polo de Sala de Despecho",
-      "caption": "Sala de Despecho · Polo · Mockup"
-    },
-    {
-      "src": "/images/portfolio-mockups/f1-houdinni-pulsera.jpg",
-      "alt": "Pulsera roja y negra de F1 Week para Houdinni",
-      "caption": "Houdinni · Pulsera · Mockup"
-    }
-  ],
-  "category": "Campañas"
-},
-  {
-    slug: 'bulk', number: '04', title: 'BULK', subtitle: 'Comer bien. Sin bajar el volumen.',
+    slug: 'bulk', number: '03', title: 'BULK', subtitle: 'Comer bien. Sin bajar el volumen.',
     description: 'Mi proyecto de fin de grado: una marca de alimentación saludable llevada al naming, la identidad y el packaging.',
     record: {color:'#a7c6c0',ink:'#25251f',label:'IDENTIDAD CON ACTITUD'},
     category: 'Identidad', context: 'Proyecto de fin de grado · UDIT',
@@ -158,10 +115,10 @@ export const projects: Project[] = [
   },
 {
   "slug": "houdinni",
-  "number": "05",
+  "number": "04",
   "title": "Houdinni",
-  "subtitle": "Un aniversario en clave de club urbano.",
-  "description": "Un aniversario en clave de club urbano.",
+  "subtitle": "Identidad y comunicación para un club urbano.",
+  "description": "Identidad y comunicación para un club urbano.",
   "context": "Mandala Group · Club",
   "scope": [
     "Aplicaciones de marca",
@@ -179,6 +136,16 @@ export const projects: Project[] = [
   "approach": "El rótulo iluminado pone el nombre y la firma del aniversario en contraste. El grabado traslada la composición a una botella metálica.",
   "contribution": "Diseñé las aplicaciones de aniversario que se muestran en este caso.",
   "gallery": [
+{
+    "src": "/images/portfolio-mockups/f1-houdinni-pulsera.jpg",
+    "alt": "Pulsera roja y negra de F1 Week para Houdinni",
+    "caption": "Houdinni · Pulsera · Mockup"
+},
+{
+    "src": "/images/portfolio-mockups/f1-houdinni-cartel-y-mapa.jpg",
+    "alt": "Cartel y mapa de F1 Week para Houdinni",
+    "caption": "Houdinni · Cartel y mapa · Mockup"
+},
     {
       "src": "/images/portfolio-mockups/houdinni-lightbox-aniversario.jpg",
       "alt": "Rótulo iluminado del primer aniversario de Houdinni",
@@ -194,7 +161,7 @@ export const projects: Project[] = [
 },
 {
   "slug": "sala-de-despecho",
-  "number": "06",
+  "number": "05",
   "title": "Sala de Despecho",
   "subtitle": "Una gráfica de barra para (des)ahogar tus penas.",
   "description": "Una gráfica de barra para (des)ahogar tus penas.",
@@ -215,6 +182,11 @@ export const projects: Project[] = [
   "approach": "La portada usa verde menta, tipografía cálida y una botella central. Las prendas de la campaña de carreras se muestran en F1 Week.",
   "contribution": "Diseñé la portada del menú Dobel y las piezas de Sala de Despecho que se muestran en F1 Week.",
   "gallery": [
+{
+    "src": "/images/portfolio-mockups/f1-sdd-polo.jpg",
+    "alt": "Frente y espalda del polo de Sala de Despecho",
+    "caption": "Sala de Despecho · Polo · Mockup"
+},
     {
       "src": "/images/portfolio-mockups/sala-de-despecho-menu-dobel.jpg",
       "alt": "Portada verde del menú Maestro Dobel sobre una barra",
@@ -225,7 +197,7 @@ export const projects: Project[] = [
 },
   {
   "slug": "bonbonniere",
-  "number": "07",
+  "number": "06",
   "title": "Bonbonniere",
   "subtitle": "Programación musical en movimiento.",
   "description": "Piezas animadas para sesiones y artistas.",
@@ -266,5 +238,5 @@ export const projects: Project[] = [
 
 ];
 
-export const recordProjects = projects.filter(project => project.cover);
+export const recordProjects = projects.filter(project => project.category !== 'Personal');
 export const projectIndex = projects.filter(project => project.category !== 'Personal');

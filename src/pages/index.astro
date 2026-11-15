@@ -4,9 +4,23 @@ import Layout from '../layouts/Layout.astro';
 import BrandMark from '../components/BrandMark.astro';
 import RecordSleeve from '../components/RecordSleeve.astro';
 import { recordProjects as projects, projectIndex } from '../data/projects';
+import { projectMedia } from '../data/project-media';
 import '../styles/record-room.css';
-import '../styles/room-loading.css';
 import '../styles/collection-orbit.css';
+
+const collectionProjects = projects.map(project => {
+  const { slug, title, number, subtitle, description, record, theme, cover, gallery } = project;
+  const image = gallery[0];
+  const pieces = projectMedia[slug]?.flatMap(chapter => chapter.pieces) ?? [];
+  const video = pieces.find(piece => piece.kind === 'video' && piece.poster);
+  const still = pieces.find(piece => piece.kind === 'image');
+  const preview = image ? { image: image.src, alt: image.alt }
+    : video ? { image: video.poster, alt: video.label, video: video.src }
+    : still ? { image: still.src, alt: still.label }
+    : { image: cover, alt: title };
+  return { slug, title, number, subtitle, description, record, theme, cover, preview };
+});
+const firstProject = collectionProjects[0];
 ---
 <Layout home title="Jorge Pindado — Una colección de ideas" description="Portfolio de Jorge Pindado. Diseño gráfico y dirección de arte en Madrid.">
   <main id="main" class="record-room">
@@ -18,31 +32,41 @@ import '../styles/collection-orbit.css';
     <section class="listening-table" aria-label="Expositor interactivo de proyectos en vinilo">
       <div id="record-scene" aria-hidden="true"></div>
       <div class="scene-fallback" aria-hidden="true"><div class="fallback-model"><img src="/models/tocadiscos-poster.webp" alt="" width="1100" height="850" /></div><div class="fallback-stack">{[...projects].reverse().map(project=><div class="fallback-sleeve"><RecordSleeve project={project}/></div>)}</div></div>
-      <button class="collection-hotspot" data-open-collection aria-label="Abrir la colección de vinilos"><span class="hotspot-dot"><Icon name="plus" size={160} /></span><span class="hotspot-hint">ABRIR COLECCIÓN</span></button>
+      <button class="collection-hotspot" data-open-collection aria-haspopup="dialog" aria-label="Abrir la colección de vinilos"><span class="hotspot-dot"><Icon name="plus" size={160} /></span><span class="hotspot-hint">ABRIR COLECCIÓN</span></button>
 
     </section>
 
-    <div class="room-bottom"><span class="bottom-statement">CADA VINILO,<br/><strong>UN PROYECTO.</strong></span><button class="collection-main-button" data-open-collection>Explorar la colección <sup>{String(projects.length).padStart(2,'0')}</sup><i aria-hidden="true"><Icon name="arrow" size={60} /></i></button><span class="bottom-location">MADRID, ES<br/>2026</span></div>
-    <p class="sr-only" id="room-status" role="status" aria-live="polite"></p>
-    <div class="static-collection-links">{projectIndex.map(project=><a href={`/proyectos/${project.slug}/`}>{project.title} </a>)}</div>
+    <div class="room-bottom"><button class="collection-main-button" data-open-collection aria-haspopup="dialog">Abrir colección <i aria-hidden="true"><Icon name="arrow" size={60} /></i></button></div>
     <noscript><div class="no-js-projects"><p>Proyectos</p>{projectIndex.map(project=><a href={`/proyectos/${project.slug}/`}>{project.title} </a>)}<a href="/CV-Jorge-Pindado-ES.pdf">Mi CV</a><a href="mailto:jorgepindado.gfx@gmail.com">Contacto</a></div></noscript>
   </main>
 
-  <dialog id="collection-dialog" class="orbit-dialog" aria-label="Colección de vinilos">
-    <div class="orbit-stage" tabindex="0" role="region" aria-label="Vinilos. Usa las flechas para recorrerlos y Enter para abrir un proyecto.">
-      <div class="orbit-fallback">
-        {projects.map((project,index)=><a class="orbit-fallback-record" data-fallback-record={index} href={`/proyectos/${project.slug}/`} aria-label={project.title}>
-          <div class="orbit-fallback-front"><RecordSleeve project={project}/></div>
-          <div class="orbit-fallback-back"><strong>{project.title}</strong><p>{project.description}</p></div>
+  <dialog id="collection-dialog" class="orbit-dialog" data-render="fallback" aria-label="Colección de vinilos">
+    <button class="orbit-close" type="button" data-close-collection aria-label="Cerrar colección"><Icon name="close" size={60} /></button>
+    <div class="orbit-stage">
+      <div class="orbit-fallback" aria-hidden="true">
+        {projects.map((project,index)=><a class="orbit-fallback-record" data-fallback-record={index} href={`/proyectos/${project.slug}/`} tabindex="-1" aria-label={project.title}>
+          <RecordSleeve project={project}/>
         </a>)}
       </div>
-      <div class="sr-only" aria-live="polite" data-orbit-status></div>
     </div>
-    <button class="orbit-close" data-close-collection aria-label="Cerrar colección"><Icon name="close" size={60} /></button>
+    <div class="orbit-navigation">
+      <button type="button" data-step="-1" aria-label="Vinilo anterior"><span aria-hidden="true">←</span></button>
+      <button type="button" data-step="1" aria-label="Vinilo siguiente"><span aria-hidden="true">→</span></button>
+    </div>
+    <div class="orbit-preview">
+      <div class="orbit-preview-media">
+        <img data-preview-image src={firstProject.preview.image} alt={firstProject.preview.alt} decoding="async" loading="lazy" />
+        <video data-preview-video muted loop playsinline preload="none" aria-hidden="true" hidden></video>
+      </div>
+      <a class="orbit-project" data-preview-link href={`/proyectos/${firstProject.slug}/`}>
+        <span data-preview-title>{firstProject.title}</span>
+        <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+    <p class="sr-only" role="status" aria-atomic="true" data-orbit-status></p>
   </dialog>
 
   <dialog id="contact-dialog" class="info-dialog contact-dialog" aria-labelledby="contact-dialog-title"><button class="room-dialog-close room-dialog-close--text" data-close-dialog aria-label="Cerrar contacto">Cerrar </button><h2 id="contact-dialog-title">¿Tienes algo<br/><strong>en mente?</strong></h2><div class="room-contact-email"><a href="mailto:jorgepindado.gfx@gmail.com">jorgepindado.gfx@gmail.com </a><button class="copy-email" aria-label="Copiar correo electrónico" title="Copiar correo">Copiar</button></div><div class="room-contact-links"><a href="https://www.linkedin.com/in/jorge-pindado-badiola-4a3846191/" target="_blank" rel="noopener noreferrer">LinkedIn </a><a href="/CV-Jorge-Pindado-ES.pdf" download>Descargar CV </a></div></dialog>
-  <div class="record-transition" aria-hidden="true"><span class="tiny-label">AHORA EN EL PLATO</span><strong></strong><span class="record-transition-subtitle"></span><span class="transition-line"></span></div>
-  <script id="record-project-data" type="application/json" set:html={JSON.stringify(projects.map(({slug,title,number,subtitle,description,record,theme,cover})=>({slug,title,number,subtitle,description,record,theme,cover})))}/>
+  <script id="record-project-data" type="application/json" set:html={JSON.stringify(collectionProjects)}/>
   <script src="../scripts/record-room.ts"></script>
 </Layout>

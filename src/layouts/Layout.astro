@@ -6,7 +6,6 @@ import '../styles/type-controls.css';
 import '../styles/selection.css';
 import '../styles/film.css';
 import BrandMark from '../components/BrandMark.astro';
-import { recordProjects } from '../data/projects';
 const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráfico y dirección de arte. Del concepto publicitario a la expresión visual. Portfolio de Jorge Pindado, Madrid.', home = false, projectPage = false } = Astro.props;
 ---
 <!doctype html>
@@ -21,25 +20,9 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
     <meta property="og:description" content={description} />
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon.png" />
     {home && <link rel="preload" href="/models/tocadiscos.glb?v=meshopt-palette-01" as="fetch" type="model/gltf-binary" crossorigin="anonymous" />}
-    {home && <script is:inline>
-      document.documentElement.classList.add('room-loading');
-      window.setTimeout(()=>{
-        const root=document.documentElement;
-        if(root.classList.contains('room-loading')){
-          root.classList.remove('room-loading');root.classList.add('room-loaded','room-static');
-          document.getElementById('room-loader')?.remove();
-        }
-      },15000);
-    </script>}
     <title>{title}</title>
   </head>
   <body class:list={{'listening-room':home, 'project-layout':projectPage}}>
-    {home && <div id="room-loader" class="room-loader" role="status" aria-live="polite">
-      <BrandMark tone="red" class="loader-signature" />
-      <div class="loader-copy"><strong>Ideas en rotación.</strong><span id="loader-message">Preparando la colección</span></div>
-      <div class="loader-track" aria-hidden="true"><span id="loader-progress"></span></div>
-      <button class="loader-skip" id="loader-skip" hidden>Explorar mientras carga </button>
-    </div>}
     <a href="#main" class="skip-link">Saltar al contenido</a>
     <div class="scroll-progress" aria-hidden="true"></div>
     <header class="site-header">
@@ -49,8 +32,7 @@ const { title = 'Jorge Pindado — Ideas en forma', description = 'Diseño gráf
 
       <button class="menu-toggle" aria-label="Abrir menú" aria-controls="main-nav" aria-expanded="false"><span>Menú</span><i aria-hidden="true"></i></button>
       <nav id="main-nav" aria-label="Navegación principal">
-        <a href={home ? '#proyectos' : '/#proyectos'}>Colección <sup>{String(recordProjects.length).padStart(2,'0')}</sup></a>
-        <a href="/proyectos/">Índice</a>
+        <a href={home ? '#proyectos' : '/#proyectos'}>Proyectos</a>
         <a href="/proyectos/sobre-mi/">Sobre mí</a>
         <a class="nav-contact" href={home ? '#contacto' : '/#contacto'}>Hablemos </a>
       </nav>
