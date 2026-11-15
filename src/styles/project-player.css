@@ -1,0 +1,274 @@
+.project-player{
+  --player-ground:#dedcd4;
+  padding-block:1rem 5rem;
+  color:var(--ink)}
+  .player-layout{
+    display:grid;
+    grid-template-columns:minmax(190px,1fr) minmax(0,3.3fr);
+    gap:clamp(2rem,5vw,6rem);
+    align-items:start}
+    .player-index{
+      position:sticky;
+      top:7rem;
+      padding-top:1rem}
+      .player-index h2{
+        font-size:clamp(2rem,3.8vw,4.5rem);
+        font-weight:500;
+        line-height:1.02;
+        letter-spacing:-.055em;
+        margin:0 0 2.5rem}
+        .player-chapters{
+          display:flex;
+          flex-direction:column;
+          gap:.5rem}
+          .player-chapters button{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:1rem;
+            text-align:left;
+            padding:.75rem 0;
+            background:none;
+            border:0;
+            font:inherit;
+            font-size:1rem;
+            color:inherit;
+            cursor:pointer;
+            min-height:44px}
+            .player-chapters button span{
+              font-size:.75rem;
+              font-variant-numeric:tabular-nums}
+              .player-chapters button[aria-pressed=true]{
+                color:var(--red);
+                font-weight:650}
+                .player-context-link{
+                  display:inline-block;
+                  font-size:.875rem;
+                  margin-top:2.5rem;
+                  text-decoration:underline;
+                  text-underline-offset:.3em;
+                  padding-block:.75rem}
+                  .player-main{
+                    min-width:0}
+                    .player-stage{
+                      position:relative;
+                      outline-offset:6px}
+                      .player-piece{
+                        margin:0 0 2rem;
+                        min-width:0}
+                        .player-art{
+                          height:clamp(350px,62vh,720px);
+                          padding:clamp(1rem,3vw,2.5rem);
+                          background:var(--player-ground);
+                          display:flex;
+                          align-items:center;
+                          justify-content:center;
+                          overflow:hidden}
+                          .player-art video,.player-art img{
+                            display:block;
+                            max-width:100%;
+                            max-height:100%;
+                            width:auto;
+                            height:auto;
+                            object-fit:contain}
+                            .player-art video{
+                              height:100%;
+                              background:#000}
+                              .player-art .player-image{
+                                position:relative;
+                                display:flex;
+                                align-items:center;
+                                justify-content:center;
+                                width:100%;
+                                height:100%;
+                                padding:0;
+                                border:0;
+                                background:none;
+                                cursor:zoom-in}
+                                .player-art .player-image img{
+                                  width:100%;
+                                  height:100%;
+                                  object-fit:contain;
+                                  transform:none}
+                                  .player-image .player-zoom-label{
+                                    position:absolute;
+                                    right:0;
+                                    bottom:0;
+                                    width:auto;
+                                    height:auto;
+                                    padding:.6rem .9rem;
+                                    font:inherit;
+                                    font-size:.875rem;
+                                    background:var(--paper,#f3f0e8);
+                                    color:var(--ink);
+                                    border-radius:0;
+                                    opacity:0;
+                                    transition:opacity .2s ease}
+                                    .player-image:hover .player-zoom-label,.player-image:focus-visible .player-zoom-label{
+                                      opacity:1}
+                                      .player-piece figcaption{
+                                        padding-top:1.25rem;
+                                        min-height:5.5rem}
+                                        .player-piece figcaption>span{
+                                          font-size:.875rem}
+                                          .player-piece h3{
+                                            font-size:clamp(1.2rem,2vw,1.8rem);
+                                            font-weight:500;
+                                            letter-spacing:-.025em;
+                                            line-height:1.2;
+                                            margin:.4rem 0 0;
+                                            text-transform:none}
+                                            .player-document{
+                                              display:flex;
+                                              flex-direction:column;
+                                              gap:2rem;
+                                              padding:2rem;
+                                              width:min(100%,360px);
+                                              background:var(--paper,#f3f0e8);
+                                              color:var(--ink);
+                                              min-height:75%;
+                                              justify-content:space-between}
+                                              .player-document strong{
+                                                font-size:clamp(1.5rem,3vw,2.5rem);
+                                                line-height:1.1}
+                                                .player-document>span:last-child{
+                                                  text-decoration:underline;
+                                                  text-underline-offset:.3em}
+                                                  .player-controls{
+                                                    display:none;
+                                                    justify-content:space-between;
+                                                    align-items:center;
+                                                    margin:.5rem 0 1rem;
+                                                    gap:1rem}
+                                                    .player-controls p{
+                                                      font-size:.875rem;
+                                                      font-variant-numeric:tabular-nums;
+                                                      margin:0}
+                                                      .player-controls>div{
+                                                        display:flex;
+                                                        gap:.5rem}
+                                                        .player-controls button{
+                                                          min-height:44px;
+                                                          padding:.5rem 1rem;
+                                                          background:none;
+                                                          border:1px solid var(--ink);
+                                                          font:inherit;
+                                                          font-size:.875rem;
+                                                          color:inherit;
+                                                          cursor:pointer;
+                                                          transition:background-color .2s,color .2s}
+                                                          .player-controls button:hover{
+                                                            background:var(--ink);
+                                                            color:var(--paper,#f3f0e8)}
+                                                            .player-controls button[aria-disabled=true]{
+                                                              opacity:.35;
+                                                              cursor:default}
+                                                              .player-strip{
+                                                                display:none;
+                                                                gap:.75rem;
+                                                                overflow-x:auto;
+                                                                padding:8px 4px 1rem;
+                                                                scrollbar-width:thin;
+                                                                scroll-snap-type:x proximity}
+                                                                .player-thumb{
+                                                                  position:relative;
+                                                                  flex:0 0 76px;
+                                                                  height:94px;
+                                                                  background:var(--player-ground);
+                                                                  padding:0;
+                                                                  border:0;
+                                                                  cursor:pointer;
+                                                                  scroll-snap-align:center;
+                                                                  transition:transform .25s ease,opacity .25s ease;
+                                                                  opacity:.6}
+                                                                  .player-thumb img{
+                                                                    width:100%;
+                                                                    height:100%;
+                                                                    object-fit:cover}
+                                                                    .player-thumb[aria-pressed=true]{
+                                                                      outline:2px solid var(--red);
+                                                                      outline-offset:4px;
+                                                                      opacity:1;
+                                                                      transform:translateY(-4px)}
+                                                                      .player-thumb:hover,.player-thumb:focus-visible{
+                                                                        opacity:1}
+                                                                        .thumb-format{
+                                                                          position:absolute;
+                                                                          bottom:0;
+                                                                          left:0;
+                                                                          background:var(--paper,#f3f0e8);
+                                                                          color:var(--ink);
+                                                                          font-size:.65rem;
+                                                                          padding:.2rem .4rem}
+                                                                          .player-chapters,.player-context-link{
+                                                                            display:none}
+                                                                            .project-player.is-enhanced .player-chapters{
+                                                                              display:flex}
+                                                                              .project-player.is-enhanced .player-context-link{
+                                                                                display:inline-block}
+                                                                                .project-player.is-enhanced .player-controls,.project-player.is-enhanced .player-strip{
+                                                                                  display:flex}
+                                                                                  .project-player.is-enhanced .player-piece{
+                                                                                    margin:0}
+                                                                                    .project-player [hidden]{
+                                                                                      display:none!important}
+                                                                                      .project-player :is(button,a):focus-visible,.player-stage:focus-visible{
+                                                                                        outline:2px solid var(--red);
+                                                                                        outline-offset:5px}
+                                                                                        @media(max-width:900px){
+                                                                                          .player-layout{
+                                                                                            grid-template-columns:1fr;
+                                                                                            gap:1.5rem}
+                                                                                            .player-index{
+                                                                                              position:static;
+                                                                                              display:flex;
+                                                                                              flex-wrap:wrap;
+                                                                                              gap:1rem;
+                                                                                              align-items:end}
+                                                                                              .player-index h2{
+                                                                                                font-size:2.5rem;
+                                                                                                margin:0}
+                                                                                                .player-index h2 br{
+                                                                                                  display:none}
+                                                                                                  .player-chapters{
+                                                                                                    flex-direction:row;
+                                                                                                    flex-wrap:wrap;
+                                                                                                    gap:.25rem 1.25rem;
+                                                                                                    width:100%}
+                                                                                                    .player-chapters button{
+                                                                                                      justify-content:start;
+                                                                                                      gap:.5rem}
+                                                                                                      .player-context-link{
+                                                                                                        margin:0 0 0 auto}
+                                                                                                        .player-art{
+                                                                                                          height:clamp(330px,58vh,620px)}
+                                                                                                          .project-player{
+                                                                                                            padding-bottom:3rem}
+                                                                                                          }
+                                                                                                          @media(max-width:480px){
+                                                                                                            .player-index h2{
+                                                                                                              font-size:2.25rem}
+                                                                                                              .player-chapters button{
+                                                                                                                font-size:.875rem}
+                                                                                                                .player-art{
+                                                                                                                  padding:1rem;
+                                                                                                                  height:53svh;
+                                                                                                                  min-height:300px}
+                                                                                                                  .player-thumb{
+                                                                                                                    flex-basis:64px;
+                                                                                                                    height:80px}
+                                                                                                                    .player-piece figcaption{
+                                                                                                                      min-height:6rem}
+                                                                                                                      .player-controls button{
+                                                                                                                        padding:.5rem .75rem}
+                                                                                                                        .player-context-link{
+                                                                                                                          font-size:.8rem}
+                                                                                                                          .player-image .player-zoom-label{
+                                                                                                                            opacity:1}
+                                                                                                                          }
+                                                                                                                          @media(prefers-reduced-motion:reduce){
+                                                                                                                            .player-thumb,.player-controls button{
+                                                                                                                              transition:none}
+                                                                                                                              .player-thumb[aria-pressed=true]{
+                                                                                                                                transform:none}
+                                                                                                                              }

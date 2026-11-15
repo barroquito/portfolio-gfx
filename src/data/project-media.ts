@@ -9,25 +9,25 @@ export const projectMedia: Partial<Record<string, Chapter[]>> = {
         {
           "kind": "video",
           "src": "/media/recap/bonbonniere-artes-bbm-st-animada-lee-burridge-26jul.mp4",
-          "label": "BBM ST ANIMADA LEE BURRIDGE 26JUL",
+          "label": "Lee Burridge · 26 julio",
           "poster": "/media/recap/bonbonniere-artes-bbm-st-animada-lee-burridge-26jul.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/bonbonniere-artes-bbm-st-animada-residents-03sep.mp4",
-          "label": "BBM ST Animada RESIDENTS 03SEP",
+          "label": "Residents · 3 septiembre",
           "poster": "/media/recap/bonbonniere-artes-bbm-st-animada-residents-03sep.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/bonbonniere-artes-bbm-st-animada-residents-24ago.mp4",
-          "label": "BBM ST Animada RESIDENTS 24AGO",
+          "label": "Residents · 24 agosto",
           "poster": "/media/recap/bonbonniere-artes-bbm-st-animada-residents-24ago.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/bonbonniere-artes-marco-carola-bbm-st-animada-marco-carola-1080x1080-jul5.mp4",
-          "label": "BBM ST ANIMADA Marco Carola 1080x1080 JUL5",
+          "label": "Marco Carola · 5 julio",
           "poster": "/media/recap/bonbonniere-artes-marco-carola-bbm-st-animada-marco-carola-1080x1080-jul5.jpg"
         }
       ]
@@ -41,13 +41,13 @@ export const projectMedia: Partial<Record<string, Chapter[]>> = {
         {
           "kind": "video",
           "src": "/media/recap/houdinni-artes-houdinni-st-animada-alex-puche.mp4",
-          "label": "Houdinni ST Animada ALEX PUCHE",
+          "label": "Alex Puche",
           "poster": "/media/recap/houdinni-artes-houdinni-st-animada-alex-puche.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/houdinni-artes-houdinni-st-animada-macarena.mp4",
-          "label": "Houdinni ST Animada MACARENA",
+          "label": "Macarena",
           "poster": "/media/recap/houdinni-artes-houdinni-st-animada-macarena.jpg"
         }
       ]
@@ -59,19 +59,19 @@ export const projectMedia: Partial<Record<string, Chapter[]>> = {
         {
           "kind": "video",
           "src": "/media/recap/houdinni-f1-week-artes-st-animado-l-f1-2.mp4",
-          "label": "ST ANIMADO l F1 - 2",
+          "label": "F1 Week · Motion 1",
           "poster": "/media/recap/houdinni-f1-week-artes-st-animado-l-f1-2.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/houdinni-f1-week-artes-st-animado-l-f1-3.mp4",
-          "label": "ST ANIMADO l F1 - 3",
+          "label": "F1 Week · Motion 2",
           "poster": "/media/recap/houdinni-f1-week-artes-st-animado-l-f1-3.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/houdinni-f1-week-artes-st-animado-l-f1-4.mp4",
-          "label": "ST ANIMADO l F1 - 4",
+          "label": "F1 Week · Motion 3",
           "poster": "/media/recap/houdinni-f1-week-artes-st-animado-l-f1-4.jpg"
         }
       ]
@@ -85,34 +85,34 @@ export const projectMedia: Partial<Record<string, Chapter[]>> = {
         {
           "kind": "image",
           "src": "/media/recap/li-onna-aniversario-logo-li-onna-logo-aniversario-01.png",
-          "label": "Li-Onna LOGO Aniversario-01"
+          "label": "Logotipo · Versión 1"
         },
         {
           "kind": "image",
           "src": "/media/recap/li-onna-aniversario-logo-li-onna-logo-aniversario-02.png",
-          "label": "Li-Onna LOGO Aniversario-02"
+          "label": "Logotipo · Versión 2"
         },
         {
           "kind": "document",
           "src": "/media/recap/li-onna-aniversario-portacuentas-li-onna-portacuentas-aniversario.pdf",
-          "label": "Li-Onna Portacuentas Aniversario"
+          "label": "Portacuentas de aniversario"
         },
         {
           "kind": "video",
           "src": "/media/recap/li-onna-aniversario-reel-aniversario-li-onna-reel-aniversario.mp4",
-          "label": "Li-Onna Reel Aniversario",
+          "label": "Reel de aniversario",
           "poster": "/media/recap/li-onna-aniversario-reel-aniversario-li-onna-reel-aniversario.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/li-onna-aniversario-st-aniversario-felicitacio-un-li-onna-st-felicitacio-un.mp4",
-          "label": "Li-Onna ST Felicitacio╠ün",
+          "label": "Felicitación de aniversario",
           "poster": "/media/recap/li-onna-aniversario-st-aniversario-felicitacio-un-li-onna-st-felicitacio-un.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/li-onna-aniversario-st-menu-1-li-onna-st-menu-1.mp4",
-          "label": "Li-Onna ST Menu-1",
+          "label": "Menú de aniversario",
           "poster": "/media/recap/li-onna-aniversario-st-menu-1-li-onna-st-menu-1.jpg"
         }
       ]
@@ -124,35 +124,35 @@ export const projectMedia: Partial<Record<string, Chapter[]>> = {
         {
           "kind": "image",
           "src": "/media/recap/li-onna-evento-sake-crm-lionna-crm-evento-sake-oct16-01.png",
-          "label": "LiOnna CRM EVENTO SAKE OCT16-01"
+          "label": "Invitación a la cata"
         },
         {
           "kind": "image",
           "src": "/media/recap/li-onna-evento-sake-crm-lionna-crm-evento-sake-oct16-02.png",
-          "label": "LiOnna CRM EVENTO SAKE OCT16-02"
+          "label": "Cata de sake · Cierre del CRM"
         },
         {
           "kind": "video",
           "src": "/media/recap/li-onna-evento-sake-publi-1-li-onna-eventosake-publi-1.mp4",
-          "label": "Li-Onna EventoSake Publi 1",
+          "label": "Cata de sake · Motion 1",
           "poster": "/media/recap/li-onna-evento-sake-publi-1-li-onna-eventosake-publi-1.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/li-onna-evento-sake-publi-2-li-onna-eventosake-publi-2.mp4",
-          "label": "Li-Onna EventoSake Publi 2",
+          "label": "Cata de sake · Motion 2",
           "poster": "/media/recap/li-onna-evento-sake-publi-2-li-onna-eventosake-publi-2.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/li-onna-evento-sake-publi-3-li-onna-eventosake-publi-3.mp4",
-          "label": "Li-Onna EventoSake Publi 3",
+          "label": "Cata de sake · Motion 3",
           "poster": "/media/recap/li-onna-evento-sake-publi-3-li-onna-eventosake-publi-3.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/li-onna-evento-sake-reel-fotos-li-onna-eventosake-reel-fotos-oct26.mp4",
-          "label": "Li-Onna EventoSake REEL FOTOS OCT26",
+          "label": "Cata de sake · Reel fotográfico",
           "poster": "/media/recap/li-onna-evento-sake-reel-fotos-li-onna-eventosake-reel-fotos-oct26.jpg"
         }
       ]
@@ -164,24 +164,24 @@ export const projectMedia: Partial<Record<string, Chapter[]>> = {
         {
           "kind": "video",
           "src": "/media/recap/li-onna-f1-week-artes-li-onna-st-f1-05.mp4",
-          "label": "Li-Onna ST F1 05",
+          "label": "Race Weekend · Motion 1",
           "poster": "/media/recap/li-onna-f1-week-artes-li-onna-st-f1-05.jpg"
         },
         {
           "kind": "image",
           "src": "/media/recap/li-onna-f1-week-artes-li-onna-st-f1-06.png",
-          "label": "Li-Onna ST F1 06"
+          "label": "Race Weekend · Story"
         },
         {
           "kind": "video",
           "src": "/media/recap/li-onna-f1-week-artes-li-onna-st-f1-07.mp4",
-          "label": "Li-Onna ST F1 07",
+          "label": "Race Weekend · Motion 2",
           "poster": "/media/recap/li-onna-f1-week-artes-li-onna-st-f1-07.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/li-onna-f1-week-artes-li-onna-st-f1-08.mp4",
-          "label": "Li-Onna ST F1 08",
+          "label": "Race Weekend · Motion 3",
           "poster": "/media/recap/li-onna-f1-week-artes-li-onna-st-f1-08.jpg"
         }
       ]
@@ -195,36 +195,36 @@ export const projectMedia: Partial<Record<string, Chapter[]>> = {
         {
           "kind": "video",
           "src": "/media/recap/one-more-artes-om-reel-halloween-15oct.mp4",
-          "label": "OM REEL Halloween 15OCT",
+          "label": "Halloween · Reel",
           "poster": "/media/recap/one-more-artes-om-reel-halloween-15oct.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/one-more-artes-om-reel-pantallas-nov09.mp4",
-          "label": "OM REEL Pantallas NOV09",
+          "label": "Visuales para pantallas",
           "poster": "/media/recap/one-more-artes-om-reel-pantallas-nov09.jpg"
         },
         {
           "kind": "image",
           "src": "/media/recap/one-more-artes-om-st-halloween-15oct.png",
-          "label": "OM ST Halloween 15OCT"
+          "label": "Halloween · Story"
         },
         {
           "kind": "video",
           "src": "/media/recap/one-more-artes-om-st-halloween-oct28.mp4",
-          "label": "OM ST Halloween Oct28",
+          "label": "Halloween · Motion",
           "poster": "/media/recap/one-more-artes-om-st-halloween-oct28.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/one-more-artes-om-st-horario.mp4",
-          "label": "OM ST Horario",
+          "label": "Horario · Motion",
           "poster": "/media/recap/one-more-artes-om-st-horario.jpg"
         },
         {
           "kind": "video",
           "src": "/media/recap/one-more-artes-one-more-reel-sep14.mp4",
-          "label": "One More REEL Sep14",
+          "label": "One More · Reel",
           "poster": "/media/recap/one-more-artes-one-more-reel-sep14.jpg"
         }
       ]
@@ -238,17 +238,17 @@ export const projectMedia: Partial<Record<string, Chapter[]>> = {
         {
           "kind": "image",
           "src": "/media/recap/sdd-f1-week-artes-sdd-st-f1-01.png",
-          "label": "SDD ST F1 01"
+          "label": "F1 Week · Story 1"
         },
         {
           "kind": "image",
           "src": "/media/recap/sdd-f1-week-artes-sdd-st-f1-02.png",
-          "label": "SDD ST F1 02"
+          "label": "F1 Week · Story 2"
         },
         {
           "kind": "image",
           "src": "/media/recap/sdd-f1-week-artes-sdd-st-f1-03.png",
-          "label": "SDD ST F1 03"
+          "label": "F1 Week · Story 3"
         }
       ]
     }

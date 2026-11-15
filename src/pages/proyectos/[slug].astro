@@ -23,27 +23,17 @@ const story = project.story ?? [
       <h1 id="case-title" data-reveal>{project.title}{project.number && <span>/{project.number}</span>}</h1>
       {!personal && <div class="case-intro"><p>{project.subtitle}</p><div>{project.scope.map((tag: string) => <span class="tag">{tag}</span>)}</div></div>}
     </section>
+    {!personal && project.slug !== 'bulk' && <ProjectMedia project={project} />}
     <section class="case-story case-story--details section-shell" aria-labelledby="case-story-title">
       <div class="case-story-intro" data-reveal><h2 id="case-story-title">{project.intro}</h2></div>
       {personal ? <div class="case-reflection" data-reveal>
         {story.map(({text}: {text:string}) => <p>{text}</p>)}
         <a class="text-link case-cv-link" href="/CV-Jorge-Pindado-ES.pdf" download>Descargar CV (PDF)</a>
-      </div> : <div class="case-story-grid">
+      </div> : <details class="case-process"><summary>Proceso y aportación</summary><div class="case-story-grid">
         {story.map(({ title, text }: { title: string; text: string }) => <div data-reveal><h2>{title}</h2><p>{text}</p></div>)}
-      </div>}
+      </div></details>}
     </section>
-    {project.slug === 'bulk' ? <BentoGallery project={project} /> : project.gallery.length > 0 && <section class="case-gallery section-shell print-gallery" aria-labelledby="gallery-heading">
-      <h2 id="gallery-heading">En imágenes</h2>
-      <div class="print-gallery-grid">
-        {project.gallery.map(({src, alt, caption}) => <figure>
-          <button type="button" class="gallery-zoom" data-src={src} data-alt={alt} data-caption={caption} aria-label={`Ampliar imagen: ${alt}`}>
-            <img src={src} alt={alt} loading="lazy" decoding="async" />
-          </button>
-          <figcaption data-bento-caption>{caption}</figcaption>
-        </figure>)}
-      </div>
-    </section>}
-    <ProjectMedia slug={project.slug} />
+    {project.slug === 'bulk' && <BentoGallery project={project} />}
     <section class="case-browse section-shell" aria-label="Explorar otros trabajos"><ProjectNavigator currentSlug={project.slug} /><a class="text-link" href="mailto:jorgepindado.gfx@gmail.com">Hablemos de un proyecto</a></section>
   </main>
   {!personal && <dialog class="lightbox" aria-label="Imagen ampliada"><button class="lightbox-close" aria-label="Cerrar imagen ampliada">Cerrar <Icon name="close" size={60} /></button><img src="" alt="" /><p></p></dialog>}
@@ -51,11 +41,16 @@ const story = project.story ?? [
 </Layout>
 
 <style>
-  .print-gallery { padding-block: clamp(2rem, 6vw, 5rem); }
-  .print-gallery h2 { margin-bottom: 1.5rem; }
-  .print-gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 25rem), 1fr)); gap: clamp(1rem, 3vw, 2.5rem); }
-  .print-gallery figure { margin: 0; min-width: 0; }
-  .print-gallery .gallery-zoom { position: static; display: block; width: 100%; height: auto; padding: 0; border: 0; background: transparent; }
-  .print-gallery img { display: block; width: 100%; height: auto; }
-  .print-gallery figcaption { margin-top: .65rem; font-size: .875rem; }
+  .case-process { margin-top: 2rem; }
+  .case-process summary { cursor: pointer; font-size: 1.25rem; padding-block: 1rem; }
+  .case-process .case-story-grid { margin-top: 1rem; }
+  .case-heading { padding-bottom: 2rem; }
+  .case-heading .back-link { margin-bottom: 2rem; }
+  .case-heading h1 { font-size: clamp(3.5rem, 8vw, 8rem); }
+  .case-story { padding-top: 3rem; }
+  @media (max-width: 480px) {
+    .case-heading { padding-top: 1rem; }
+    .case-heading .back-link { margin-bottom: 1.25rem; }
+    .case-heading h1 { margin-top: 1rem; }
+  }
 </style>
