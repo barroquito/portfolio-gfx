@@ -1,4 +1,6 @@
 ---
+import sharp from 'sharp';
+import path from 'node:path';
 import Icon from '../components/Icon.astro';
 import Layout from '../layouts/Layout.astro';
 import BrandMark from '../components/BrandMark.astro';
@@ -8,18 +10,16 @@ import { projectMedia } from '../data/project-media';
 import '../styles/record-room.css';
 import '../styles/collection-orbit.css';
 
-const collectionProjects = projects.map(project => {
+const collectionProjects = await Promise.all(projects.map(async project => {
   const { slug, title, number, subtitle, description, record, theme, cover, gallery } = project;
-  const image = gallery[0];
-  const pieces = projectMedia[slug]?.flatMap(chapter => chapter.pieces) ?? [];
-  const video = pieces.find(piece => piece.kind === 'video' && piece.poster);
-  const still = pieces.find(piece => piece.kind === 'image');
-  const preview = image ? { image: image.src, alt: image.alt }
-    : video ? { image: video.poster, alt: video.label, video: video.src }
-    : still ? { image: still.src, alt: still.label }
-    : { image: cover, alt: title };
-  return { slug, title, number, subtitle, description, record, theme, cover, preview };
-});
+  const digital = (projectMedia[slug] ?? []).flatMap(chapter => chapter.pieces).filter(piece => piece.kind !== 'document');
+  const sources = [...gallery.map(piece => ({ image: piece.src, alt: piece.alt })), ...digital.map(piece => ({ image: piece.poster ?? piece.src, alt: piece.label }))];
+  const previews = await Promise.all(sources.map(async piece => {
+    const meta = await sharp(path.join(process.cwd(), 'public', piece.image)).metadata();
+    return { ...piece, ratio: (meta.width ?? 1) / (meta.height ?? 1) };
+  }));
+  return { slug, title, number, subtitle, description, record, theme, cover, previews, preview: previews[0] };
+}));
 const firstProject = collectionProjects[0];
 ---
 <Layout home title="Jorge Pindado — Una colección de ideas" description="Portfolio de Jorge Pindado. Diseño gráfico y dirección de arte en Madrid.">

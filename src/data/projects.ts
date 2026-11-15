@@ -45,11 +45,6 @@ export const projects: Project[] = [
       "caption": "Impresos de mesa · Mockup"
     },
     {
-      "src": "/images/portfolio-mockups/li-onna-aniversario.jpg",
-      "alt": "Portacuentas del segundo aniversario de Li-Onna",
-      "caption": "Segundo aniversario · Mockup"
-    },
-    {
       "src": "/images/portfolio-mockups/li-onna-cata-de-sake.jpg",
       "alt": "Cartel y flyer de la cata de sake de Li-Onna",
       "caption": "Cata de sake · Mockup"

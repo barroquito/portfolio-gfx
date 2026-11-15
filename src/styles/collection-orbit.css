@@ -129,3 +129,9 @@ body.collection-open:has(.orbit-dialog[data-render=fallback]) #record-scene{visi
 .orbit-fallback-record .record-sleeve strong{font-size:clamp(20px,3vw,38px);overflow-wrap:normal}
 
 .orbit-preview-media.cursor-preview{position:fixed;left:0;top:0;width:clamp(180px,23vw,320px);height:clamp(180px,28vh,300px);z-index:40;pointer-events:none;will-change:transform}
+
+.orbit-preview-media[hidden]{display:none!important}
+
+.orbit-fallback-record{transition:transform .4s cubic-bezier(.22,1,.36,1)}
+.orbit-stage.is-dragging .orbit-fallback-record{transition:none}
+@media(prefers-reduced-motion:reduce){.orbit-fallback-record{transition:none}}

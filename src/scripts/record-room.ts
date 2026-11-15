@@ -1,7 +1,8 @@
 import { gsap } from 'gsap';
 import type { RecordProject, RecordScene } from './record-scene';
 
-type CollectionProject = RecordProject & { preview: { image?: string; alt: string; video?: string } };
+type Preview = { image: string; alt: string; ratio: number };
+type CollectionProject = RecordProject & { previews: Preview[]; preview: Preview };
 const projects = JSON.parse(document.getElementById('record-project-data')!.textContent!) as CollectionProject[];
 const collection = document.querySelector<HTMLDialogElement>('#collection-dialog')!;
 const contact = document.querySelector<HTMLDialogElement>('#contact-dialog')!;
@@ -16,7 +17,11 @@ const previewVideo = collection.querySelector<HTMLVideoElement>('[data-preview-v
 const previewMedia = collection.querySelector<HTMLElement>('.orbit-preview-media')!;
 const followX = gsap.quickTo(previewMedia, 'x', { duration: .18, ease: 'power2.out' });
 const followY = gsap.quickTo(previewMedia, 'y', { duration: .18, ease: 'power2.out' });
-function followPointer(event: PointerEvent) {
+let pointerX = 0, pointerY = 0;
+let previewCycle: number | undefined;
+let previewPiece = 0;
+function followPointer(event: { clientX: number; clientY: number }) {
+  pointerX = event.clientX; pointerY = event.clientY;
   const entering = !previewMedia.classList.contains('cursor-preview');
   previewMedia.classList.add('cursor-preview');
   const x = Math.max(12, Math.min(innerWidth - previewMedia.offsetWidth - 12, event.clientX - previewMedia.offsetWidth / 2));
@@ -25,6 +30,10 @@ function followPointer(event: PointerEvent) {
   else { followX(x); followY(y); }
 }
 function resetPointerPreview() {
+  clearInterval(previewCycle);
+  previewCycle = undefined;
+  previewed = null;
+  previewMedia.hidden = true;
   followX.tween.pause(); followY.tween.pause();
   previewMedia.classList.remove('cursor-preview');
   gsap.set(previewMedia, { clearProps: 'transform' });
@@ -59,35 +68,33 @@ function stopPreviewVideo() {
   previewVideo.load();
 }
 
-function showPreview(index: number, force = false) {
-  if (previewed === index && !force) return;
-  previewed = index;
-  const project = projects[index];
-  const { image, alt, video } = project.preview;
-
-  previewTitle.textContent = project.title;
-  previewLink.href = projectPath(project);
-  previewImage.alt = alt;
-  if (image) previewImage.src = image;
-  else previewImage.removeAttribute('src');
-  previewImage.hidden = !image;
-  stopPreviewVideo();
-  if (video && !motion.matches) {
-    videoTimer = window.setTimeout(() => {
-      previewVideo.src = video;
-      void previewVideo.play().catch(() => { previewVideo.hidden = true; });
-    }, 160);
-  }
+function renderPreviewPiece(index: number) {
+  const piece = projects[index].previews[previewPiece % projects[index].previews.length];
+  const width = Math.min(320, innerWidth * .38, innerHeight * .36 * piece.ratio);
+  previewMedia.style.width = width + 'px';
+  previewMedia.style.height = width / piece.ratio + 'px';
+  previewImage.src = piece.image;
+  previewImage.alt = piece.alt;
+  previewMedia.hidden = false;
+  followPointer({ clientX: pointerX, clientY: pointerY });
 }
-
-previewVideo.addEventListener('playing', () => { previewVideo.hidden = false; });
-previewVideo.addEventListener('error', () => { previewVideo.hidden = true; });
-previewVideo.addEventListener('timeupdate', () => {
-  if (previewVideo.currentTime >= 4.75) previewVideo.pause();
-});
-motion.addEventListener('change', () => {
-  if (collection.open && !closing) showPreview(hovered ?? selected, true);
-});
+function showPreview(index: number, force = false) {
+  previewTitle.textContent = projects[index].title;
+  previewLink.href = projectPath(projects[index]);
+  if (hovered !== index) { resetPointerPreview(); previewed = null; return; }
+  if (previewed === index && !force) return;
+  clearInterval(previewCycle);
+  previewed = index; previewPiece = 0;
+  renderPreviewPiece(index);
+  previewCycle = window.setInterval(() => {
+    if (!collection.open || hovered !== index || document.hidden) return;
+    previewPiece++; renderPreviewPiece(index);
+  }, 2000);
+}
+previewMedia.hidden = true;
+previewVideo.hidden = true;
+window.addEventListener('blur', () => clearRecordHover());
+document.addEventListener('visibilitychange', () => { if (document.hidden) clearRecordHover(); });
 
 function layoutFallback() {
   const count = fallbackCards.length;
@@ -396,6 +403,7 @@ else {
 
 window.addEventListener('pagehide', event => {
   leaving = true;
+  resetPointerPreview();
   clearTimeout(snapTimer);
   stopPreviewVideo();
   clearHomeHover();

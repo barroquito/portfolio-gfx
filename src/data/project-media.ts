@@ -83,21 +83,6 @@ export const projectMedia: Partial<Record<string, Chapter[]>> = {
       "title": "ANIVERSARIO",
       "pieces": [
         {
-          "kind": "image",
-          "src": "/media/recap/li-onna-aniversario-logo-li-onna-logo-aniversario-01.png",
-          "label": "Logotipo · Versión 1"
-        },
-        {
-          "kind": "image",
-          "src": "/media/recap/li-onna-aniversario-logo-li-onna-logo-aniversario-02.png",
-          "label": "Logotipo · Versión 2"
-        },
-        {
-          "kind": "document",
-          "src": "/media/recap/li-onna-aniversario-portacuentas-li-onna-portacuentas-aniversario.pdf",
-          "label": "Portacuentas de aniversario"
-        },
-        {
           "kind": "video",
           "src": "/media/recap/li-onna-aniversario-reel-aniversario-li-onna-reel-aniversario.mp4",
           "label": "Reel de aniversario",
@@ -125,11 +110,6 @@ export const projectMedia: Partial<Record<string, Chapter[]>> = {
           "kind": "image",
           "src": "/media/recap/li-onna-evento-sake-crm-lionna-crm-evento-sake-oct16-01.png",
           "label": "Invitación a la cata"
-        },
-        {
-          "kind": "image",
-          "src": "/media/recap/li-onna-evento-sake-crm-lionna-crm-evento-sake-oct16-02.png",
-          "label": "Cata de sake · Cierre del CRM"
         },
         {
           "kind": "video",
