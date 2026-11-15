@@ -7,6 +7,19 @@ document.querySelectorAll<HTMLElement>('[data-project-reel]').forEach(reel => {
   const status = reel.querySelector<HTMLElement>('[data-reel-status]')!;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+  pieces.forEach(piece => {
+    const video = piece.querySelector('video');
+    if (!video) return;
+    const label = piece.querySelector('figcaption')!.textContent;
+    const syncLabel = () => video.setAttribute('aria-label', (video.paused ? 'Reproducir ' : 'Pausar ') + label);
+    const toggle = () => { if (video.paused) void video.play().catch(() => {}); else video.pause(); };
+    video.addEventListener('click', toggle);
+    video.addEventListener('keydown', event => {
+      if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); toggle(); }
+    });
+    video.addEventListener('play', syncLabel);
+    video.addEventListener('pause', syncLabel);
+  });
   let selected = -1;
   let visible = false;
   let frame = 0;
@@ -16,7 +29,7 @@ document.querySelectorAll<HTMLElement>('[data-project-reel]').forEach(reel => {
   function playCurrent() {
     if (!visible || document.hidden || reduced.matches || connection?.saveData) return;
     const video = pieces[selected]?.querySelector('video');
-    if (video) video.play().catch(() => { /* Native controls remain available when autoplay is blocked. */ });
+    if (video) video.play().catch(() => { /* Clicking the video remains available when autoplay is blocked. */ });
   }
   function update() {
     frame = 0;
@@ -27,6 +40,7 @@ document.querySelectorAll<HTMLElement>('[data-project-reel]').forEach(reel => {
       const delta = Math.abs(piece.getBoundingClientRect().left - left);
       if (delta < distance) { nearest = index; distance = delta; }
     });
+    if (track.scrollLeft >= track.scrollWidth - track.clientWidth - 2) nearest = pieces.length - 1;
     if (nearest === selected) return;
     pauseAll();
     selected = nearest;
@@ -56,7 +70,7 @@ document.querySelectorAll<HTMLElement>('[data-project-reel]').forEach(reel => {
   });
   // A mouse wheel traverses the horizontal sequence. At either end, page scrolling resumes.
   track.addEventListener('wheel', event => {
-    if (event.ctrlKey || Math.abs(event.deltaX) >= Math.abs(event.deltaY) || (event.target as HTMLElement).closest('video:focus')) return;
+    if (event.ctrlKey || Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
     const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? track.clientWidth : 1;
     const delta = event.deltaY * scale;
     const end = track.scrollWidth - track.clientWidth;

@@ -1,3 +1,4 @@
+import { gsap } from 'gsap';
 import type { RecordProject, RecordScene } from './record-scene';
 
 type CollectionProject = RecordProject & { preview: { image?: string; alt: string; video?: string } };
@@ -12,6 +13,22 @@ const previewLink = collection.querySelector<HTMLAnchorElement>('[data-preview-l
 const previewTitle = collection.querySelector<HTMLElement>('[data-preview-title]')!;
 const previewImage = collection.querySelector<HTMLImageElement>('[data-preview-image]')!;
 const previewVideo = collection.querySelector<HTMLVideoElement>('[data-preview-video]')!;
+const previewMedia = collection.querySelector<HTMLElement>('.orbit-preview-media')!;
+const followX = gsap.quickTo(previewMedia, 'x', { duration: .18, ease: 'power2.out' });
+const followY = gsap.quickTo(previewMedia, 'y', { duration: .18, ease: 'power2.out' });
+function followPointer(event: PointerEvent) {
+  const entering = !previewMedia.classList.contains('cursor-preview');
+  previewMedia.classList.add('cursor-preview');
+  const x = Math.max(12, Math.min(innerWidth - previewMedia.offsetWidth - 12, event.clientX - previewMedia.offsetWidth / 2));
+  const y = Math.max(12, Math.min(innerHeight - previewMedia.offsetHeight - 12, event.clientY - previewMedia.offsetHeight / 2));
+  if (entering || motion.matches) gsap.set(previewMedia, { x, y });
+  else { followX(x); followY(y); }
+}
+function resetPointerPreview() {
+  followX.tween.pause(); followY.tween.pause();
+  previewMedia.classList.remove('cursor-preview');
+  gsap.set(previewMedia, { clearProps: 'transform' });
+}
 const fallbackCards = [...stage.querySelectorAll<HTMLAnchorElement>('[data-fallback-record]')];
 const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const fineHover = window.matchMedia('(hover: hover) and (pointer: fine)');
@@ -99,12 +116,14 @@ function centerRecord(index: number) {
 }
 
 function clearRecordHover() {
+  resetPointerPreview();
   hovered = null;
   delete stage.dataset.hoverRecord;
   if (collection.open && !closing) showPreview(selected);
 }
 
 function selectRecord(index: number) {
+  resetPointerPreview();
   clearTimeout(snapTimer);
   hovered = null;
   delete stage.dataset.hoverRecord;
@@ -173,6 +192,7 @@ function openCollection() {
 async function closeCollection(restoreFocus = true) {
   if (!collection.open || closing) return;
   closing = true;
+  resetPointerPreview();
   clearTimeout(snapTimer);
   stopPreviewVideo();
   previewed = null;
@@ -263,6 +283,7 @@ stage.addEventListener('pointermove', event => {
   }
   if (!fineHover.matches || event.pointerType === 'touch') return;
   const index = pickRecord(event);
+  if (index !== null) followPointer(event);
   if (index === hovered) return;
   if (index === null) clearRecordHover();
   else {

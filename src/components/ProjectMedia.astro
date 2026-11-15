@@ -1,4 +1,6 @@
 ---
+import sharp from 'sharp';
+import path from 'node:path';
 import { projectMedia } from '../data/project-media';
 import type { Project } from '../data/projects';
 import '../styles/project-player.css';
@@ -9,13 +11,21 @@ const digital = (projectMedia[project.slug] ?? []).flatMap(chapter => chapter.pi
 })));
 const printed = project.gallery.map(piece => ({ kind: 'image', src: piece.src, label: piece.caption.replace(/^\d+\s*[—–-]\s*/, ''), alt: piece.alt, campaign: '', poster: undefined }));
 const pieces = [...digital, ...printed];
+const ratios = await Promise.all(pieces.map(async piece => {
+  if (piece.kind === 'document') return 0.707;
+  const file = piece.kind === 'video' ? piece.poster : piece.src;
+  if (!file) return 1;
+  const metadata = await sharp(path.join(process.cwd(), 'public', file)).metadata();
+  return (metadata.width ?? 1) / (metadata.height ?? 1);
+}));
+pieces.forEach((piece, index) => Object.assign(piece, { ratio: ratios[index] }));
 // Start with a representative film, followed by the complete collection in campaign order.
 const lead = pieces.findIndex(piece => piece.kind === 'video');
 if (lead > 0) pieces.unshift(...pieces.splice(lead, 1));
 ---
 {pieces.length > 0 && <section class="project-reel" aria-label={`Piezas de ${project.title}`} data-project-reel>
   <div class="reel-toolbar section-shell">
-    <span class="reel-hint">Desplázate para explorar</span>
+    
     <div class="reel-navigation">
       <span data-reel-count aria-hidden="true">1 / {pieces.length}</span>
       <button type="button" data-reel-prev aria-label="Pieza anterior">←</button>
@@ -23,16 +33,16 @@ if (lead > 0) pieces.unshift(...pieces.splice(lead, 1));
     </div>
   </div>
   <div class="reel-track" tabindex="0" role="region" aria-roledescription="carrusel" aria-label="Piezas. Desliza o usa las flechas para recorrerlas.">
-    {pieces.map((piece, index) => <figure class="reel-piece" data-reel-piece id={`pieza-${index + 1}`} aria-label={`${index + 1} de ${pieces.length}`}>
+    {pieces.map((piece, index) => <figure class="reel-piece" style={`--piece-ratio:${(piece as typeof piece & { ratio: number }).ratio}`} data-reel-piece id={`pieza-${index + 1}`} aria-label={`${index + 1} de ${pieces.length}`}>
       <div class="reel-art">
-        {piece.kind === 'video' ? <video controls muted loop playsinline preload="none" poster={piece.poster} aria-label={piece.label}>
+        {piece.kind === 'video' ? <video tabindex="0" role="button" muted loop playsinline preload="none" poster={piece.poster} aria-label={`Reproducir ${piece.label}`}>
           <source src={piece.src} type="video/mp4" /><a href={piece.src}>Abrir vídeo</a>
         </video> : piece.kind === 'document' ? <a class="reel-document" href={piece.src} target="_blank" rel="noopener"><span>PDF</span><strong>{piece.label}</strong><span>Abrir documento</span></a>
         : <button type="button" class="gallery-zoom reel-image" data-src={piece.src} data-alt={piece.alt} data-caption={piece.label} aria-label={`Ampliar ${piece.label}`}>
           <img src={piece.src} alt={piece.alt} loading={index === 0 ? 'eager' : 'lazy'} decoding="async" />
         </button>}
       </div>
-      <figcaption>{piece.label}</figcaption>
+      <figcaption class="sr-only">{piece.label}</figcaption>
     </figure>)}
   </div>
   <p class="sr-only" data-reel-status aria-live="polite" aria-atomic="true"></p>

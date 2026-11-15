@@ -1,9 +1,10 @@
 .project-reel {
+  --reel-height: clamp(280px, 65svh, 760px);
   padding-block: .5rem 2rem;
 }
 .reel-toolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: 1rem;
   margin-bottom: .75rem;
@@ -34,7 +35,7 @@
 }
 .reel-track {
   display: flex;
-  gap: clamp(1rem, 3vw, 3rem);
+  gap: 16px;
   overflow-x: auto;
   padding: .25rem var(--gutter) 1rem;
   scroll-padding-inline: var(--gutter);
@@ -44,7 +45,8 @@
 }
 .reel-piece {
   margin: 0;
-  flex: 0 0 min(76vw, 1100px);
+  flex: 0 0 auto;
+  width: calc(var(--reel-height) * var(--piece-ratio, 1));
   min-width: 0;
   scroll-snap-align: start;
 }
@@ -52,7 +54,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: clamp(320px, 62svh, 760px);
+  height: var(--reel-height);
   overflow: hidden;
   background: color-mix(in srgb, var(--ink) 5%, transparent);
 }
@@ -107,10 +109,13 @@
   outline-offset: -3px;
 }
 @media(max-width:760px) {
-  .reel-piece { flex-basis: 85vw; }
-  .reel-art { height: 56svh; min-height: 280px; }
+  .project-reel { --reel-height: 58svh; }
+
   .reel-toolbar { font-size: .8125rem; gap: .5rem; }
   .reel-navigation { gap: 0; }
   .reel-navigation span { margin-right: .25rem; }
   .reel-piece figcaption { font-size: .875rem; }
 }
+
+.reel-art video{cursor:pointer}
+.reel-art video:focus-visible{outline:2px solid var(--red);outline-offset:-3px}

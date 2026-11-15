@@ -12,9 +12,9 @@ const next = projectIndex[(projectIndex.findIndex(item => item.slug === project.
 <Layout title={`${project.title} — Jorge Pindado`} description={project.intro} projectPage>
   <main id="main" class="case-page case-page--reel">
     <header class="case-heading section-shell">
-      <a class="back-link" href="/#proyectos">Todos los proyectos</a>
+      
       <h1 id="case-title">{project.title}</h1>
-      <p class="case-summary">{project.subtitle}</p>
+      {personal && <p class="case-summary">{project.subtitle}</p>}
     </header>
     {personal ? <section class="case-personal section-shell" aria-label="Sobre mí">
       {(project.story ?? []).map(({ text }: { text: string }) => <p>{text}</p>)}
@@ -22,8 +22,8 @@ const next = projectIndex[(projectIndex.findIndex(item => item.slug === project.
     </section> : <>
       <ProjectMedia project={project} />
       <nav class="case-follow section-shell" aria-label="Continuar explorando">
-        <a href="/#proyectos">Volver a la colección</a>
-        <a href={`/proyectos/${next.slug}/`}>Siguiente proyecto · {next.title} <span aria-hidden="true">→</span></a>
+        <a href="/#proyectos">Proyectos</a>
+        <a href={`/proyectos/${next.slug}/`}>{next.title} <span aria-hidden="true">→</span></a>
       </nav>
     </>}
   </main>
