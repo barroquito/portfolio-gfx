@@ -8,6 +8,7 @@ export type Project = {
 };
 
 export const projects: Project[] = [
+
 {
   "slug": "li-onna",
   "number": "01",
@@ -157,7 +158,7 @@ export const projects: Project[] = [
   },
 {
   "slug": "houdinni",
-  "number": "",
+  "number": "05",
   "title": "Houdinni",
   "subtitle": "Un aniversario en clave de club urbano.",
   "description": "Un aniversario en clave de club urbano.",
@@ -193,7 +194,7 @@ export const projects: Project[] = [
 },
 {
   "slug": "sala-de-despecho",
-  "number": "",
+  "number": "06",
   "title": "Sala de Despecho",
   "subtitle": "Una gráfica de barra para (des)ahogar tus penas.",
   "description": "Una gráfica de barra para (des)ahogar tus penas.",
@@ -223,6 +224,31 @@ export const projects: Project[] = [
   "category": "Identidad"
 },
   {
+  "slug": "bonbonniere",
+  "number": "07",
+  "title": "Bonbonniere",
+  "subtitle": "Programación musical en movimiento.",
+  "description": "Piezas animadas para sesiones y artistas.",
+  "category": "Campañas",
+  "record": {
+    "color": "#171717",
+    "ink": "#eeeeee",
+    "label": "BONBONNIERE / MOTION"
+  },
+  "context": "Club · Comunicación digital",
+  "scope": [
+    "Motion",
+    "Redes sociales"
+  ],
+  "intro": "Una selección de piezas animadas para la programación de Bonbonniere.",
+  "challenge": "Comunicar las sesiones y sus artistas en formatos digitales.",
+  "approach": "Animaciones para las convocatorias de Lee Burridge, Marco Carola y Residents.",
+  "contribution": "Piezas de comunicación digital incluidas en esta selección.",
+  "theme": "bonbonniere",
+  "original": false,
+  "gallery": []
+},
+{
     slug: 'sobre-mi', number: '', title: 'Sobre mí', subtitle: 'Una forma de mirar.',
     description: 'Soy Jorge Pindado. Diseño desde la curiosidad y me interesa cómo una idea acaba tomando forma.',
     record: {color:'#ce3024',ink:'#f5f4ef',label:'JORGE PINDADO / DISEÑO GRÁFICO'},
