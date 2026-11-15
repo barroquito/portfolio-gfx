@@ -34,6 +34,10 @@
   cursor: default;
 }
 .reel-track {
+  /* Keep visually hidden captions inside the scrolling area. */
+  position: relative;
+  max-width: 100%;
+  overscroll-behavior-x: contain;
   display: flex;
   gap: 16px;
   overflow-x: auto;
