@@ -253,10 +253,10 @@ collection.addEventListener('keydown', event => {
   selectRecord(offset ? selected + offset : event.key === 'Home' ? 0 : projects.length - 1);
 });
 
-function advance(pixels: number) {
+function advance(pixels: number, immediate = false) {
   requestedSelection = null;
   const distance = pixels / Math.min(245, Math.max(125, stage.clientWidth * .42));
-  if (useWebGL) scene!.scrollBy(distance * 560);
+  if (useWebGL) scene!.scrollBy(distance * 560, immediate);
   else {
     fallbackOrbit = (fallbackOrbit + distance) % projects.length;
     layoutFallback();
@@ -266,8 +266,7 @@ function advance(pixels: number) {
 
 function snapToRecord() {
   if (useWebGL) {
-    requestedSelection = scene!.centeredIndex();
-    scene!.select(requestedSelection);
+    requestedSelection = scene!.snap();
     centerRecord(requestedSelection);
   } else selectRecord(Math.round(fallbackOrbit));
 }
@@ -278,7 +277,7 @@ stage.addEventListener('wheel', event => {
   const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
   advance(delta * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.clientHeight : 1));
   clearTimeout(snapTimer);
-  snapTimer = window.setTimeout(snapToRecord, 130);
+  snapTimer = window.setTimeout(snapToRecord, 180);
 }, { passive: false });
 
 let gesture: { id: number; x: number; y: number; axis?: 'x' | 'y' } | null = null;
@@ -305,7 +304,7 @@ stage.addEventListener('pointermove', event => {
       clearTimeout(snapTimer);
       clearRecordHover();
     }
-    advance(gesture.axis === 'x' ? -dx : -dy);
+    advance(gesture.axis === 'x' ? -dx : -dy, true);
     gesture.x = event.clientX;
     gesture.y = event.clientY;
     return;
