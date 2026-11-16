@@ -8,7 +8,7 @@ import { gsap } from 'gsap';
 export type RecordProject = {slug:string;title:string;number:string;subtitle:string;description?:string;intro?:string;theme:string;cover?:string;record:{color:string;ink:string;label:string}};
 export type RecordScene = {
   openCollection:(index?:number,immediate?:boolean)=>Promise<void>; closeCollection:()=>Promise<void>;
-  scrollBy:(delta:number)=>void; rotate:(index:number,dx:number)=>void; centeredIndex:()=>number;
+  scrollBy:(delta:number,immediate?:boolean)=>void; snap:()=>number; rotate:(index:number,dx:number)=>void; centeredIndex:()=>number;
   select:(index:number,immediate?:boolean)=>void; pick:(x:number,y:number)=>number|null;
   play:(project:RecordProject)=>Promise<void>; hoverAt:(x:number,y:number)=>void;
   clearHover:()=>void; hoverCollection:()=>void; reset:()=>void; dispose:()=>void;
@@ -129,13 +129,15 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(logoImage)ctx.drawImage(logoImage,437,461,150,93);else{ctx.fillStyle='#232b20';ctx.textAlign='center';ctx.font=`600 48px ${printFont}`;ctx.fillText('JP',512,520);}
   });
   const matPrint=new THREE.MeshPhysicalMaterial({map:grooveTexture,metalness:0,roughness:.2,bumpMap:groovesMap,bumpScale:.0016,clearcoat:1,clearcoatRoughness:.12,anisotropy:.45,envMapIntensity:1.6});materials.push(matPrint);
-  const coverTextures=projects.map((p,index)=>sleeveTexture(ctx=>{
+  const coverTextures=projects.map((p,index)=>{
     const cover=projectCovers[index];
     if(cover){
-      ctx.imageSmoothingQuality='high';
-      ctx.drawImage(cover,0,0,1024,1024);
-      return;
+      // Keep the original artwork resolution; mipmaps handle distant sleeves.
+      const t=new THREE.Texture(cover);
+      t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=anisotropy;t.needsUpdate=true;
+      return t;
     }
+    return sleeveTexture(ctx=>{
     ctx.fillStyle=p.record.color;
     ctx.fillRect(0,0,1024,1024);
     ctx.fillStyle=p.record.ink;
@@ -143,7 +145,8 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     ctx.textBaseline='middle';
     ctx.font=`650 110px ${printFont}`;
     ctx.fillText(p.title,512,512,880);
-  }));
+    });
+  });
   // The reverse is a separate printed face. It shares the same source copy as
   // the HTML controls, so a canvas never becomes the only way to read a project.
   // A shared paper swatch keeps the back-face shader ready until the first turn.
@@ -380,8 +383,9 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(mode==='home'&&!document.body.classList.contains('collection-open')){homeRect=bounds;homeTableRect=table.getBoundingClientRect();}
     width=bounds.width;height=bounds.height;frameBounds=bounds;frameHome=liveHomeFrame();
     frameSafe=host.ownerDocument.querySelector<HTMLElement>('.orbit-stage')?.getBoundingClientRect();
-    const budget=document.body.classList.contains('collection-open')?(compactTextures?1250000:1650000):1800000;
-    const ratio=Math.min(window.devicePixelRatio,1.5,Math.sqrt(budget/(width*height)));
+    const budget=document.body.classList.contains('collection-open')?3000000:1800000;
+    // Never undersample CSS pixels on large displays; cap extra HiDPI work.
+    const ratio=Math.min(window.devicePixelRatio||1,2,Math.max(1,Math.sqrt(budget/(width*height))));
     const canvas=renderer.domElement;
     if(canvas.width!==Math.floor(width*ratio)||canvas.height!==Math.floor(height*ratio))renderer.setDrawingBufferSize(width,height,ratio);
     cameraCollection=cameraFocus=-1;
@@ -428,10 +432,17 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     return animate(timeline=>{timeline.to(layout,{collection:0,focus:0,needle:0,duration:1.1,ease:'power2.inOut'});},()=>{mode='home';layout.orbit=activeIndex=0;});
   }
   function centeredIndex(){return wrap(Math.round(layout.orbit));}
-  function scrollBy(delta:number){
+  function scrollBy(delta:number,immediate=false){
     if(mode!=='collection'||disposed||contextLost||!Number.isFinite(delta))return;
-    orbitTarget+=delta/560;
+    orbitTarget=(immediate?layout.orbit:orbitTarget)+delta/560;
+    if(immediate||reduced.matches){layout.orbit=orbitTarget;activeIndex=centeredIndex();invalidateLayout();}else render();
+  }
+  function snap(){
+    if(mode!=='collection'||disposed||contextLost)return centeredIndex();
+    // Snap the user's destination, not the still-easing rendered position.
+    orbitTarget=Math.round(orbitTarget);
     if(reduced.matches){layout.orbit=orbitTarget;activeIndex=centeredIndex();invalidateLayout();}else render();
+    return wrap(orbitTarget);
   }
   function rotate(index:number,dx:number){
     if(mode!=='collection'||disposed||contextLost||!dx||!Number.isFinite(dx))return;
@@ -527,5 +538,5 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   }
   host.closest('.listening-table')?.classList.add('scene-ready');host.dataset.renderState='ready';
   document.addEventListener('visibilitychange',visibility);reduced.addEventListener('change',onMotionChange);renderer.domElement.addEventListener('webglcontextrestored',restoreContext);
-  return {openCollection,closeCollection,scrollBy,rotate,centeredIndex,select,pick,play,hoverAt,clearHover,hoverCollection,reset,dispose};
+  return {openCollection,closeCollection,scrollBy,snap,rotate,centeredIndex,select,pick,play,hoverAt,clearHover,hoverCollection,reset,dispose};
 }
