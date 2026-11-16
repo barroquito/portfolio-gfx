@@ -74,9 +74,14 @@ document.querySelectorAll<HTMLElement>('[data-project-reel]').forEach(reel => {
     const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? track.clientWidth : 1;
     const delta = event.deltaY * scale;
     const end = track.scrollWidth - track.clientWidth;
-    if ((delta > 0 && track.scrollLeft >= end - 1) || (delta < 0 && track.scrollLeft <= 1)) return;
+    const start = track.scrollLeft;
+    const target = Math.max(0, Math.min(end, start + delta));
+    if (Math.abs(target - start) < .5) return;
     event.preventDefault();
-    track.scrollLeft += delta;
+    track.scrollTo({ left: target, behavior: 'instant' });
+    // Continue the same gesture down the page once the gallery reaches an edge.
+    const remainder = delta - (target - start);
+    if (Math.abs(remainder) > .5) window.scrollBy({ top: remainder, behavior: 'instant' });
   }, { passive: false });
   function restore() {
     const match = location.hash.match(/^#pieza-(\d+)$/);

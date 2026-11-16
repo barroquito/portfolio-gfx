@@ -163,6 +163,9 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(line)ctx.fillText(line,70,y);
     ctx.font='600 23px '+printFont;ctx.fillText(p.record.label,70,940,800);
   });
+  // Prepare reverse artwork before interaction, not in the orbit animation loop.
+  const backTextures=projects.map(createBackTexture);
+  for(const t of [...coverTextures,...backTextures])renderer.initTexture(t);
   const stack=new THREE.Group();stack.position.set(3.05,.10,0);scene.add(stack);
   type Sleeve={object:THREE.Group;index:number;home:THREE.Vector3;homeQuaternion:THREE.Quaternion;rank:number;dragYaw:number;shadowFaces:THREE.Mesh[];backMaterial:THREE.MeshBasicMaterial};
   const sleeves:Sleeve[]=[];
@@ -243,12 +246,30 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   let frameBounds=host.getBoundingClientRect(),frameHome=liveHomeFrame();
   let frameSafe=host.ownerDocument.querySelector<HTMLElement>('.orbit-stage')?.getBoundingClientRect();
   let readyForRender=false;
+  let inputUntil=0;
+  let sharpnessTimer:ReturnType<typeof setTimeout>|undefined;
+  function noteInput(){
+    inputUntil=performance.now()+180;
+    clearTimeout(sharpnessTimer);
+    sharpnessTimer=setTimeout(()=>{inputUntil=0;render();},200);
+  }
+  function updateResolution(time:number){
+    const moving=!!ownedTransition||!!hoverTween?.isActive()||
+      (mode==='collection'&&layout.orbit!==orbitTarget)||playing||time<inputUntil;
+    const budget=moving?1800000:3000000;
+    const ratio=Math.min(window.devicePixelRatio||1,moving?1.25:2,
+      moving?Math.sqrt(budget/(width*height)):Math.max(1,Math.sqrt(budget/(width*height))));
+    const canvas=renderer.domElement;
+    if(canvas.width!==Math.floor(width*ratio)||canvas.height!==Math.floor(height*ratio))
+      renderer.setDrawingBufferSize(width,height,ratio);
+  }
   function updateData(){
     if(host.dataset.sceneMode!==mode)host.dataset.sceneMode=mode;
     const slug=projects[activeIndex]?.slug||'';
     if(host.dataset.activeRecord!==slug)host.dataset.activeRecord=slug;
   }
   function draw(time:number){
+    updateResolution(time);
     renderer.render(scene,camera);renderedFrames++;
     if(!lastStats||time-lastStats>500){host.dataset.orbitProgress=layout.orbit.toFixed(4);host.dataset.renderedFrames=String(renderedFrames);host.dataset.drawCalls=String(renderer.info.render.calls);host.dataset.triangles=String(renderer.info.render.triangles);lastStats=time;}
   }
@@ -346,7 +367,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
       sleeve.object.scale.setScalar(scale);
       sleeve.object.visible=scale>.03;
       if(sleeve.object.visible&&progress>.65&&sleeve.backMaterial.map===blankBack&&Math.cos(sleeveYaw)<.15){
-        sleeve.backMaterial.map=createBackTexture(projects[sleeve.index]);
+        sleeve.backMaterial.map=backTextures[sleeve.index];
       }
     }
     loose.scale.setScalar(1-layout.collection*.95-layout.focus*.05);loose.visible=layout.collection<.77&&layout.focus<.8;
@@ -383,11 +404,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
     if(mode==='home'&&!document.body.classList.contains('collection-open')){homeRect=bounds;homeTableRect=table.getBoundingClientRect();}
     width=bounds.width;height=bounds.height;frameBounds=bounds;frameHome=liveHomeFrame();
     frameSafe=host.ownerDocument.querySelector<HTMLElement>('.orbit-stage')?.getBoundingClientRect();
-    const budget=document.body.classList.contains('collection-open')?3000000:1800000;
-    // Never undersample CSS pixels on large displays; cap extra HiDPI work.
-    const ratio=Math.min(window.devicePixelRatio||1,2,Math.max(1,Math.sqrt(budget/(width*height))));
-    const canvas=renderer.domElement;
-    if(canvas.width!==Math.floor(width*ratio)||canvas.height!==Math.floor(height*ratio))renderer.setDrawingBufferSize(width,height,ratio);
+    updateResolution(performance.now());
     cameraCollection=cameraFocus=-1;
     applyLayout();
     render();
@@ -434,6 +451,7 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   function centeredIndex(){return wrap(Math.round(layout.orbit));}
   function scrollBy(delta:number,immediate=false){
     if(mode!=='collection'||disposed||contextLost||!Number.isFinite(delta))return;
+    noteInput();
     orbitTarget=(immediate?layout.orbit:orbitTarget)+delta/560;
     if(immediate||reduced.matches){layout.orbit=orbitTarget;activeIndex=centeredIndex();invalidateLayout();}else render();
   }
@@ -506,10 +524,11 @@ export async function createRecordScene(host:HTMLElement, projects:RecordProject
   }
   function dispose(){
     if(disposed)return;
+    clearTimeout(sharpnessTimer);
     stopTweens();disposed=true;playing=false;observer.disconnect();if(renderFrame)cancelAnimationFrame(renderFrame);renderFrame=0;
     document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',onMotionChange);
     renderer.domElement.removeEventListener('webglcontextlost',loseContext);renderer.domElement.removeEventListener('webglcontextrestored',restoreContext);
-    const geometries=new Set<THREE.BufferGeometry>(),allMaterials=new Set<THREE.Material>(materials),textures=new Set<THREE.Texture>([blankBack,grooveTexture,brushedMap,paperMap,groovesMap]);
+    const geometries=new Set<THREE.BufferGeometry>(),allMaterials=new Set<THREE.Material>(materials),textures=new Set<THREE.Texture>([blankBack,grooveTexture,brushedMap,paperMap,groovesMap,...backTextures,...coverTextures]);
     scene.traverse(object=>{if(object instanceof THREE.Mesh){geometries.add(object.geometry);for(const material of Array.isArray(object.material)?object.material:[object.material])allMaterials.add(material);}});
     for(const material of allMaterials){const m=material as THREE.MeshStandardMaterial;for(const t of [m.map,m.normalMap,m.roughnessMap,m.metalnessMap,m.bumpMap,m.aoMap])if(t)textures.add(t);material.dispose();}
     geometries.forEach(geometry=>geometry.dispose());textures.forEach(t=>t.dispose());key.shadow.dispose();environment.dispose();renderer.dispose();
