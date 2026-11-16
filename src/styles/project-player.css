@@ -43,7 +43,8 @@
   overflow-x: auto;
   padding: .25rem var(--gutter) 1rem;
   scroll-padding-inline: var(--gutter);
-  scroll-snap-type: x proximity;
+  scroll-snap-type: none;
+  scroll-behavior: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--ink) transparent;
 }
@@ -52,6 +53,7 @@
   flex: 0 0 auto;
   width: calc(var(--reel-height) * var(--piece-ratio, 1));
   min-width: 0;
+  max-width: 100%;
   scroll-snap-align: start;
 }
 .reel-art {
