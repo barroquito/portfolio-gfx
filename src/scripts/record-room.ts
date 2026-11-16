@@ -12,7 +12,7 @@ const stage = collection.querySelector<HTMLElement>('.orbit-stage')!;
 const status = collection.querySelector<HTMLElement>('[data-orbit-status]')!;
 const previewLink = collection.querySelector<HTMLAnchorElement>('[data-preview-link]')!;
 const previewTitle = collection.querySelector<HTMLElement>('[data-preview-title]')!;
-const previewImage = collection.querySelector<HTMLImageElement>('[data-preview-image]')!;
+let previewImage = collection.querySelector<HTMLImageElement>('[data-preview-image]')!;
 const previewVideo = collection.querySelector<HTMLVideoElement>('[data-preview-video]')!;
 const previewMedia = collection.querySelector<HTMLElement>('.orbit-preview-media')!;
 const followX = gsap.quickTo(previewMedia, 'x', { duration: .18, ease: 'power2.out' });
@@ -20,6 +20,19 @@ const followY = gsap.quickTo(previewMedia, 'y', { duration: .18, ease: 'power2.o
 let pointerX = 0, pointerY = 0;
 let previewCycle: number | undefined;
 let previewPiece = 0;
+let previewRequest = 0;
+const decodedPreviews = new Map<string, Promise<HTMLImageElement>>();
+function preparePreview(src: string) {
+  let pending = decodedPreviews.get(src);
+  if (!pending) {
+    const image = new Image();
+    image.src = src;
+    pending = image.decode().then(() => image);
+    decodedPreviews.set(src, pending);
+    pending.catch(() => decodedPreviews.delete(src));
+  }
+  return pending;
+}
 function followPointer(event: { clientX: number; clientY: number }) {
   pointerX = event.clientX; pointerY = event.clientY;
   const entering = !previewMedia.classList.contains('cursor-preview');
@@ -30,6 +43,7 @@ function followPointer(event: { clientX: number; clientY: number }) {
   else { followX(x); followY(y); }
 }
 function resetPointerPreview() {
+  previewRequest++;
   clearInterval(previewCycle);
   previewCycle = undefined;
   previewed = null;
@@ -68,13 +82,21 @@ function stopPreviewVideo() {
   previewVideo.load();
 }
 
-function renderPreviewPiece(index: number) {
+async function renderPreviewPiece(index: number) {
+  const request = ++previewRequest;
   const piece = projects[index].previews[previewPiece % projects[index].previews.length];
+  let image: HTMLImageElement;
+  try { image = await preparePreview(piece.image); } catch { return; }
+  if (request !== previewRequest || hovered !== index || !collection.open || closing) return;
+  image.alt = piece.alt;
+  image.dataset.previewImage = '';
+  previewImage.replaceWith(image);
+  previewImage = image;
+  const upcoming = projects[index].previews[(previewPiece + 1) % projects[index].previews.length];
+  void preparePreview(upcoming.image).catch(() => {});
   const width = Math.min(320, innerWidth * .38, innerHeight * .36 * piece.ratio);
   previewMedia.style.width = width + 'px';
   previewMedia.style.height = width / piece.ratio + 'px';
-  previewImage.src = piece.image;
-  previewImage.alt = piece.alt;
   previewMedia.hidden = false;
   followPointer({ clientX: pointerX, clientY: pointerY });
 }
