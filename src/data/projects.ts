@@ -26,7 +26,7 @@ export const projects: Project[] = [
     "ink": "#294580",
     "label": "RESTAURANTE · IDENTIDAD Y EVENTOS"
   },
-  "cover": "/images/record-covers/01-li-onna.jpg",
+  "cover": "/images/record-covers/li-onna.webp",
   "theme": "li-onna",
   "original": false,
   "intro": "Li-Onna es un restaurante japonés con alma latina. Mi trabajo ha sido dar forma visual a distintos momentos del restaurante, desde sus impresos de mesa hasta su segundo aniversario y una cata de sake.",
@@ -69,7 +69,7 @@ export const projects: Project[] = [
     "ink": "#fff9ec",
     "label": "NIGHT CULTURE / 2000s"
   },
-  "cover": "/images/record-covers/02-one-more.jpg",
+  "cover": "/images/record-covers/one-more.webp",
   "theme": "one-more",
   "original": false,
   "intro": "One More es la evolución de Fenómeno. La música de los 2000 dio el punto de partida para construir la identidad de una nueva noche.",
@@ -95,7 +95,7 @@ export const projects: Project[] = [
     description: 'Mi proyecto de fin de grado: una marca de alimentación saludable llevada al naming, la identidad y el packaging.',
     record: {color:'#a7c6c0',ink:'#25251f',label:'IDENTIDAD CON ACTITUD'},
     category: 'Identidad', context: 'Proyecto de fin de grado · UDIT',
-    scope: ['Concepto', 'Naming', 'Identidad visual', 'Packaging'], cover: '/images/record-covers/04-bulk.jpg', theme: 'bulk', original: true,
+    scope: ['Concepto', 'Naming', 'Identidad visual', 'Packaging'], cover: '/images/record-covers/bulk.webp', theme: 'bulk', original: true,
     intro: 'BULK nació como mi proyecto de fin de grado en UDIT. Quería diseñar una marca de alimentación saludable con un lenguaje más directo, que pudiera conectar con un público joven sin parecerse a todas las demás.',
     challenge: 'Muchas marcas de este sector recurren a colores suaves y mensajes muy parecidos. Me interesaba probar otra vía: hablar de comer bien con más energía y algo de humor.',
     approach: 'Trabajé el nombre, el tono y la identidad como partes de una misma idea. Después los llevé al packaging y a distintas aplicaciones para ver cómo funcionaban juntos.',
@@ -124,6 +124,7 @@ export const projects: Project[] = [
     "ink": "#fff",
     "label": "ANIVERSARIO"
   },
+  "cover": "/images/record-covers/houdinni.webp",
   "theme": "houdinni",
   "original": false,
   "intro": "Houdinni toma como referencia el metro de Nueva York. Dos aplicaciones del primer aniversario llevan esa identidad al espacio y al objeto.",
@@ -170,6 +171,7 @@ export const projects: Project[] = [
     "ink": "#fff",
     "label": "IMPRESOS"
   },
+  "cover": "/images/record-covers/sala-de-despecho.webp",
   "theme": "sdd",
   "original": false,
   "intro": "Sala de Despecho lleva el humor y el desamor a la barra. La colaboración con Maestro Dobel es una muestra de cómo se aplica ese tono a un impreso.",
@@ -211,6 +213,7 @@ export const projects: Project[] = [
   "challenge": "Comunicar las sesiones y sus artistas en formatos digitales.",
   "approach": "Animaciones para las convocatorias de Lee Burridge, Marco Carola y Residents.",
   "contribution": "Piezas de comunicación digital incluidas en esta selección.",
+  "cover": "/images/record-covers/bonbonniere.webp",
   "theme": "bonbonniere",
   "original": false,
   "gallery": []
