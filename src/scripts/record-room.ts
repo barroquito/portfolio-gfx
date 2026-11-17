@@ -63,6 +63,7 @@ let scene: RecordScene | null = null;
 let useWebGL = false;
 let closing = false;
 let leaving = false;
+let playback: { replace: boolean; timer?: number } | null = null;
 let originFocus: HTMLElement | null = null;
 let selected = 0;
 let fallbackOrbit = 0;
@@ -167,7 +168,7 @@ function selectRecord(index: number) {
 }
 
 function syncScene() {
-  if (!collection.open || closing || !useWebGL || !scene) return;
+  if (!collection.open || closing || playback || !useWebGL || !scene) return;
   if (host.dataset.renderState !== 'ready') {
     useWebGL = false;
     collection.dataset.render = 'fallback';
@@ -199,7 +200,7 @@ function focusOrigin() {
 }
 
 function openCollection() {
-  if (collection.open || leaving) return;
+  if (collection.open || playback || leaving) return;
   if (contact.open) contact.close();
   originFocus = focusOrigin();
   scene?.clearHover();
@@ -219,7 +220,7 @@ function openCollection() {
 }
 
 async function closeCollection(restoreFocus = true) {
-  if (!collection.open || closing) return;
+  if (!collection.open || closing || playback) return;
   closing = true;
   resetPointerPreview();
   clearTimeout(snapTimer);
@@ -343,12 +344,22 @@ stage.addEventListener('click', event => {
     event.preventDefault();
   } else if (useWebGL) {
     const index = pickRecord(event);
-    if (index !== null) location.assign(projectPath(projects[index]));
+    if (index !== null) void playProject(projects[index]);
   }
 });
 
+previewLink.addEventListener('click', event => {
+  if (event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  if (playback || closing) { event.preventDefault(); return; }
+  if (!useWebGL || motion.matches) return;
+  const project = projects.find(project => projectPath(project) === previewLink.pathname);
+  if (!project) return;
+  event.preventDefault();
+  void playProject(project);
+});
+
 function openContact() {
-  if (contact.open) return;
+  if (contact.open || playback) return;
   const show = () => { originFocus = focusOrigin(); contact.showModal(); };
   if (collection.open) void closeCollection(false).then(show);
   else show();
@@ -409,10 +420,53 @@ async function initializeScene() {
   }
 }
 
+async function playProject(project: RecordProject, replace = false) {
+  if (closing || leaving || playback) return;
+  const request: NonNullable<typeof playback> = { replace };
+  playback = request;
+  const route = projectPath(project);
+  let navigated = false;
+  const isCurrent = () => playback === request && !leaving && !navigated;
+  const navigate = () => {
+    if (!isCurrent()) return;
+    navigated = true;
+    clearTimeout(request.timer);
+    if (replace) location.replace(route);
+    else location.assign(route);
+  };
+
+  if (motion.matches) { navigate(); return; }
+  try {
+    if (replace) {
+      // Only a project change waits for the scene. The homepage can keep loading it in the background.
+      request.timer = window.setTimeout(navigate, 4500);
+      await initializeScene();
+      clearTimeout(request.timer);
+      if (!isCurrent()) return;
+    }
+    if (!scene || host.dataset.renderState !== 'ready' || motion.matches) { navigate(); return; }
+    clearHomeHover();
+    resetPointerPreview();
+    stopPreviewVideo();
+    clearTimeout(snapTimer);
+    collection.dataset.render = 'webgl';
+    collection.dataset.phase = 'playing';
+    document.body.classList.add('collection-open');
+    if (!collection.open) collection.showModal();
+    status.textContent = `Poniendo ${project.title}. Abriendo el proyecto.`;
+    request.timer = window.setTimeout(navigate, 4000);
+    await scene.play(project);
+  } catch (error) {
+    console.warn('No se pudo reproducir la transición del vinilo.', error);
+  } finally {
+    navigate();
+  }
+}
+
 const url = new URL(location.href);
 const requestedSlug = url.searchParams.get('play');
 const requestedProject = projects.find(project => project.slug === requestedSlug);
-if (requestedProject) location.replace(projectPath(requestedProject));
+if (requestedProject) void playProject(requestedProject, true);
 else {
   if (requestedSlug !== null) {
     url.searchParams.delete('play');
@@ -424,6 +478,7 @@ else {
 
 window.addEventListener('pagehide', event => {
   leaving = true;
+  clearTimeout(playback?.timer);
   resetPointerPreview();
   clearTimeout(snapTimer);
   stopPreviewVideo();
@@ -432,5 +487,23 @@ window.addEventListener('pagehide', event => {
 });
 window.addEventListener('pageshow', event => {
   leaving = false;
-  if (event.persisted && collection.open && !closing) showPreview(hovered ?? selected, true);
+  if (!event.persisted) return;
+  if (playback) {
+    const replay = playback.replace;
+    playback = null;
+    delete collection.dataset.phase;
+    if (replay && collection.open) collection.close();
+    if (collection.open && useWebGL && host.dataset.renderState === 'ready') {
+      void scene!.openCollection(selected, true);
+    } else {
+      document.body.classList.toggle('collection-open', collection.open);
+      scene?.reset();
+      syncScene();
+    }
+    if (collection.open) {
+      clearRecordHover();
+      centerRecord(selected);
+      previewLink.focus({ preventScroll: true });
+    }
+  } else if (collection.open && !closing) showPreview(hovered ?? selected, true);
 });

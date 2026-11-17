@@ -36,6 +36,8 @@ body.collection-open .scene-recovery { visibility: hidden; }
 .orbit-dialog::backdrop {
   background: radial-gradient(ellipse at 50% 44%, transparent 35%, #4c48411e 100%);
 }
+/* Keep the stage dimensions available to the camera during playback. */
+.orbit-dialog[data-phase=playing] > :not([data-orbit-status]) { visibility: hidden; }
 .orbit-stage {
   position: absolute;
   inset: 0;

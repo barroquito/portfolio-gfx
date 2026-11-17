@@ -7,7 +7,7 @@ import { projectIndex } from '../../data/projects';
     <a class="back-link" href="/#proyectos">Volver al expositor</a>
     <h1>Proyectos</h1>
     <ul>
-      {projectIndex.map(project => <li><a href={`/proyectos/${project.slug}/`}>
+      {projectIndex.map(project => <li><a href={`/proyectos/${project.slug}/`} data-replay-project={project.slug}>
         <span><strong>{project.title}</strong><small>{project.subtitle}</small></span>
         <span aria-hidden="true">↗</span>
       </a></li>)}

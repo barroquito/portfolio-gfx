@@ -28,6 +28,15 @@ document.addEventListener('keydown', event => {
 });
 window.matchMedia('(min-width: 761px)').addEventListener('change', event => { if (event.matches) closeMenu(); });
 
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+document.querySelectorAll<HTMLAnchorElement>('[data-replay-project]').forEach(link => {
+  link.addEventListener('click', event => {
+    if (reducedMotion.matches || event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    event.preventDefault();
+    location.assign(`/?play=${encodeURIComponent(link.dataset.replayProject!)}`);
+  });
+});
+
 let toastTimer: ReturnType<typeof setTimeout>;
 function toast(message: string) {
   const element = document.querySelector<HTMLElement>('.toast'); if (!element) return;

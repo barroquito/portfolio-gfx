@@ -21,7 +21,7 @@ const { currentSlug } = Astro.props;
               <span class="project-navigator__title">{project.title}</span>
               <span class="sr-only">Proyecto actual</span>
             </span>
-          : <a class="project-navigator__link" href={`/proyectos/${project.slug}/`}>
+          : <a class="project-navigator__link" href={`/proyectos/${project.slug}/`} data-replay-project={project.slug}>
               <span class="project-navigator__number">{project.number}</span>
               <span class="project-navigator__title">{project.title}</span>
             </a>}
