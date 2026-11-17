@@ -1,27 +1,30 @@
 ---
 import Icon from './Icon.astro';
 import { projectIndex } from '../data/projects';
+import { localize, projectPath, type Language } from '../data/language';
 
 interface Props {
   currentSlug: string;
+  language: Language;
 }
-const { currentSlug } = Astro.props;
+const { currentSlug, language } = Astro.props;
+const t = localize(language);
 ---
 <details class="project-navigator">
   <summary>
-    <span>Todos los proyectos</span>
+    <span>{t('Todos los proyectos', 'All projects')}</span>
     <Icon name="plus" size={60} />
   </summary>
-  <nav aria-label="Navegar entre proyectos">
+  <nav aria-label={t('Navegar entre proyectos', 'Browse projects')}>
     <ol class="project-navigator__list">
       {projectIndex.map(project => <li>
         {project.slug === currentSlug
           ? <span class="project-navigator__current" aria-current="page">
               <span class="project-navigator__number">{project.number}</span>
               <span class="project-navigator__title">{project.title}</span>
-              <span class="sr-only">Proyecto actual</span>
+              <span class="sr-only">{t('Proyecto actual', 'Current project')}</span>
             </span>
-          : <a class="project-navigator__link" href={`/proyectos/${project.slug}/`} data-replay-project={project.slug}>
+          : <a class="project-navigator__link" href={projectPath(language, project.slug)} data-replay-project={project.slug}>
               <span class="project-navigator__number">{project.number}</span>
               <span class="project-navigator__title">{project.title}</span>
             </a>}

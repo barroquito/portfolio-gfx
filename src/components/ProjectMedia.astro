@@ -3,13 +3,17 @@ import sharp from 'sharp';
 import path from 'node:path';
 import { projectMedia } from '../data/project-media';
 import type { Project } from '../data/projects';
+import { localize, type Language } from '../data/language';
+import { localizeMediaLabel } from '../data/projects-en';
 import '../styles/project-player.css';
-const { project } = Astro.props as { project: Project };
-const titles: Record<string, string> = { aniversario: 'Segundo aniversario', 'evento-sake': 'Cata de sake', 'f1-week': 'F1 Week', 'piezas-digitales': '' };
-const digital = (projectMedia[project.slug] ?? []).flatMap(chapter => chapter.pieces.map(piece => ({
-  ...piece, alt: piece.label, campaign: titles[chapter.id] ?? chapter.title,
-})));
-const printed = project.gallery.map(piece => ({ kind: 'image', src: piece.src, label: piece.caption.replace(/^\d+\s*[—–-]\s*/, ''), alt: piece.alt, campaign: '', poster: undefined }));
+interface Props { project: Project; language: Language }
+const { project, language } = Astro.props;
+const t = localize(language);
+const digital = (projectMedia[project.slug] ?? []).flatMap(chapter => chapter.pieces.map(piece => {
+  const label = localizeMediaLabel(piece.label, language);
+  return { ...piece, label, alt: label };
+}));
+const printed = project.gallery.map(piece => ({ kind: 'image', src: piece.src, label: piece.caption.replace(/^\d+\s*[—–-]\s*/, ''), alt: piece.alt, poster: undefined }));
 const pieces = [...digital, ...printed];
 const ratios = await Promise.all(pieces.map(async piece => {
   if (piece.kind === 'document') return 0.707;
@@ -23,22 +27,22 @@ pieces.forEach((piece, index) => Object.assign(piece, { ratio: ratios[index] }))
 const lead = pieces.findIndex(piece => piece.kind === 'video');
 if (lead > 0) pieces.unshift(...pieces.splice(lead, 1));
 ---
-{pieces.length > 0 && <section class="project-reel" aria-label={`Piezas de ${project.title}`} data-project-reel>
+{pieces.length > 0 && <section class="project-reel" aria-label={t('Piezas de ', 'Work for ') + project.title} data-project-reel>
   <div class="reel-toolbar section-shell">
     
     <div class="reel-navigation">
       <span data-reel-count aria-hidden="true">1 / {pieces.length}</span>
-      <button type="button" data-reel-prev aria-label="Pieza anterior">←</button>
-      <button type="button" data-reel-next aria-label="Pieza siguiente">→</button>
+      <button type="button" data-reel-prev aria-label={t('Pieza anterior', 'Previous piece')}>←</button>
+      <button type="button" data-reel-next aria-label={t('Pieza siguiente', 'Next piece')}>→</button>
     </div>
   </div>
-  <div class="reel-track" tabindex="0" role="region" aria-roledescription="carrusel" aria-label="Piezas. Desliza o usa las flechas para recorrerlas.">
-    {pieces.map((piece, index) => <figure class="reel-piece" style={`--piece-ratio:${(piece as typeof piece & { ratio: number }).ratio}`} data-reel-piece id={`pieza-${index + 1}`} aria-label={`${index + 1} de ${pieces.length}`}>
+  <div class="reel-track" tabindex="0" role="region" aria-roledescription={t('carrusel', 'carousel')} aria-label={t('Piezas. Desliza o usa las flechas para recorrerlas.', 'Gallery. Swipe or use the arrow keys to browse.')}>
+    {pieces.map((piece, index) => <figure class="reel-piece" style={`--piece-ratio:${(piece as typeof piece & { ratio: number }).ratio}`} data-reel-piece id={`pieza-${index + 1}`} aria-label={`${index + 1}${t(' de ', ' of ')}${pieces.length}`}>
       <div class="reel-art">
-        {piece.kind === 'video' ? <video tabindex="0" role="button" muted loop playsinline preload="none" poster={piece.poster} aria-label={`Reproducir ${piece.label}`}>
-          <source src={piece.src} type="video/mp4" /><a href={piece.src}>Abrir vídeo</a>
-        </video> : piece.kind === 'document' ? <a class="reel-document" href={piece.src} target="_blank" rel="noopener"><span>PDF</span><strong>{piece.label}</strong><span>Abrir documento</span></a>
-        : <button type="button" class="gallery-zoom reel-image" data-src={piece.src} data-alt={piece.alt} data-caption={piece.label} aria-label={`Ampliar ${piece.label}`}>
+        {piece.kind === 'video' ? <video tabindex="0" role="button" muted loop playsinline preload="none" poster={piece.poster} aria-label={t('Reproducir ', 'Play ') + piece.label}>
+          <source src={piece.src} type="video/mp4" /><a href={piece.src}>{t('Abrir vídeo', 'Open video')}</a>
+        </video> : piece.kind === 'document' ? <a class="reel-document" href={piece.src} target="_blank" rel="noopener"><span>PDF</span><strong>{piece.label}</strong><span>{t('Abrir documento', 'Open document')}</span></a>
+        : <button type="button" class="gallery-zoom reel-image" data-src={piece.src} data-alt={piece.alt} data-caption={piece.label} aria-label={t('Ampliar ', 'Enlarge ') + piece.label}>
           <img src={piece.src} alt={piece.alt} loading={index === 0 ? 'eager' : 'lazy'} decoding="async" />
         </button>}
       </div>

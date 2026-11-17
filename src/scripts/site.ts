@@ -1,10 +1,15 @@
+import { localize, localizedPath } from '../data/language';
+
+const language = document.documentElement.lang === 'en' ? 'en' : 'es';
+const t = localize(language);
 const menuToggle = document.querySelector<HTMLButtonElement>('.menu-toggle');
 const nav = document.querySelector<HTMLElement>('#main-nav');
+const languageSwitch = document.querySelector<HTMLAnchorElement>('.language-switch');
 
 function closeMenu(returnFocus = false) {
   const wasOpen = menuToggle?.getAttribute('aria-expanded') === 'true';
   menuToggle?.setAttribute('aria-expanded', 'false');
-  menuToggle?.setAttribute('aria-label', 'Abrir menú');
+  menuToggle?.setAttribute('aria-label', t('Abrir menú', 'Open menu'));
   nav?.classList.remove('open');
   document.body.classList.remove('menu-open');
   if (returnFocus && wasOpen) menuToggle?.focus();
@@ -12,7 +17,7 @@ function closeMenu(returnFocus = false) {
 menuToggle?.addEventListener('click', () => {
   const open = menuToggle.getAttribute('aria-expanded') !== 'true';
   menuToggle.setAttribute('aria-expanded', String(open));
-  menuToggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+  menuToggle.setAttribute('aria-label', open ? t('Cerrar menú', 'Close menu') : t('Abrir menú', 'Open menu'));
   nav?.classList.toggle('open', open);
   document.body.classList.toggle('menu-open', open);
 });
@@ -20,7 +25,7 @@ nav?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => 
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') closeMenu(true);
   if (event.key === 'Tab' && menuToggle?.getAttribute('aria-expanded') === 'true') {
-    const focusable = [menuToggle, ...Array.from(nav?.querySelectorAll<HTMLAnchorElement>('a') || [])];
+    const focusable = [menuToggle, ...Array.from(nav?.querySelectorAll<HTMLAnchorElement>('a') || []), languageSwitch].filter(Boolean);
     const first = focusable[0], last = focusable[focusable.length - 1];
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
@@ -33,7 +38,7 @@ document.querySelectorAll<HTMLAnchorElement>('[data-replay-project]').forEach(li
   link.addEventListener('click', event => {
     if (reducedMotion.matches || event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     event.preventDefault();
-    location.assign(`/?play=${encodeURIComponent(link.dataset.replayProject!)}`);
+    location.assign(`${localizedPath(language)}?play=${encodeURIComponent(link.dataset.replayProject!)}`);
   });
 });
 
@@ -44,8 +49,9 @@ function toast(message: string) {
   toastTimer = setTimeout(() => element.classList.remove('show'), 3500);
 }
 const copyEmail = document.querySelector<HTMLButtonElement>('.copy-email');
+const copiedMessage = t('Correo copiado. Hablemos.', 'Email address copied.');
 copyEmail?.addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText('jorgepindado.gfx@gmail.com'); toast('Correo copiado. Hablemos.'); }
+  try { await navigator.clipboard.writeText('jorgepindado.gfx@gmail.com'); toast(copiedMessage); }
   catch {
     const previousFocus = document.activeElement as HTMLElement | null;
     const field = document.createElement('textarea');
@@ -58,7 +64,7 @@ copyEmail?.addEventListener('click', async () => {
     let copied = false;
     try { copied = document.execCommand('copy'); } catch { /* Show the address when copying is unavailable. */ }
     field.remove(); previousFocus?.focus();
-    toast(copied ? 'Correo copiado. Hablemos.' : 'Puedes escribir a jorgepindado.gfx@gmail.com');
+    toast(copied ? copiedMessage : t('Puedes escribir a jorgepindado.gfx@gmail.com', 'You can email jorgepindado.gfx@gmail.com'));
   }
 });
 

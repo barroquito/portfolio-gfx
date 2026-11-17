@@ -1,3 +1,7 @@
+import { localize } from '../data/language';
+
+const t = localize(document.documentElement.lang === 'en' ? 'en' : 'es');
+
 document.querySelectorAll<HTMLElement>('[data-project-reel]').forEach(reel => {
   const track = reel.querySelector<HTMLElement>('.reel-track')!;
   const pieces = [...reel.querySelectorAll<HTMLElement>('[data-reel-piece]')];
@@ -11,7 +15,7 @@ document.querySelectorAll<HTMLElement>('[data-project-reel]').forEach(reel => {
     const video = piece.querySelector('video');
     if (!video) return;
     const label = piece.querySelector('figcaption')!.textContent;
-    const syncLabel = () => video.setAttribute('aria-label', (video.paused ? 'Reproducir ' : 'Pausar ') + label);
+    const syncLabel = () => video.setAttribute('aria-label', (video.paused ? t('Reproducir ', 'Play ') : t('Pausar ', 'Pause ')) + label);
     const toggle = () => { if (video.paused) void video.play().catch(() => {}); else video.pause(); };
     video.addEventListener('click', toggle);
     video.addEventListener('keydown', event => {
@@ -49,7 +53,7 @@ document.querySelectorAll<HTMLElement>('[data-project-reel]').forEach(reel => {
     next.setAttribute('aria-disabled', String(selected === pieces.length - 1));
     clearTimeout(announceTimer);
     announceTimer = window.setTimeout(() => {
-      status.textContent = `${pieces[selected].querySelector('figcaption')!.textContent}. ${selected + 1} de ${pieces.length}.`;
+      status.textContent = `${pieces[selected].querySelector('figcaption')!.textContent}. ${selected + 1}${t(' de ', ' of ')}${pieces.length}.`;
       playCurrent();
     }, 160);
   }

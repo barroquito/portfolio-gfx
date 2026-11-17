@@ -1,5 +1,6 @@
 import { gsap } from 'gsap';
 import type { RecordProject, RecordScene } from './record-scene';
+import { localize, projectPath } from '../data/language';
 
 type Preview = { image: string; alt: string; ratio: number };
 type CollectionProject = RecordProject & { previews: Preview[]; preview: Preview };
@@ -57,7 +58,9 @@ const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const fineHover = window.matchMedia('(hover: hover) and (pointer: fine)');
 const initialHomeFrame = { host: host.getBoundingClientRect(), table: table.getBoundingClientRect() };
 const wrap = (index: number) => ((index % projects.length) + projects.length) % projects.length;
-const projectPath = (project: RecordProject) => '/proyectos/' + project.slug + '/';
+const language = document.documentElement.lang === 'en' ? 'en' : 'es';
+const t = localize(language);
+const routeFor = (project: RecordProject) => projectPath(language, project.slug);
 
 let scene: RecordScene | null = null;
 let useWebGL = false;
@@ -103,7 +106,7 @@ async function renderPreviewPiece(index: number) {
 }
 function showPreview(index: number, force = false) {
   previewTitle.textContent = projects[index].title;
-  previewLink.href = projectPath(projects[index]);
+  previewLink.href = routeFor(projects[index]);
   if (hovered !== index) { resetPointerPreview(); previewed = null; return; }
   if (previewed === index && !force) return;
   clearInterval(previewCycle);
@@ -140,7 +143,7 @@ new ResizeObserver(() => {
 
 function centerRecord(index: number) {
   selected = wrap(index);
-  const announcement = projects[selected].title + ', ' + (selected + 1) + ' de ' + projects.length;
+  const announcement = projects[selected].title + ', ' + (selected + 1) + t(' de ', ' of ') + projects.length;
   if (status.textContent !== announcement) status.textContent = announcement;
   if (hovered === null) showPreview(selected);
 }
@@ -352,7 +355,7 @@ previewLink.addEventListener('click', event => {
   if (event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
   if (playback || closing) { event.preventDefault(); return; }
   if (!useWebGL || motion.matches) return;
-  const project = projects.find(project => projectPath(project) === previewLink.pathname);
+  const project = projects.find(project => routeFor(project) === previewLink.pathname);
   if (!project) return;
   event.preventDefault();
   void playProject(project);
@@ -373,7 +376,7 @@ contact.addEventListener('click', event => {
 });
 function navigateHash(hash: string) {
   if (hash === '#proyectos') openCollection();
-  else if (hash === '#sobre-mi') location.replace('/proyectos/sobre-mi/');
+  else if (hash === '#sobre-mi') location.replace(projectPath(language, 'sobre-mi'));
   else if (hash === '#contacto') openContact();
 }
 document.querySelectorAll<HTMLAnchorElement>('#main-nav a[href^="#"]').forEach(link => link.addEventListener('click', event => {
@@ -424,7 +427,7 @@ async function playProject(project: RecordProject, replace = false) {
   if (closing || leaving || playback) return;
   const request: NonNullable<typeof playback> = { replace };
   playback = request;
-  const route = projectPath(project);
+  const route = routeFor(project);
   let navigated = false;
   const isCurrent = () => playback === request && !leaving && !navigated;
   const navigate = () => {
@@ -453,7 +456,7 @@ async function playProject(project: RecordProject, replace = false) {
     collection.dataset.phase = 'playing';
     document.body.classList.add('collection-open');
     if (!collection.open) collection.showModal();
-    status.textContent = `Poniendo ${project.title}. Abriendo el proyecto.`;
+    status.textContent = t(`Poniendo ${project.title}. Abriendo el proyecto.`, `Playing ${project.title}. Opening the project.`);
     request.timer = window.setTimeout(navigate, 4000);
     await scene.play(project);
   } catch (error) {

@@ -1,0 +1,16 @@
+---
+import { projects } from '../../data/projects';
+import Home from '../../views/Home.astro';
+import Projects from '../../views/Projects.astro';
+import Project from '../../views/Project.astro';
+
+export function getStaticPaths() {
+  return [
+    { params: { page: undefined }, props: { project: undefined } },
+    { params: { page: 'proyectos' }, props: { project: undefined } },
+    ...projects.map(project => ({ params: { page: `proyectos/${project.slug}` }, props: { project } })),
+  ];
+}
+const { project } = Astro.props;
+---
+{project ? <Project language="en" project={project} /> : Astro.params.page ? <Projects language="en" /> : <Home language="en" />}

@@ -1,0 +1,89 @@
+---
+import sharp from 'sharp';
+import path from 'node:path';
+import Icon from '../components/Icon.astro';
+import Layout from '../layouts/Layout.astro';
+import BrandMark from '../components/BrandMark.astro';
+import RecordSleeve from '../components/RecordSleeve.astro';
+import { recordProjects as projects, projectIndex } from '../data/projects';
+import { projectMedia } from '../data/project-media';
+import { localize, projectPath, type Language } from '../data/language';
+import { localizeMediaLabel, localizeProject } from '../data/projects-en';
+import '../styles/record-room.css';
+import '../styles/collection-orbit.css';
+
+interface Props { language: Language }
+const { language } = Astro.props;
+const t = localize(language);
+const collectionProjects = await Promise.all(projects.map(async original => {
+  const project = localizeProject(original, language);
+  const { slug, title, number, subtitle, description, record, theme, cover, gallery } = project;
+  const digital = (projectMedia[slug] ?? []).flatMap(chapter => chapter.pieces).filter(piece => piece.kind !== 'document');
+  const sources = [...gallery.map(piece => ({ image: piece.src, alt: piece.alt })), ...digital.map(piece => ({ image: piece.poster ?? piece.src, alt: localizeMediaLabel(piece.label, language) }))];
+  const previews = await Promise.all(sources.map(async piece => {
+    const meta = await sharp(path.join(process.cwd(), 'public', piece.image)).metadata();
+    return { ...piece, ratio: (meta.width ?? 1) / (meta.height ?? 1) };
+  }));
+  return { slug, title, number, subtitle, description, record, theme, cover, previews, preview: previews[0] };
+}));
+const firstProject = collectionProjects[0];
+---
+<Layout home language={language} title={t('Jorge Pindado — Una colección de ideas', 'Jorge Pindado — A Collection of Ideas')} description={t('Portfolio de Jorge Pindado. Diseño gráfico y dirección de arte en Madrid.', 'Jorge Pindado’s portfolio. Graphic design and art direction in Madrid.')}>
+  <main id="main" class="record-room">
+    <div class="room-heading">
+      <div class="room-heading-copy"><h1>{t('Ideas en', 'Ideas in')}<br/><strong>{t('rotación.', 'rotation.')}</strong></h1><p>{t('Diseño gráfico.', 'Graphic design.')}<br/>{t('Dirección de arte.', 'Art direction.')}</p></div>
+      <div class="room-identity"><BrandMark tone="red" class="room-signature"/></div>
+    </div>
+
+    <section class="listening-table" aria-label={t('Expositor interactivo de proyectos en vinilo', 'Interactive vinyl display of projects')}>
+      <div id="record-scene" aria-hidden="true"></div>
+      <div class="scene-fallback" aria-hidden="true"><div class="fallback-model"><img src="/models/tocadiscos-poster.webp" alt="" width="1100" height="850" /></div><div class="fallback-stack">{[...projects].reverse().map(project=><div class="fallback-sleeve"><RecordSleeve project={project}/></div>)}</div></div>
+      <button class="collection-hotspot" data-open-collection aria-haspopup="dialog" aria-label={t('Abrir la colección de vinilos', 'Open the record collection')}><span class="hotspot-dot"><Icon name="plus" size={160} /></span><span class="hotspot-hint">{t('ABRIR COLECCIÓN', 'OPEN COLLECTION')}</span></button>
+
+    </section>
+
+    <div class="room-bottom"><button class="collection-main-button" data-open-collection aria-haspopup="dialog">{t('Abrir colección', 'Open collection')} <i aria-hidden="true"><Icon name="arrow" size={60} /></i></button></div>
+    <noscript><div class="no-js-projects"><p>{t('Proyectos', 'Projects')}</p>{projectIndex.map(project => <a href={projectPath(language, project.slug)}>{project.title}</a>)}<a href="/CV-Jorge-Pindado-ES.pdf">{t('Mi CV', 'My CV (Spanish)')}</a><a href="mailto:jorgepindado.gfx@gmail.com">{t('Contacto', 'Contact')}</a></div></noscript>
+  </main>
+
+  <dialog id="collection-dialog" class="orbit-dialog" data-render="fallback" aria-label={t('Colección de vinilos', 'Record collection')}>
+    <button class="orbit-close" type="button" data-close-collection aria-label={t('Cerrar colección', 'Close collection')}><Icon name="close" size={60} /></button>
+    <div class="orbit-stage">
+      <div class="orbit-fallback" aria-hidden="true">
+        {projects.map((project,index)=><a class="orbit-fallback-record" data-fallback-record={index} href={projectPath(language, project.slug)} tabindex="-1" aria-label={project.title}>
+          <RecordSleeve project={project}/>
+        </a>)}
+      </div>
+    </div>
+    <div class="orbit-navigation">
+      <button type="button" data-step="-1" aria-label={t('Vinilo anterior', 'Previous record')}><span aria-hidden="true">←</span></button>
+      <button type="button" data-step="1" aria-label={t('Vinilo siguiente', 'Next record')}><span aria-hidden="true">→</span></button>
+    </div>
+    <div class="orbit-preview">
+      <div class="orbit-preview-media">
+        <img data-preview-image src={firstProject.preview.image} alt={firstProject.preview.alt} decoding="async" loading="lazy" />
+        <video data-preview-video muted loop playsinline preload="none" aria-hidden="true" hidden></video>
+      </div>
+      <a class="orbit-project" data-preview-link href={projectPath(language, firstProject.slug)}>
+        <span data-preview-title>{firstProject.title}</span>
+        <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+    <p class="sr-only" role="status" aria-atomic="true" data-orbit-status></p>
+  </dialog>
+
+  <dialog id="contact-dialog" class="info-dialog contact-dialog" aria-labelledby="contact-dialog-title">
+    <button class="room-dialog-close room-dialog-close--text" data-close-dialog aria-label={t('Cerrar contacto', 'Close contact')}>{t('Cerrar', 'Close')}</button>
+    <h2 id="contact-dialog-title">{t('¿Tienes algo', 'Have something')}<br/><strong>{t('en mente?', 'in mind?')}</strong></h2>
+    <div class="room-contact-email">
+      <a href="mailto:jorgepindado.gfx@gmail.com">jorgepindado.gfx@gmail.com</a>
+      <button class="copy-email" aria-label={t('Copiar correo electrónico', 'Copy email address')} title={t('Copiar correo', 'Copy email')}>{t('Copiar', 'Copy')}</button>
+    </div>
+    <div class="room-contact-links">
+      <a href="https://www.linkedin.com/in/jorge-pindado-badiola-4a3846191/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      <a href="/CV-Jorge-Pindado-ES.pdf" download>{t('Descargar CV', 'Download CV (Spanish)')}</a>
+    </div>
+  </dialog>
+  <script id="record-project-data" type="application/json" set:html={JSON.stringify(collectionProjects)}/>
+  <script src="../scripts/record-room.ts"></script>
+</Layout>
