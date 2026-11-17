@@ -106,6 +106,16 @@ export const projects: Project[] = [
       {src:'/images/bulk-burger.webp', alt:'Pieza gráfica de BULK con una hamburguesa como protagonista', caption:'03 — Producto y lenguaje de marca'},
       {src:'/images/bulk-bag.webp', alt:'Aplicación de la identidad de BULK a una mochila', caption:'04 — La marca fuera del packaging'},
       {src:'/images/bulk-hero.webp', alt:'Mockup de una valla de BULK en una fachada con el mensaje Double is Better', caption:'05 — Publicidad exterior / Double is Better'},
+      {src:"/images/bulk-valla-edificio.webp", alt:"Valla de BULK en la esquina de un edificio", caption:"06 — Publicidad exterior / Valla en fachada"},
+      {src:"/images/bulk-cartel-suelo.webp", alt:"Cartel de BULK sobre el pavimento", caption:"07 — Campaña / Cartel"},
+      {src:"/images/bulk-valla-palmeras.webp", alt:"Valla verde de BULK entre palmeras", caption:"08 — Publicidad exterior / Valla entre palmeras"},
+      {src:"/images/bulk-bowl.webp", alt:"Bowl de BULK sobre una mesa oscura", caption:"09 — Producto / Bowl"},
+      {src:"/images/bulk-gorra.webp", alt:"Gorra negra de BULK con el lema Protein Staff", caption:"10 — Uniforme / Protein Staff"},
+      {src:"/images/bulk-local-interior.webp", alt:"Interior del local BULK con un mostrador verde", caption:"11 — Espacio / Interior del local"},
+      {src:"/images/bulk-local-fachada.webp", alt:"Fachada del local BULK vista desde la calle", caption:"12 — Espacio / Fachada"},
+      {src:"/images/bulk-packaging.webp", alt:"Bolsa de papel de BULK con el mensaje Engullir y repetir", caption:"13 — Packaging / Engullir y repetir"},
+      {src:"/images/bulk-pizza.webp", alt:"Pizza en una escena con una nevera abierta", caption:"14 — Producto / Pizza"},
+      {src:"/images/bulk-stand.webp", alt:"Stand de BULK con iluminación verde", caption:"15 — Espacio / Stand"},
     ]
   },
 {
